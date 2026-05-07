@@ -246,6 +246,62 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
 
       return toCmsPage(updatedPage)
     },
+
+    async create(input) {
+      // Import validation functions
+      const { normalizePageSlug, validatePageSlug, validatePageTitle } = await import(
+        "@sovereign-cms/core"
+      )
+
+      // Normalize and validate
+      const normalizedSlug = normalizePageSlug(input.slug)
+      const trimmedTitle = input.title.trim()
+
+      if (!validatePageSlug(normalizedSlug)) {
+        throw new Error(`Invalid slug: ${normalizedSlug}`)
+      }
+
+      if (!validatePageTitle(trimmedTitle)) {
+        throw new Error("Invalid title: must not be empty")
+      }
+
+      // Check for duplicate
+      const existingPage = store.pages.find(
+        (p) =>
+          p.tenantId === input.tenantId &&
+          p.locale === input.locale &&
+          p.slug === normalizedSlug,
+      )
+
+      if (existingPage) {
+        throw new Error(
+          `Page already exists: tenantId=${input.tenantId}, locale=${input.locale}, slug=${normalizedSlug}`,
+        )
+      }
+
+      // Generate ID
+      const id = `page-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+
+      // Create new page
+      const now = new Date().toISOString()
+      const newPage: InternalPageRow = {
+        id,
+        tenantId: input.tenantId,
+        slug: normalizedSlug,
+        locale: input.locale,
+        title: trimmedTitle,
+        status: "draft",
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      // Add to store
+      store.pages.push(newPage)
+      // Initialize empty blocks for this page
+      store.blocksByPageId.set(id, [])
+
+      return toCmsPage(newPage)
+    },
   }
 
   const blockRepo: BlockRepository = {

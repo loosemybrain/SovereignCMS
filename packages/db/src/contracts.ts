@@ -1,4 +1,4 @@
-import type { CmsBlock, CmsPage, Locale, TransitionPageStatusInput } from "@sovereign-cms/core"
+import type { CmsBlock, CmsPage, Locale, TransitionPageStatusInput, CreatePageInput } from "@sovereign-cms/core"
 
 export type PageRecord = CmsPage
 
@@ -24,6 +24,8 @@ export interface PageRepository {
   listByTenant(input: { tenantId: string; locale?: string }): Promise<CmsPage[]>
 
   transitionStatus(input: TransitionPageStatusInput): Promise<CmsPage>
+
+  create(input: CreatePageInput): Promise<CmsPage>
 }
 
 export interface BlockRepository {

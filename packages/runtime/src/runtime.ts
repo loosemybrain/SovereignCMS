@@ -13,6 +13,7 @@ import {
 } from "./adapter-selection"
 import { createEditorPersistence } from "./editor-persistence"
 import { createPageStatusPersistence } from "./page-status-persistence"
+import { createPageCreationPersistence } from "./page-creation-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 
 export type SovereignRuntime = {
@@ -23,6 +24,7 @@ export type SovereignRuntime = {
   tenantResolver: TenantResolver
   editorPersistence: EditorPersistence
   pageStatusPersistence: ReturnType<typeof createPageStatusPersistence>
+  pageCreationPersistence: ReturnType<typeof createPageCreationPersistence>
 }
 
 export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRuntime {
@@ -35,6 +37,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const tenantResolver = createDatabaseTenantResolver(db)
   const editorPersistence = createEditorPersistence({ db })
   const pageStatusPersistence = createPageStatusPersistence({ db })
+  const pageCreationPersistence = createPageCreationPersistence({ db })
 
   return {
     config: mergedConfig,
@@ -44,6 +47,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     tenantResolver,
     editorPersistence,
     pageStatusPersistence,
+    pageCreationPersistence,
   }
 }
 
