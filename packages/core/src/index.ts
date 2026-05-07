@@ -11,3 +11,4 @@ export type { SavePageDraftInput, SavePageDraftResult, SavePageDraftError } from
 export type { EditorPersistence } from "./editor-persistence"
 export { createBlockRegistry, type BlockRegistry } from "./registry"
 export type { LocaleCode, SupportedLocale, LocaleContext } from "./locale"
+export { isSupportedLocale, getDefaultLocale, resolveLocale } from "./locale-utils"

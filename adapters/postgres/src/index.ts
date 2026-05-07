@@ -22,6 +22,9 @@ export function createPostgresDatabaseAdapterPlaceholder(): DatabaseAdapter {
     async listByPage() {
       return []
     },
+    async replacePageBlocks() {
+      return []
+    },
   }
   return { tenants, pages, blocks }
 }

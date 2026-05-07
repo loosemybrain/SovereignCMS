@@ -31,7 +31,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const storage = selectStorageAdapter(mergedConfig)
   const auth = selectAuthProvider(mergedConfig)
   const tenantResolver = createDatabaseTenantResolver(db)
-  const editorPersistence = createEditorPersistence()
+  const editorPersistence = createEditorPersistence({ db })
 
   return {
     config: mergedConfig,

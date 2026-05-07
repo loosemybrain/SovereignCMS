@@ -1,6 +1,13 @@
-import type { CmsBlock, CmsPage } from "@sovereign-cms/core"
+import type { CmsBlock, CmsPage, Locale } from "@sovereign-cms/core"
 
 export type PageRecord = CmsPage
+
+export type ReplacePageBlocksInput = {
+  tenantId: string
+  pageId: string
+  locale: Locale
+  blocks: CmsBlock[]
+}
 
 export interface TenantRepository {
   findByDomain(host: string): Promise<unknown | null>
@@ -19,6 +26,8 @@ export interface PageRepository {
 
 export interface BlockRepository {
   listByPage(input: { tenantId: string; pageId: string }): Promise<CmsBlock[]>
+
+  replacePageBlocks(input: ReplacePageBlocksInput): Promise<CmsBlock[]>
 }
 
 export interface DatabaseAdapter {

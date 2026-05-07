@@ -1,5 +1,6 @@
 export type {
   PageRecord,
+  ReplacePageBlocksInput,
   DatabaseAdapter,
   TenantRepository,
   PageRepository,

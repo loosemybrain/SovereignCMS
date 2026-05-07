@@ -1,21 +1,41 @@
 import { headers } from "next/headers"
 import Link from "next/link"
-import { notFound } from "next/navigation"
 import { PageEditorClient } from "@/components/page-editor-client"
+import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { loadAdminPageDetail } from "@/lib/load-admin-page-detail"
 
 type Props = {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ locale?: string }>
 }
 
-export default async function AdminPageDetailRoute({ params }: Props) {
+export default async function AdminPageDetailRoute({ params, searchParams }: Props) {
   const { slug } = await params
+  const sp = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const result = await loadAdminPageDetail({ host, slug })
+  const result = await loadAdminPageDetail({
+    host,
+    slug,
+    searchParams: sp,
+  })
 
   if (result.notFound) {
-    notFound()
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/pages" className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors">
+            ← Back to Pages
+          </Link>
+        </div>
+        <div className="rounded-lg border border-amber-800/50 bg-amber-900/20 p-6">
+          <p className="text-amber-200 font-medium">Page not found</p>
+          <p className="text-sm text-amber-300 mt-2">
+            No page with slug &quot;{slug}&quot; found for locale &quot;{result.activeLocale}&quot;
+          </p>
+        </div>
+      </div>
+    )
   }
 
   if (result.error || !result.page) {
@@ -26,7 +46,13 @@ export default async function AdminPageDetailRoute({ params }: Props) {
     )
   }
 
-  const { tenant, runtimeConfig, page, blocks, supportedLocales } = result
+  const { tenant, runtimeConfig, page, blocks, localeContext, activeLocale } = result
+
+  const createHref = (locale: string) => {
+    const newParams = new URLSearchParams()
+    newParams.set("locale", locale)
+    return `/pages/${slug}?${newParams.toString()}`
+  }
 
   return (
     <div className="space-y-6">
@@ -34,7 +60,7 @@ export default async function AdminPageDetailRoute({ params }: Props) {
       <div className="space-y-3">
         <div className="flex items-center gap-4">
           <Link
-            href="/pages"
+            href={`/pages?locale=${activeLocale}`}
             className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             ← Back to Pages
@@ -49,7 +75,7 @@ export default async function AdminPageDetailRoute({ params }: Props) {
             <span className="font-mono">{page.slug}</span>
           </div>
           <div className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
-            Locale: <span className="font-medium">{page.locale}</span>
+            Locale: <span className="font-medium">{activeLocale}</span>
           </div>
           <div className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
             Status: <span className="font-medium">{page.status}</span>
@@ -58,12 +84,14 @@ export default async function AdminPageDetailRoute({ params }: Props) {
             Tenant: <span className="font-medium">{tenant.tenantId}</span>
           </div>
         </div>
-        {supportedLocales.length > 0 && (
-          <div className="text-xs text-zinc-400">
-            Supported locales: {supportedLocales.join(", ")}
-          </div>
-        )}
       </div>
+
+      {/* Locale Switcher */}
+      <AdminLocaleSwitcher
+        activeLocale={activeLocale}
+        localeContext={localeContext}
+        createHref={createHref}
+      />
 
       {/* Editor */}
       <PageEditorClient page={page} blocks={blocks} tenant={tenant} runtimeConfig={runtimeConfig} />

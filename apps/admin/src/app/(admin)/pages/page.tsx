@@ -1,6 +1,7 @@
 import { headers } from "next/headers"
 import Link from "next/link"
 import { cn } from "@sovereign-cms/ui"
+import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 function StatusBadge({ status }: { status: string }) {
@@ -20,10 +21,24 @@ function StatusBadge({ status }: { status: string }) {
   )
 }
 
-export default async function PagesListPage() {
+type Props = {
+  searchParams: Promise<{ locale?: string }>
+}
+
+export default async function PagesListPage({ searchParams }: Props) {
+  const params = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const { pages, error, locale, supportedLocales } = await loadAdminPages({ host })
+  const { pages, error, localeContext, activeLocale } = await loadAdminPages({
+    host,
+    searchParams: params,
+  })
+
+  const createHref = (locale: string) => {
+    const newParams = new URLSearchParams()
+    newParams.set("locale", locale)
+    return `/pages?${newParams.toString()}`
+  }
 
   return (
     <div className="space-y-6">
@@ -32,28 +47,12 @@ export default async function PagesListPage() {
         <p className="text-sm text-zinc-400 mt-1">Manage your CMS pages</p>
       </div>
 
-      {/* Locale Info */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-zinc-300">Current Locale</span>
-          <span className="font-mono text-sm px-3 py-1 rounded bg-zinc-800 text-zinc-100">{locale}</span>
-        </div>
-        <div>
-          <span className="text-xs text-zinc-500">Supported Locales:</span>
-          <div className="flex gap-2 mt-1">
-            {supportedLocales.map((loc) => (
-              <span key={loc} className={cn(
-                "text-xs px-2 py-1 rounded",
-                loc === locale
-                  ? "bg-blue-950 text-blue-200 font-medium"
-                  : "bg-zinc-800 text-zinc-400"
-              )}>
-                {loc}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Locale Switcher */}
+      <AdminLocaleSwitcher
+        activeLocale={activeLocale}
+        localeContext={localeContext}
+        createHref={createHref}
+      />
 
       {error === true ? (
         <div className="rounded-lg border border-red-800/50 bg-red-900/20 p-4 text-red-300">
@@ -61,7 +60,7 @@ export default async function PagesListPage() {
         </div>
       ) : pages.length === 0 ? (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-8 text-center text-zinc-400">
-          <p className="text-sm">No pages for this tenant yet</p>
+          <p className="text-sm">No pages for this locale ({activeLocale})</p>
         </div>
       ) : (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
@@ -82,7 +81,10 @@ export default async function PagesListPage() {
                   className="hover:bg-zinc-900/40 transition-colors duration-200 cursor-pointer"
                 >
                   <td className="px-6 py-4 text-zinc-100">
-                    <Link href={`/pages/${page.slug}`} className="hover:underline font-medium">
+                    <Link
+                      href={`/pages/${page.slug}?locale=${activeLocale}`}
+                      className="hover:underline font-medium"
+                    >
                       {page.title}
                     </Link>
                   </td>

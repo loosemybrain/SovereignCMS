@@ -26,6 +26,9 @@ export function createSupabaseDatabaseAdapterPlaceholder(): DatabaseAdapter {
     async listByPage() {
       return []
     },
+    async replacePageBlocks() {
+      return []
+    },
   }
   return { tenants, pages, blocks }
 }

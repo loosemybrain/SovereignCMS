@@ -1,3 +1,5 @@
+import type { SupportedLocale } from "@sovereign-cms/core"
+
 export type DatabaseAdapterKind = "memory" | "supabase" | "postgres"
 export type StorageAdapterKind = "memory" | "supabase" | "s3"
 export type AuthAdapterKind = "none" | "supabase" | "keycloak"
@@ -8,7 +10,7 @@ export type RuntimeConfig = {
   storageAdapter: StorageAdapterKind
   authAdapter: AuthAdapterKind
   defaultLocale: string
-  supportedLocales: string[]
+  supportedLocales: SupportedLocale[]
 }
 
 function readEnum<TValue extends string>(
@@ -33,16 +35,30 @@ function readCommaSeparatedList(env: NodeJS.ProcessEnv, key: string, fallback: s
     .filter((item) => item.length > 0)
 }
 
-export function loadRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
-  const supportedLocales = readCommaSeparatedList(env, "SUPPORTED_LOCALES", "de")
-  const defaultLocale = env.DEFAULT_LOCALE ?? "de"
+function buildSupportedLocales(locales: string[]): SupportedLocale[] {
+  return locales.map((code, index) => ({
+    code,
+    label: code.toUpperCase(),
+    default: index === 0,
+  }))
+}
 
-  // Validate: defaultLocale must be in supportedLocales
-  if (!supportedLocales.includes(defaultLocale)) {
+export function loadRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
+  const localeStrings = readCommaSeparatedList(env, "SUPPORTED_LOCALES", "de")
+  const defaultLocale = env.DEFAULT_LOCALE ?? localeStrings[0] ?? "de"
+
+  // Validate: defaultLocale must be in localeStrings
+  if (!localeStrings.includes(defaultLocale)) {
     throw new Error(
-      `Invalid runtime config: DEFAULT_LOCALE "${defaultLocale}" not in SUPPORTED_LOCALES "${supportedLocales.join(",")}"`,
+      `Invalid runtime config: DEFAULT_LOCALE "${defaultLocale}" not in SUPPORTED_LOCALES "${localeStrings.join(",")}"`,
     )
   }
+
+  // Ensure default locale is marked as default in the array
+  const supportedLocales = buildSupportedLocales(localeStrings).map((locale) => ({
+    ...locale,
+    default: locale.code === defaultLocale,
+  }))
 
   return {
     appEnv: readEnum(env, "APP_ENV", "local", ["local", "development", "staging", "production"]),

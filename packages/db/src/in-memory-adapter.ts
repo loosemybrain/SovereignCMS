@@ -4,6 +4,7 @@ import type {
   DatabaseAdapter,
   PageRepository,
   TenantRepository,
+  ReplacePageBlocksInput,
 } from "./contracts"
 import type { CmsBlock } from "@sovereign-cms/core"
 
@@ -37,16 +38,17 @@ type InternalPageRow = {
   updatedAt: string
 }
 
+type MutableStore = {
+  pages: InternalPageRow[]
+  blocksByPageId: Map<string, BlockRow[]>
+}
+
 function normalizeHost(hostHeader: string): string {
   const trimmed = hostHeader.trim().toLowerCase()
   return trimmed.split(":")[0] ?? trimmed
 }
 
-function buildStores(): {
-  tenants: readonly TenantRow[]
-  pages: readonly InternalPageRow[]
-  blocksByPageId: ReadonlyMap<string, readonly BlockRow[]>
-} {
+function buildStores(): MutableStore {
   // German blocks
   const heroDE: BlockRow = {
     id: "blk-hero-1",
@@ -107,15 +109,8 @@ function buildStores(): {
     updatedAt: "2026-05-04T00:00:00.000Z",
   }
 
-  const blocksDE: readonly BlockRow[] = [heroDE, textDE]
-  const blocksEN: readonly BlockRow[] = [heroEN, textEN]
-
-  const tenant: TenantRow = {
-    id: "demo",
-    domain: "localhost",
-    slug: "demo",
-    displayName: "Demo",
-  }
+  const blocksDE: BlockRow[] = [heroDE, textDE]
+  const blocksEN: BlockRow[] = [heroEN, textEN]
 
   // German page
   const pageDE: InternalPageRow = {
@@ -141,13 +136,12 @@ function buildStores(): {
     updatedAt: "2026-05-04T00:00:00.000Z",
   }
 
-  const blocksByPageId = new Map<string, readonly BlockRow[]>([
+  const blocksByPageId = new Map<string, BlockRow[]>([
     [pageDE.id, blocksDE],
     [pageEN.id, blocksEN],
   ])
 
   return {
-    tenants: [tenant],
     pages: [pageDE, pageEN],
     blocksByPageId,
   }
@@ -180,22 +174,31 @@ function toCmsBlock(row: BlockRow): CmsBlock {
   }
 }
 
-function buildAdapterFromStores(stores: ReturnType<typeof buildStores>): DatabaseAdapter {
+const tenants: readonly TenantRow[] = [
+  {
+    id: "demo",
+    domain: "localhost",
+    slug: "demo",
+    displayName: "Demo",
+  },
+]
+
+function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
   const tenantRepo: TenantRepository = {
     async findByDomain(host) {
       const key = normalizeHost(host)
-      const row = stores.tenants.find((t) => t.domain === key) ?? null
+      const row = tenants.find((t) => t.domain === key) ?? null
       return row
     },
     async findById(tenantId) {
-      return stores.tenants.find((t) => t.id === tenantId) ?? null
+      return tenants.find((t) => t.id === tenantId) ?? null
     },
   }
 
   const pageRepo: PageRepository = {
     async findBySlug(input) {
       const p =
-        stores.pages.find(
+        store.pages.find(
           (x) =>
             x.tenantId === input.tenantId &&
             x.slug === input.slug &&
@@ -204,7 +207,7 @@ function buildAdapterFromStores(stores: ReturnType<typeof buildStores>): Databas
       return p ? toCmsPage(p) : null
     },
     async listByTenant(input) {
-      let list = stores.pages.filter((p) => p.tenantId === input.tenantId)
+      let list = store.pages.filter((p) => p.tenantId === input.tenantId)
       if (input.locale !== undefined) {
         list = list.filter((p) => p.locale === input.locale)
       }
@@ -214,10 +217,45 @@ function buildAdapterFromStores(stores: ReturnType<typeof buildStores>): Databas
 
   const blockRepo: BlockRepository = {
     async listByPage(input) {
-      const page = stores.pages.find((p) => p.id === input.pageId) ?? null
+      const page = store.pages.find((p) => p.id === input.pageId) ?? null
       if (!page || page.tenantId !== input.tenantId) return []
-      const found = stores.blocksByPageId.get(input.pageId)
+      const found = store.blocksByPageId.get(input.pageId)
       return found ? found.map(toCmsBlock) : []
+    },
+
+    async replacePageBlocks(input: ReplacePageBlocksInput): Promise<CmsBlock[]> {
+      // Validate page exists with tenant + locale
+      const page = store.pages.find(
+        (p) =>
+          p.id === input.pageId &&
+          p.tenantId === input.tenantId &&
+          p.locale === input.locale,
+      )
+
+      if (!page) {
+        throw new Error(
+          `Page not found: tenantId=${input.tenantId}, pageId=${input.pageId}, locale=${input.locale}`,
+        )
+      }
+
+      // Normalize blocks: renumber sortOrder, update timestamps
+      const normalized: BlockRow[] = input.blocks.map((block, index) => ({
+        id: block.id,
+        pageId: input.pageId,
+        tenantId: input.tenantId,
+        type: block.type,
+        sortOrder: index + 1,
+        props: block.props,
+        visibility: block.visibility,
+        createdAt: block.createdAt,
+        updatedAt: new Date().toISOString(),
+      }))
+
+      // Update store
+      store.blocksByPageId.set(input.pageId, normalized)
+
+      // Return as CmsBlock
+      return normalized.map(toCmsBlock)
     },
   }
 
@@ -229,11 +267,13 @@ function buildAdapterFromStores(stores: ReturnType<typeof buildStores>): Databas
 }
 
 let cached: DatabaseAdapter | null = null
+let cachedStore: MutableStore | null = null
 
-/** In-Memory-Demo: Mandant `demo` / `localhost`, Seite `home`/`de`, Blöcke hero + text. */
+/** In-Memory-Demo: Mandant `demo` / `localhost`, Seite `home`/`de` + `en`, Blöcke hero + text. */
 export function createInMemoryAdapter(): DatabaseAdapter {
   if (!cached) {
-    cached = buildAdapterFromStores(buildStores())
+    cachedStore = buildStores()
+    cached = buildAdapterFromStores(cachedStore)
   }
   return cached
 }

@@ -1,20 +1,37 @@
 import type { EditorPersistence, SavePageDraftInput, SavePageDraftResult } from "@sovereign-cms/core"
+import type { DatabaseAdapter } from "@sovereign-cms/db"
+
+export type CreateEditorPersistenceInput = {
+  db: DatabaseAdapter
+}
 
 /**
  * Creates a runtime-managed editor persistence adapter.
- * Currently uses in-memory mock. Later phases will integrate with API or DB.
+ * Delegates block saves to DatabaseAdapter.blocks.replacePageBlocks.
+ * persisted=false indicates this is InMemory/Mock persistence (no durable storage).
  */
-export function createEditorPersistence(): EditorPersistence {
+export function createEditorPersistence(input: CreateEditorPersistenceInput): EditorPersistence {
   return {
-    async savePageDraft(input: SavePageDraftInput): Promise<SavePageDraftResult> {
-      console.log("[runtime-persistence] save draft", input)
+    async savePageDraft(draftInput: SavePageDraftInput): Promise<SavePageDraftResult> {
+      try {
+        const blocks = await input.db.blocks.replacePageBlocks({
+          tenantId: draftInput.tenantId,
+          pageId: draftInput.pageId,
+          locale: draftInput.locale,
+          blocks: draftInput.blocks,
+        })
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 500))
+        const savedAt = new Date().toISOString()
 
-      return {
-        success: true,
-        savedAt: new Date().toISOString(),
+        return {
+          success: true,
+          savedAt,
+          persisted: false, // InMemory/Mock – not durable
+          updatedBlocks: blocks,
+        }
+      } catch (error) {
+        console.error("[runtime-persistence] save draft failed", error)
+        throw error
       }
     },
   }

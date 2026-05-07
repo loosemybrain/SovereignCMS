@@ -6,4 +6,4 @@ export type {
 } from "./config"
 export { loadRuntimeConfig } from "./config"
 export { createRuntime, type SovereignRuntime } from "./runtime"
-
+export { createLocaleContext } from "./locale-context"

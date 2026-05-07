@@ -1,28 +1,42 @@
-import type { CmsBlock, CmsPage } from "@sovereign-cms/core"
+import type { CmsBlock, CmsPage, LocaleContext } from "@sovereign-cms/core"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
+import { createLocaleContext } from "@sovereign-cms/runtime"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
+import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
 export async function loadAdminPageDetail(input: {
   host?: string
   slug: string
-  locale?: string
+  searchParams?: {
+    locale?: string
+  }
 }): Promise<{
   tenant: ReturnType<typeof getAdminRuntime>["tenant"]
   runtimeConfig: RuntimeConfig
   page: CmsPage | null
   blocks: CmsBlock[]
-  locale: string
-  supportedLocales: string[]
+  localeContext: LocaleContext
+  activeLocale: string
   error?: boolean
   notFound?: boolean
 }> {
   const { runtime, tenant } = getAdminRuntime({ host: input.host })
-  const locale = input.locale ?? runtime.config.defaultLocale
+
+  const localeContext = createLocaleContext({
+    locale: runtime.config.defaultLocale,
+    supportedLocales: runtime.config.supportedLocales,
+    defaultLocale: runtime.config.defaultLocale,
+  })
+
+  const activeLocale = resolveAdminLocale({
+    locale: input?.searchParams?.locale,
+    localeContext,
+  })
 
   try {
     const page = await runtime.db.pages.findBySlug({
       tenantId: tenant.tenantId,
-      locale,
+      locale: activeLocale,
       slug: input.slug,
     })
 
@@ -32,8 +46,8 @@ export async function loadAdminPageDetail(input: {
         runtimeConfig: runtime.config,
         page: null,
         blocks: [],
-        locale,
-        supportedLocales: runtime.config.supportedLocales,
+        localeContext,
+        activeLocale,
         notFound: true,
       }
     }
@@ -48,8 +62,8 @@ export async function loadAdminPageDetail(input: {
       runtimeConfig: runtime.config,
       page,
       blocks,
-      locale,
-      supportedLocales: runtime.config.supportedLocales,
+      localeContext,
+      activeLocale,
     }
   } catch (error) {
     console.error("[admin] failed to load page detail", error)
@@ -58,8 +72,8 @@ export async function loadAdminPageDetail(input: {
       runtimeConfig: runtime.config,
       page: null,
       blocks: [],
-      locale,
-      supportedLocales: runtime.config.supportedLocales,
+      localeContext,
+      activeLocale,
       error: true,
     }
   }

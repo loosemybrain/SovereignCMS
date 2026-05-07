@@ -127,6 +127,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       const result = await clientEditorPersistence.savePageDraft({
         tenantId: tenant.tenantId,
         pageId: page.id,
+        locale: page.locale,
         blocks: blocksToSave,
       })
 
