@@ -1,0 +1,314 @@
+"use client"
+
+import { cn } from "@/lib/utils"
+import { ElementAnimated } from "@/components/blocks/ElementAnimated"
+import { CardSurface } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
+import { getServiceIcon } from "@/components/icons/service-icons"
+import { mergeTypographyClasses, type TypographySettings } from "@/lib/typography"
+import type { ElementConfig } from "@/types/cms"
+
+interface ServicesGridBlockProps {
+  section?: unknown
+  typography?: unknown
+  headline?: string
+  subheadline?: string
+  headlineColor?: string
+  subheadlineColor?: string
+  columns?: 2 | 3 | 4
+  cards: Array<{
+    id: string
+    icon: string
+    title: string
+    text: string
+    textAlign?: "left" | "center" | "right" | "justify"
+    ctaText?: string
+    ctaHref?: string
+    iconColor?: string
+    iconBgColor?: string
+    titleColor?: string
+    textColor?: string
+    ctaColor?: string
+    cardBgColor?: string
+    cardBorderColor?: string
+  }>
+  background?: "none" | "muted" | "gradient"
+  iconColor?: string
+  iconBgColor?: string
+  titleColor?: string
+  textColor?: string
+  textAlign?: "left" | "center" | "right" | "justify"
+  ctaColor?: string
+  cardBgColor?: string
+  cardBorderColor?: string
+  // CMS/Inline Edit Props
+  editable?: boolean
+  blockId?: string
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+  // Shadow/Element Props
+  elements?: Record<string, unknown>
+  onElementClick?: (blockId: string, elementId: string) => void
+  selectedElementId?: string | null
+  /** Admin Live-Preview: Klick auf Card öffnet zugehörige Inspector-Card */
+  interactivePreview?: boolean
+  activeItemId?: string | null
+  onItemSelect?: (itemId: string) => void
+}
+
+const columnsMap = {
+  2: "grid-cols-1 md:grid-cols-2",
+  3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+}
+
+const backgroundMap = {
+  none: "bg-background",
+  muted: "bg-muted/10",
+  gradient: "bg-gradient-to-br from-primary/5 via-background to-background",
+}
+
+export function ServicesGridBlock({
+  headline,
+  subheadline,
+  headlineColor,
+  subheadlineColor,
+  columns = 3,
+  cards,
+  background = "none",
+  iconColor,
+  iconBgColor,
+  titleColor,
+  textColor,
+  textAlign = "left",
+  ctaColor,
+  cardBgColor,
+  cardBorderColor,
+  typography,
+  editable = false,
+  blockId,
+  onEditField,
+  elements,
+  onElementClick,
+  selectedElementId,
+  interactivePreview = false,
+  activeItemId = null,
+  onItemSelect,
+}: ServicesGridBlockProps) {
+  const elementMap = (elements ?? {}) as Record<string, ElementConfig>
+  const typographyMap = (typography as Record<string, TypographySettings | undefined> | undefined) ?? {}
+
+  // Inline edit helper
+  const handleInlineEdit = (e: React.MouseEvent, fieldPath: string) => {
+    if (!editable || !blockId || !onEditField) return
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    onEditField(blockId, fieldPath, rect)
+  }
+
+  return (
+    <section
+      className={cn(
+        "relative",
+        backgroundMap[background]
+      )}
+    >
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        {/* Headline & Subheadline */}
+        {(headline || subheadline) && (
+          <header className="mb-16 text-center">
+            {subheadline && (
+              <ElementAnimated elementId="services.subheadline" elements={elementMap}>
+              <p
+                data-element-id="services.subheadline"
+                onClick={(e) => handleInlineEdit(e, "subheadline")}
+                className={cn(
+                  mergeTypographyClasses(
+                    "mb-5 text-xs font-semibold uppercase tracking-[0.2em] text-primary",
+                    typographyMap["services.subheadline"]
+                  ),
+                  editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                )}
+                style={subheadlineColor ? ({ color: subheadlineColor } as React.CSSProperties) : undefined}
+              >
+                {subheadline}
+              </p>
+              </ElementAnimated>
+            )}
+            {headline && (
+              <ElementAnimated elementId="services.headline" elements={elementMap}>
+              <h2
+                data-element-id="services.headline"
+                onClick={(e) => handleInlineEdit(e, "headline")}
+                className={cn(
+                  mergeTypographyClasses(
+                    "text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl",
+                    typographyMap["services.headline"]
+                  ),
+                  editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                )}
+                style={headlineColor ? ({ color: headlineColor } as React.CSSProperties) : undefined}
+              >
+                {headline}
+              </h2>
+              </ElementAnimated>
+            )}
+          </header>
+        )}
+
+        {/* Cards Grid */}
+        <div className={cn("grid gap-6 lg:gap-8", columnsMap[columns])}>
+          {cards.map((card, index) => {
+            // 1) Icon Badge Defaults
+            const IconComponent = getServiceIcon(card.icon)
+            const resolvedIconBg = card.iconBgColor ?? iconBgColor
+            const resolvedIconColor = card.iconColor ?? iconColor
+            const elementId = `card:${index}`
+            const isSelected = selectedElementId === elementId
+            const isPadded = columns === 2 || columns === 4
+
+            const isPreviewActive = interactivePreview && activeItemId === card.id
+            return (
+              <ElementAnimated key={card.id} elementId={elementId} elements={elementMap}>
+              <CardSurface
+                data-element-id={elementId}
+                data-repeater-field="cards"
+                data-repeater-item-id={card.id}
+                role={interactivePreview && onItemSelect ? "button" : undefined}
+                tabIndex={interactivePreview && onItemSelect ? 0 : undefined}
+                onClick={(e) => {
+                  if (interactivePreview && onItemSelect) {
+                    e.stopPropagation()
+                    onItemSelect(card.id)
+                    return
+                  }
+                  if (editable && blockId && onElementClick) {
+                    e.stopPropagation()
+                    onElementClick(blockId, elementId)
+                  }
+                }}
+                onKeyDown={
+                  interactivePreview && onItemSelect
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          onItemSelect(card.id)
+                        }
+                      }
+                    : undefined
+                }
+                className={cn(
+                  "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card",
+                  "shadow-[0_1px_3px_rgba(0,0,0,0.06),0_18px_50px_-20px_rgba(0,0,0,0.18)]",
+                  "transition-shadow duration-300 ease-out",
+                  "hover:shadow-[0_1px_3px_rgba(0,0,0,0.06),0_28px_60px_-16px_rgba(0,0,0,0.22)]",
+                  (editable && blockId && onElementClick) || (interactivePreview && onItemSelect) ? "cursor-pointer" : "",
+                  (isSelected || isPreviewActive) && "ring-2 ring-primary/60",
+                  interactivePreview && onItemSelect && "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                )}
+                style={{
+                  backgroundColor: card.cardBgColor || cardBgColor || undefined,
+                  borderColor: card.cardBorderColor || cardBorderColor || undefined,
+                }}
+              >
+                {/* Top Accent Bar */}
+                <div className="h-1 w-full bg-linear-to-r from-primary/60 via-primary/30 to-transparent" />
+
+                {/* Card Body */}
+                <div className={cn(
+                  "relative flex flex-1 flex-col",
+                  isPadded ? "p-8 md:p-10" : "p-7"
+                )}>
+                  {/* Icon Badge */}
+                  <div
+                    className={cn(
+                      "mb-5 flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300",
+                      "group-hover:scale-110",
+                      !resolvedIconBg && "bg-primary/10"
+                    )}
+                    style={{
+                      ...(resolvedIconColor ? { color: resolvedIconColor } : {}),
+                      ...(resolvedIconBg ? { backgroundColor: resolvedIconBg } : {}),
+                    }}
+                  >
+                    <IconComponent className={cn("h-7 w-7", !resolvedIconColor && "text-primary")} />
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleInlineEdit(e, `cards.${index}.title`)
+                    }}
+                    className={cn(
+                      mergeTypographyClasses(
+                        "mb-3 text-lg font-semibold tracking-tight text-card-foreground",
+                        typographyMap["services.card.title"]
+                      ),
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                    )}
+                    style={{ color: card.titleColor || titleColor || undefined }}
+                  >
+                    {card.title}
+                  </h3>
+
+                  {/* Text */}
+                  <p
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleInlineEdit(e, `cards.${index}.text`)
+                    }}
+                    className={cn(
+                      "flex-1 text-base leading-relaxed text-muted-foreground",
+                      {
+                        "text-left": card.textAlign === "left" || (!card.textAlign && textAlign === "left"),
+                        "text-center": card.textAlign === "center" || (!card.textAlign && textAlign === "center"),
+                        "text-right": card.textAlign === "right" || (!card.textAlign && textAlign === "right"),
+                        "text-justify": card.textAlign === "justify" || (!card.textAlign && textAlign === "justify"),
+                      },
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                    )}
+                    style={{ color: card.textColor || textColor || undefined }}
+                  >
+                    {card.text}
+                  </p>
+
+                  {/* CTA Section */}
+                  {card.ctaText && card.ctaHref && (
+                    <div className="mt-6 border-t border-border/40 pt-5">
+                      {editable ? (
+                        <button
+                          type="button"
+                          className="group/cta inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                          style={{ color: card.ctaColor || ctaColor || undefined }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleInlineEdit(e, `cards.${index}.ctaText`)
+                          }}
+                        >
+                          <span>{card.ctaText}</span>
+                          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-1" />
+                        </button>
+                      ) : (
+                        <a
+                          href={card.ctaHref}
+                          className="group/cta inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                          style={{ color: card.ctaColor || ctaColor || undefined }}
+                        >
+                          <span>{card.ctaText}</span>
+                          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/cta:translate-x-1" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardSurface>
+              </ElementAnimated>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}

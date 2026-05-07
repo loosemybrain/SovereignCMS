@@ -1,0 +1,29 @@
+{
+  "name": "@sovereign-cms/runtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@sovereign-cms/adapter-keycloak": "*",
+    "@sovereign-cms/adapter-postgres": "*",
+    "@sovereign-cms/adapter-s3": "*",
+    "@sovereign-cms/adapter-supabase": "*",
+    "@sovereign-cms/auth": "*",
+    "@sovereign-cms/db": "*",
+    "@sovereign-cms/storage": "*",
+    "@sovereign-cms/tenancy": "*"
+  },
+  "devDependencies": {
+    "@sovereign-cms/config": "*",
+    "typescript": "^5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

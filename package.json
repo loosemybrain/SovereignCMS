@@ -1,0 +1,28 @@
+{
+  "name": "sovereign-cms",
+  "version": "0.0.1",
+  "private": true,
+  "description": "SovereignCMS — mandantenfähiges CMS (Monorepo)",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "adapters/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:admin": "turbo dev --filter=@sovereign-cms/admin",
+    "dev:web": "turbo dev --filter=@sovereign-cms/web",
+    "dev:legacy": "npm --prefix legacy/physio-source run dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "clean": "node scripts/clean.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.9.2"
+}

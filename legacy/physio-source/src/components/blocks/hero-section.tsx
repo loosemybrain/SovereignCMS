@@ -1,0 +1,1030 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { HeroDecoration } from "@/components/decorations/HeroDecoration"
+import { ArrowRight, Play, Heart, Zap } from "lucide-react"
+import { Editable } from "@/components/editor/Editable"
+import { getTypographyClassName } from "@/lib/typography"
+import type { TypographySettings } from "@/lib/typography"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { AnimatedBlock } from "@/components/blocks/AnimatedBlock"
+import { ElementAnimated } from "@/components/blocks/ElementAnimated"
+
+import type { HeroBlock, MediaValue, CommonBlockProps, ElementConfig } from "@/types/cms"
+import type { BrandKey } from "@/components/brand/brandAssets"
+import { useElementShadowStyle } from "@/lib/shadow"
+import { resolveDynamicElementId } from "@/lib/editableElements"
+import { BrandToggle } from "@/components/brand/BrandToggle"
+import { resolveButtonPresetStyles } from "@/lib/buttonPresets"
+
+/**
+ * Modul-weites Animation-Guard-Set
+ * 
+ * Grund: React 18 StrictMode führt absichtlich zu Unmount/Remount während Development.
+ * useRef würde bei jedem Remount neu erstellt (Set wird leer), deshalb müssen wir
+ * das Guard-Set auf Modul-Scope speichern. Das überlebt Remounts und verhindert,
+ * dass Enter-Animationen mehrfach abspielen.
+ * 
+ * Ein Key wird hinzugefügt, wenn die Animation das erste Mal läuft:
+ * `${pathname}::${blockId}`
+ * 
+ * Das Set lebt für die gesamte Modul-Lebensdauer (bis Reload/Neustart).
+ */
+const heroAnimatedOnce = new Set<string>()
+
+
+// No instrumentation in production
+
+
+function resolveMediaUrl(mediaValue?: MediaValue, fallbackUrl?: string): string | undefined {
+  if (!mediaValue) return fallbackUrl
+  if ("url" in mediaValue) return mediaValue.url
+  if ("mediaId" in mediaValue) {
+    return fallbackUrl
+  }
+  return fallbackUrl
+}
+
+function getHeroImageAspectClasses(variant: "landscape" | "portrait" = "landscape"): string {
+  if (variant === "portrait") {
+    return "aspect-[3/4] max-h-[60vh] sm:max-h-[70vh]"
+  }
+  return "aspect-video max-h-[55vh] sm:max-h-[60vh]"
+}
+
+function getImageFocusClass(focus: "center" | "top" | "bottom" = "center"): string {
+  const focusMap: Record<"center" | "top" | "bottom", string> = {
+    center: "object-center",
+    top: "object-top",
+    bottom: "object-bottom",
+  }
+  return focusMap[focus]
+}
+
+function getImageFitClass(fit: "cover" | "contain" = "cover"): string {
+  const fitMap: Record<"cover" | "contain", string> = {
+    cover: "object-cover",
+    contain: "object-contain",
+  }
+  return fitMap[fit]
+}
+
+function normalizeStringArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string") as string[]
+  if (typeof v === "string") return [v]
+  if (v && typeof v === "object") {
+    const rec = v as Record<string, unknown>
+    const numericKeys = Object.keys(rec).filter((k) => /^\d+$/.test(k)).sort((a, b) => Number(a) - Number(b))
+    if (numericKeys.length > 0) {
+      return numericKeys
+        .map((k) => rec[k])
+        .filter((x) => typeof x === "string") as string[]
+    }
+  }
+  return []
+}
+
+interface HeroSectionProps extends CommonBlockProps {
+  headline?: string
+  subheadline?: string
+  ctaText?: string
+  ctaHref?: string
+  showMedia?: boolean
+  mediaType?: "image" | "video"
+  mediaUrl?: string
+  onCtaClick?: () => void
+  editable?: boolean
+  blockId?: string
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+  onElementClick?: (blockId: string, elementId: string) => void
+  selectedElementId?: string | null
+  typography?: Record<string, TypographySettings>
+  badgeText?: string
+  playText?: string
+  trustItems?: string[]
+  floatingTitle?: string
+  floatingValue?: string
+  floatingLabel?: string
+  props?: HeroBlock["props"]
+  showBrandToggle?: boolean
+  brandToggleValue?: BrandKey
+}
+
+export function HeroSection({
+  headline,
+  subheadline,
+  ctaText,
+  ctaHref = "#contact",
+  showMedia = true,
+  mediaType = "image",
+  mediaUrl,
+  onCtaClick,
+  editable = false,
+  blockId,
+  onEditField,
+  badgeText,
+  playText,
+  trustItems,
+  floatingTitle,
+  floatingValue,
+  floatingLabel,
+  onElementClick,
+  selectedElementId,
+  typography,
+  elements,
+  props: heroProps,
+  showBrandToggle = false,
+  brandToggleValue,
+  ...restProps
+}: HeroSectionProps) {
+  const [ctaHovered, setCtaHovered] = useState(false)
+  const [playHovered, setPlayHovered] = useState(false)
+  const [actionHoveredStates, setActionHoveredStates] = useState<Record<string, boolean>>({})
+  const [shouldAnimateIn, setShouldAnimateIn] = useState(false)
+  const pathname = usePathname()
+  const elementMap = (elements ?? {}) as Record<string, ElementConfig>
+
+  const animationKey = `${pathname || "unknown"}::${blockId || "no-block"}`
+  useEffect(() => {
+    const first = !heroAnimatedOnce.has(animationKey)
+    if (first) {
+      heroAnimatedOnce.add(animationKey)
+    }
+    const raf = window.requestAnimationFrame(() => {
+      setShouldAnimateIn(first)
+    })
+    return () => window.cancelAnimationFrame(raf)
+  }, [animationKey])
+
+  // Element shadows
+  const heroHeadlineShadow = useElementShadowStyle({
+    elementId: "headline",
+    elementConfig: elementMap["headline"],
+  })
+  const heroSubheadlineShadow = useElementShadowStyle({
+    elementId: "subheadline",
+    elementConfig: elementMap["subheadline"],
+  })
+  const heroBadgeShadow = useElementShadowStyle({
+    elementId: "badge",
+    elementConfig: elementMap["badge"],
+  })
+  const heroPrimaryCtaShadow = useElementShadowStyle({
+    elementId: "cta",
+    elementConfig: elementMap["cta"],
+  })
+  const heroSecondaryCtaShadow = useElementShadowStyle({
+    elementId: "secondaryCtaText",
+    elementConfig: elementMap["secondaryCtaText"],
+  })
+  const heroMediaShadow = useElementShadowStyle({
+    elementId: "media",
+    elementConfig: elementMap["media"],
+  })
+  const heroTrustShadow = useElementShadowStyle({
+    elementId: "trust",
+    elementConfig: elementMap["trust"],
+  })
+  // Floating element shadows
+  const heroFloatingTitleShadow = useElementShadowStyle({
+    elementId: "floatingTitle",
+    elementConfig: elementMap["floatingTitle"],
+  })
+  const heroFloatingValueShadow = useElementShadowStyle({
+    elementId: "floatingValue",
+    elementConfig: elementMap["floatingValue"],
+  })
+  const heroFloatingLabelShadow = useElementShadowStyle({
+    elementId: "floatingLabel",
+    elementConfig: elementMap["floatingLabel"],
+  })
+
+  const showBrandToggleNav = false // Toggle moved to HomePageClient/BrandToggle component
+  
+  // Determine activeBrand with strict priority:
+  // 1) __previewBrand (iframe preview must be authoritative)
+  // 2) heroProps.mood
+  // 3) pathname fallback (public routes)
+  const previewBrandRaw = (heroProps as Record<string, unknown>)?.__previewBrand
+  const previewBrand: BrandKey | null =
+    previewBrandRaw === "physio-konzept" || previewBrandRaw === "physiotherapy" ? previewBrandRaw : null
+
+  let activeBrand: BrandKey = "physiotherapy"
+
+  if (previewBrand) {
+    activeBrand = previewBrand
+  } else if (heroProps?.mood && (heroProps.mood === "physiotherapy" || heroProps.mood === "physio-konzept")) {
+    activeBrand = heroProps.mood
+  } else {
+    activeBrand = pathname.startsWith("/konzept") ? "physio-konzept" : "physiotherapy"
+  }
+  
+  const isCalm = activeBrand === "physiotherapy"
+
+  const props: HeroBlock["props"] = heroProps || {
+    headline,
+    subheadline,
+    ctaText,
+    ctaHref,
+    showMedia,
+    mediaType,
+    mediaUrl,
+    badgeText,
+    playText,
+    trustItems,
+    floatingTitle,
+    floatingValue,
+    floatingLabel,
+  }
+
+  const activeBrandContent = props.brandContent?.[activeBrand] ?? {}
+
+  // Helper: Only non-empty string, else undefined
+  const opt = (v?: string) => (v && typeof v === "string" && v.trim() ? v.trim() : undefined)
+
+  // Resolve minHeightVh: prefer from props
+  const resolvedMinHeightVh = (() => {
+    const vh = props.minHeightVh || "90"
+    const num = Number(vh)
+    return Math.max(50, Math.min(100, num)) // Clamp 50-100
+  })()
+
+  const resolvedHeadline = activeBrandContent.headline ?? props.headline ?? headline ?? ""
+  const resolvedSubheadline = activeBrandContent.subheadline ?? props.subheadline ?? subheadline ?? ""
+  const resolvedCtaText = activeBrandContent.ctaText ?? props.ctaText ?? ctaText ?? ""
+  const resolvedCtaHref = activeBrandContent.ctaHref ?? props.ctaHref ?? ctaHref ?? "#contact"
+  const resolvedBadgeText = activeBrandContent.badgeText ?? props.badgeText ?? badgeText ?? ""
+  const resolvedPlayText = activeBrandContent.playText ?? props.playText ?? playText ?? ""
+  const resolvedTrustItems = normalizeStringArray(activeBrandContent.trustItems ?? props.trustItems ?? trustItems ?? [])
+  const resolvedFloatingTitle = activeBrandContent.floatingTitle ?? props.floatingTitle ?? floatingTitle ?? ""
+  const resolvedFloatingValue = activeBrandContent.floatingValue ?? props.floatingValue ?? floatingValue ?? ""
+  const resolvedFloatingLabel = activeBrandContent.floatingLabel ?? props.floatingLabel ?? floatingLabel ?? ""
+  const resolvedImageUrl = resolveMediaUrl(activeBrandContent.image) ?? props.mediaUrl ?? mediaUrl ?? "/placeholder.svg"
+  const resolvedImageAlt = activeBrandContent.imageAlt ?? props.imageAlt ?? ""
+  const resolvedImageVariant = activeBrandContent.imageVariant ?? "landscape"
+  const imageFitRaw = activeBrandContent.imageFit ?? (props as Record<string, unknown>)?.imageFit
+  const resolvedImageFit: "cover" | "contain" = imageFitRaw === "contain" ? "contain" : "cover"
+  const resolvedImageFocus = activeBrandContent.imageFocus ?? "center"
+  const resolvedContainBackground = activeBrandContent.containBackground ?? "blur"
+
+  // Resolve actions: prefer brandContent.actions, fallback to props.actions
+  const resolvedActions = activeBrandContent.actions ?? props.actions ?? []
+
+  // Farben (nur gesetzt falls in brandContent belegt, sonst undefined)
+  const resolvedHeadlineColor = opt(activeBrandContent.headlineColor)
+  const resolvedSubheadlineColor = opt(activeBrandContent.subheadlineColor)
+  const resolvedCtaColor = opt(activeBrandContent.ctaColor)
+  const resolvedCtaBgColor = opt(activeBrandContent.ctaBgColor)
+  const resolvedCtaHoverBgColor = opt(activeBrandContent.ctaHoverBgColor)
+  const resolvedCtaBorderColor = opt(activeBrandContent.ctaBorderColor)
+  const resolvedBadgeColor = opt(activeBrandContent.badgeColor)
+  const resolvedBadgeBgColor = opt(activeBrandContent.badgeBgColor)
+  const resolvedBadgeBorderColor = opt(
+    typeof (activeBrandContent as Record<string, unknown>).badgeBorderColor === "string"
+      ? (activeBrandContent as Record<string, unknown>).badgeBorderColor as string
+      : undefined
+  )
+  const resolvedBadgeRadiusPreset = opt(
+    typeof (activeBrandContent as Record<string, unknown>).badgeRadiusPreset === "string"
+      ? (activeBrandContent as Record<string, unknown>).badgeRadiusPreset as string
+      : undefined
+  ) as
+    | "pill"
+    | "lg"
+    | "md"
+    | "sm"
+    | "none"
+    | undefined
+  const resolvedBadgeBorderRadius = opt(
+    typeof (activeBrandContent as Record<string, unknown>).badgeBorderRadius === "string"
+      ? (activeBrandContent as Record<string, unknown>).badgeBorderRadius as string
+      : undefined
+  )
+
+  const badgeRadiusFromPreset = (() => {
+    switch (resolvedBadgeRadiusPreset) {
+      case "pill":
+        return "9999px"
+      case "lg":
+        return "16px"
+      case "md":
+        return "12px"
+      case "sm":
+        return "8px"
+      case "none":
+        return "0px"
+      default:
+        return undefined
+    }
+  })()
+  const resolvedPlayTextColor = opt(activeBrandContent.playTextColor)
+  const resolvedPlayBorderColor = opt(activeBrandContent.playBorderColor)
+  const resolvedPlayBgColor = opt(activeBrandContent.playBgColor)
+  const resolvedPlayHoverBgColor = opt(activeBrandContent.playHoverBgColor)
+  const resolvedTrustItemsColor = opt(activeBrandContent.trustItemsColor)
+  const resolvedTrustDotColor = opt(activeBrandContent.trustDotColor)
+  const resolvedFloatingTitleColor = opt(activeBrandContent.floatingTitleColor)
+  const resolvedFloatingValueColor = opt(activeBrandContent.floatingValueColor)
+  const resolvedFloatingLabelColor = opt(activeBrandContent.floatingLabelColor)
+  const resolvedHeroBgColor = opt(props.heroBgColor)
+
+  const typographyRecord = typography || {}
+  const headlineTypography = typographyRecord["headline"]
+  const subheadlineTypography = typographyRecord["subheadline"]
+  const ctaTypography = typographyRecord["cta"]
+  const playTypography = typographyRecord["play"] || typographyRecord["cta"]
+
+  const handleInlineEdit = (e: React.MouseEvent, fieldPath: string, elementId?: string) => {
+    if (!editable || !blockId || !onEditField) return
+    
+    // Trigger element selection first (for shadow inspector)
+    if (elementId && onElementClick) {
+      onElementClick(blockId, elementId)
+    }
+    
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    onEditField(blockId, fieldPath, rect)
+  }
+
+  return (
+    <AnimatedBlock config={props.section?.animation}>
+      <section
+        className={cn(
+          "relative w-full touch-pan-y",
+          !isCalm && "physio-konzept"
+        )}
+        style={{
+          minHeight: `${resolvedMinHeightVh}vh`,
+          touchAction: "pan-y",
+          // Ensure scroll chaining works even if an inner element becomes scrollable on iOS.
+          overscrollBehaviorY: "auto",
+          WebkitOverflowScrolling: "auto",
+        }}
+        aria-labelledby="hero-headline"
+      >
+        {/* Background Layer */}
+        <div 
+          className="absolute inset-0 -z-10 overflow-visible pointer-events-none" 
+          aria-hidden="true"
+        >
+          <HeroDecoration brand={isCalm ? "physiotherapy" : "physio-konzept"} />
+        </div>
+
+        {/* Brand Toggle - Floating overlay at top center of Hero (responsive positioned) */}
+        {showBrandToggle && (
+          <div className="absolute top-4 sm:top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+            <BrandToggle value={brandToggleValue ?? activeBrand} showToggle={true} />
+          </div>
+        )}
+
+      <div
+        className="flex min-h-full flex-col items-center justify-center gap-8 py-16 lg:flex-row lg:gap-12 lg:py-24"
+        style={{
+          overscrollBehaviorY: "auto",
+          WebkitOverflowScrolling: "auto",
+        }}
+      >
+        {/* Content */}
+        <header
+          className={cn(
+            "hero-content flex max-w-2xl flex-1 flex-col gap-6",
+            "pt-16 sm:pt-0", // Mobile padding to avoid Toggle collision
+            isCalm ? "items-start text-left" : "items-center text-center lg:items-start lg:text-left",
+          )}
+        >
+          {/* Badge */}
+          <ElementAnimated elementId="badge" elements={elementMap}>
+            <Editable
+              blockId={blockId || ""}
+              elementId="badge"
+              editable={editable}
+              onElementClick={onElementClick}
+              isSelected={selectedElementId === "badge"}
+              as="div"
+              className={cn(
+                "hero-badge inline-flex items-center gap-2",
+                "rounded-full px-4 py-2 text-sm font-medium",
+                "bg-primary/10 text-primary cursor-pointer",
+                shouldAnimateIn && "animate-fade-in-up"
+              )}
+              data-element-id="badge"
+              style={{
+                ...heroBadgeShadow,
+                ...(resolvedBadgeBgColor
+                  ? ({ backgroundColor: resolvedBadgeBgColor } as React.CSSProperties)
+                  : {}),
+                ...(resolvedBadgeBorderColor
+                  ? ({
+                      borderWidth: 1,
+                      borderStyle: "solid",
+                      borderColor: resolvedBadgeBorderColor,
+                    } as React.CSSProperties)
+                  : {}),
+                ...(resolvedBadgeBorderRadius
+                  ? ({ borderRadius: resolvedBadgeBorderRadius } as React.CSSProperties)
+                  : badgeRadiusFromPreset
+                    ? ({ borderRadius: badgeRadiusFromPreset } as React.CSSProperties)
+                    : {}),
+              }}
+            >
+            <div className="inline-flex items-center gap-2">
+              {isCalm ? (
+                <>
+                  <Heart className="h-4 w-4" aria-hidden="true" />
+                  <span
+                    onClick={(e) => handleInlineEdit(e, "badgeText", "badge")}
+                    className={cn(
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/20"
+                    )}
+                    style={
+                      resolvedBadgeColor
+                        ? ({ color: resolvedBadgeColor } as React.CSSProperties)
+                        : undefined
+                    }
+                  >
+                    {resolvedBadgeText}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4" aria-hidden="true" />
+                  <span
+                    onClick={(e) => handleInlineEdit(e, "badgeText", "badge")}
+                    className={cn(
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/20"
+                    )}
+                    style={
+                      resolvedBadgeColor
+                        ? ({ color: resolvedBadgeColor } as React.CSSProperties)
+                        : undefined
+                    }
+                  >
+                    {resolvedBadgeText}
+                  </span>
+                </>
+              )}
+            </div>
+          </Editable>
+          </ElementAnimated>
+
+          {/* Headline */}
+          <ElementAnimated elementId="headline" elements={elementMap}>
+            <Editable
+              blockId={blockId || ""}
+              elementId="headline"
+              typography={headlineTypography}
+              editable={editable}
+              onElementClick={onElementClick}
+              isSelected={selectedElementId === "headline"}
+              as="h1"
+              className={cn(
+                "hero-headline text-balance text-foreground",
+                isCalm
+                  ? "font-serif text-4xl font-semibold tracking-tight md:text-5xl lg:text-6xl"
+                  : "font-sans text-4xl font-bold uppercase tracking-tight md:text-5xl lg:text-7xl"
+              )}
+              style={{
+                ...heroHeadlineShadow,
+                ...(resolvedHeadlineColor ? { color: resolvedHeadlineColor } : {}),
+              }}
+              data-element-id="headline"
+            >
+              <span className={shouldAnimateIn ? "animate-fade-in-up animate-delay-200 inline-block" : "inline-block"} onClick={(e) => handleInlineEdit(e, "headline", "headline")}>
+                {resolvedHeadline}
+              </span>
+            </Editable>
+          </ElementAnimated>
+
+          {/* Subheadline */}
+          <ElementAnimated elementId="subheadline" elements={elementMap}>
+            <Editable
+              blockId={blockId || ""}
+              elementId="subheadline"
+              typography={subheadlineTypography}
+              editable={editable}
+              onElementClick={onElementClick}
+              isSelected={selectedElementId === "subheadline"}
+              as="p"
+              className={cn(
+                "hero-subheadline max-w-xl text-pretty leading-relaxed",
+                "text-lg md:text-xl text-muted-foreground"
+              )}
+              style={{
+                ...heroSubheadlineShadow,
+                ...(resolvedSubheadlineColor ? { color: resolvedSubheadlineColor } : {}),
+              }}
+              data-element-id="subheadline"
+            >
+              <span className={shouldAnimateIn ? "animate-fade-in-up animate-delay-300 inline-block" : "inline-block"} onClick={(e) => handleInlineEdit(e, "subheadline", "subheadline")}>
+                {resolvedSubheadline}
+              </span>
+            </Editable>
+          </ElementAnimated>
+
+          {/* CTA Actions */}
+          <div className={cn("hero-cta mt-4 flex flex-wrap items-center gap-4", shouldAnimateIn && "animate-fade-in-up animate-delay-400")}>
+            {resolvedActions.map((action, index) => {
+              const actionId = action.id ?? `action-${index}`
+              const isVideo = action.action === "video"
+              const elementId = `action-${actionId}`
+              const actionHovered = actionHoveredStates[actionId] ?? false
+              const isSecondary = action.variant === "secondary"
+
+              // Inline-edit mapping:
+              // Legacy Hero props expose ctaText/secondaryCtaText, but UI uses actions[].label.
+              // Prefer editing those legacy fields for the primary/secondary CTA so changes persist predictably.
+              const fieldPathForLabel =
+                !isSecondary && index === 0
+                  ? "ctaText"
+                  : isSecondary && index === 0
+                    ? "secondaryCtaText"
+                    : `actions.${index}.label`
+
+              // IMPORTANT:
+              // For the primary/secondary CTA we intentionally do NOT fall back to action.label.
+              // If ctaText/secondaryCtaText is empty, the button must be hidden.
+              const displayLabel =
+                !isSecondary && index === 0
+                  ? resolvedCtaText
+                  : isSecondary && index === 0
+                    ? resolvedPlayText
+                    : action.label
+
+              const displayLabelTrimmed = typeof displayLabel === "string" ? displayLabel.trim() : ""
+              if (!displayLabelTrimmed) {
+                return null
+              }
+              
+              // Resolve colors based on variant
+              const shadowStyle = isSecondary ? heroSecondaryCtaShadow : heroPrimaryCtaShadow
+              const textColorProp = isSecondary ? resolvedPlayTextColor : resolvedCtaColor
+              const bgColorProp = isSecondary ? resolvedPlayBgColor : resolvedCtaBgColor
+              const hoverBgColorProp = isSecondary ? resolvedPlayHoverBgColor : resolvedCtaHoverBgColor
+              const borderColorProp = isSecondary ? resolvedPlayBorderColor : resolvedCtaBorderColor
+
+              return (
+                <Editable
+                  key={actionId}
+                  blockId={blockId || ""}
+                  elementId={elementId}
+                  typography={isSecondary ? playTypography : ctaTypography}
+                  editable={editable}
+                  onElementClick={onElementClick}
+                  isSelected={selectedElementId === elementId}
+                >
+                  <Button
+                    size="lg"
+                    variant={isSecondary ? "outline" : "default"}
+                    className={cn(
+                      // First apply button preset styles if available
+                      resolveButtonPresetStyles(
+                        props?.buttonPreset,
+                        isSecondary ? "outline" : "default"
+                      ).className,
+                      // Then add block-specific styling
+                      "group gap-2 text-base font-semibold",
+                      isSecondary && "border-border/50 bg-transparent text-foreground hover:bg-secondary hover:text-secondary-foreground rounded-md uppercase tracking-wide",
+                      !isSecondary && isCalm && "rounded-full px-8",
+                      !isSecondary && !isCalm && "rounded-md px-8 uppercase tracking-wide",
+                    )}
+                    data-element-id={elementId}
+                    style={{
+                      ...shadowStyle,
+                      ...(textColorProp ||
+                      bgColorProp ||
+                      borderColorProp ||
+                      (actionHovered && hoverBgColorProp)
+                        ? {
+                            ...(textColorProp ? { color: textColorProp } : {}),
+                            ...(bgColorProp || (actionHovered && hoverBgColorProp)
+                              ? {
+                                  backgroundColor:
+                                    (actionHovered && hoverBgColorProp) ? hoverBgColorProp : bgColorProp
+                                }
+                              : {}),
+                            ...(borderColorProp
+                              ? { borderColor: borderColorProp }
+                              : {}),
+                          }
+                        : {}),
+                    }}
+                    onMouseEnter={() => setActionHoveredStates(prev => ({ ...prev, [actionId]: true }))}
+                    onMouseLeave={() => setActionHoveredStates(prev => ({ ...prev, [actionId]: false }))}
+                    onClick={editable && blockId && onEditField ? (e) => handleInlineEdit(e, fieldPathForLabel, elementId) : (isVideo ? onCtaClick : undefined)}
+                    asChild={!editable && !isVideo && !!action.href}
+                  >
+                    {!editable && !isVideo && action.href ? (
+                      <a href={action.href}>
+                        {isVideo && <Play className="h-4 w-4" aria-hidden="true" />}
+                        {displayLabelTrimmed}
+                        {!isVideo && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />}
+                      </a>
+                    ) : (
+                      <>
+                        {isVideo && <Play className="h-4 w-4" aria-hidden="true" />}
+                        <span
+                          onClick={(e) => {
+                            if (editable && blockId && onEditField) {
+                              e.stopPropagation()
+                              handleInlineEdit(e, fieldPathForLabel, elementId)
+                            }
+                          }}
+                          className={cn(
+                            editable && blockId && onEditField && "cursor-pointer"
+                          )}
+                        >
+                          {displayLabelTrimmed}
+                        </span>
+                        {!isVideo && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />}
+                      </>
+                    )}
+                  </Button>
+                </Editable>
+              )
+            })}
+          </div>
+
+          {/* Trust indicators for calm mood */}
+          {isCalm && resolvedTrustItems.length > 0 && (
+            <ElementAnimated elementId="trust" elements={elementMap}>
+              <div
+                className={cn("hero-trust mt-6 flex flex-wrap items-center gap-6 text-sm text-muted-foreground", shouldAnimateIn && "animate-fade-in-up animate-delay-500")}
+                data-element-id="trust"
+                style={heroTrustShadow}
+                onClick={() => onElementClick?.(blockId || "", "trust")}
+              >
+                {resolvedTrustItems.map((item, index) => (
+                  <HeroTrustItem
+                    key={item}
+                    item={item}
+                    index={index}
+                    elements={elementMap}
+                    blockId={blockId}
+                    onElementClick={onElementClick}
+                    resolvedTrustItemsColor={resolvedTrustItemsColor}
+                  />
+                ))}
+              </div>
+            </ElementAnimated>
+          )}
+        </header>
+
+        {/* Media Section */}
+        {showMedia && (
+          <figure
+            className={cn(
+              "hero-media relative w-full min-w-0 flex-1 flex flex-col",
+              isCalm ? "max-w-lg" : "max-w-xl",
+              shouldAnimateIn && "animate-scale-in animate-delay-400"
+            )}
+          >
+            {mediaType === "video" && mediaUrl ? (
+              <ElementAnimated elementId="media" elements={elementMap}>
+              <div
+                className={cn(
+                  "relative w-full shadow-2xl",
+                  getHeroImageAspectClasses(resolvedImageVariant),
+                  isCalm ? "rounded-3xl" : "rounded-2xl"
+                )}
+                style={heroMediaShadow}
+                data-element-id="media"
+                onClick={() => onElementClick?.(blockId || "", "media")}
+              >
+                <div
+                  className={cn(
+                    "relative overflow-hidden w-full h-full",
+                    isCalm ? "rounded-3xl" : "rounded-2xl"
+                  )}
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <div className="relative aspect-video max-h-[60vh] lg:max-h-[70vh] w-full h-full">
+                    <video
+                      src={mediaUrl}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      className="h-full w-full object-cover object-center"
+                      aria-label="Physiotherapy treatment video"
+                    />
+                  </div>
+
+                  {/* Overlay decorations - only for cover mode */}
+                  {resolvedImageFit === "cover" && (
+                    <>
+                      {isCalm ? (
+                        <div className="absolute inset-0 bg-linear-to-t from-primary/10 to-transparent pointer-events-none" />
+                      ) : (
+                        <div className="absolute inset-0 bg-linear-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                      )}
+                    </>
+                  )}
+
+                  {/* Floating card for PhysioKonzept */}
+                  {!isCalm && (resolvedFloatingTitle?.trim() || resolvedFloatingValue?.trim()) && (
+                    <div
+                      className={cn(
+                        "absolute bottom-6 left-6 right-6 rounded-xl bg-card/90 p-4 backdrop-blur-sm animate-slide-in-left",
+                        shouldAnimateIn && "animate-delay-500"
+                      )}
+                    >
+                      {resolvedFloatingTitle?.trim() && (
+                        <span
+                          data-element-id="floatingTitle"
+                          className={cn(
+                            "block text-sm font-semibold uppercase tracking-wide text-card-foreground",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={{
+                            ...(heroFloatingTitleShadow || {}),
+                            ...(resolvedFloatingTitleColor ? { color: resolvedFloatingTitleColor } : undefined),
+                          }}
+                          onClick={(e) => {
+                            if (onElementClick) onElementClick(blockId || "", "floatingTitle")
+                            handleInlineEdit(e, "floatingTitle")
+                          }}
+                        >
+                          {resolvedFloatingTitle}
+                        </span>
+                      )}
+                      {resolvedFloatingValue?.trim() && (
+                        <span
+                          data-element-id="floatingValue"
+                          className={cn(
+                            "block mt-1 text-2xl font-bold text-primary",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={{
+                            ...(heroFloatingValueShadow || {}),
+                            ...(resolvedFloatingValueColor ? { color: resolvedFloatingValueColor } : undefined),
+                          }}
+                          onClick={(e) => {
+                            if (onElementClick) onElementClick(blockId || "", "floatingValue")
+                            handleInlineEdit(e, "floatingValue")
+                          }}
+                        >
+                          {resolvedFloatingValue}
+                        </span>
+                      )}
+                      {resolvedFloatingLabel && (
+                        <span
+                          data-element-id="floatingLabel"
+                          className={cn(
+                            "block mt-1 text-sm text-muted-foreground",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={{
+                            ...(heroFloatingLabelShadow || {}),
+                            ...(resolvedFloatingLabelColor ? { color: resolvedFloatingLabelColor } : undefined),
+                          }}
+                          onClick={(e) => {
+                            if (onElementClick) onElementClick(blockId || "", "floatingLabel")
+                            handleInlineEdit(e, "floatingLabel")
+                          }}
+                        >
+                          {resolvedFloatingLabel}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              </ElementAnimated>
+            ) : (
+              <ElementAnimated elementId="media" elements={elementMap}>
+              <div
+                className={cn(
+                  "relative w-full shadow-nonel overflow-x-hidden",
+                  getHeroImageAspectClasses(resolvedImageVariant)
+                )}
+                style={heroMediaShadow}
+                data-element-id="media"
+                onClick={() => onElementClick?.(blockId || "", "media")}
+              >
+                {/* Blurred background placed outside inner clip wrapper to avoid being clipped */}
+                {resolvedImageFit === "contain" && resolvedContainBackground === "blur" && (
+                  <div className={isCalm ? "absolute inset-0 -z-10 pointer-events-none" : "absolute inset-y-0 -inset-x-16 -z-10 pointer-events-none"}>
+                    <Image
+                      src={resolvedImageUrl}
+                      alt=""
+                      fill
+                      className={cn(
+                        "object-cover blur-2xl scale-110 opacity-70",
+                        (() => {
+                          const focusClass = resolvedImageFocus ? getImageFocusClass(resolvedImageFocus) : undefined
+                          const heroObjectPos =
+                            (resolvedImageFit as string) === "cover"
+                              ? (focusClass ? focusClass : (!isCalm ? "object-[70%_50%]" : "object-center"))
+                              : (focusClass ? focusClass : "object-center")
+                          return heroObjectPos
+                        })()
+                      )}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+                      aria-hidden="true"
+                    />
+                  </div>
+                )}
+
+                {/* INNER clip wrapper: rounded + overflow-hidden so main image and overlays are clipped */}
+                <div
+                  className={cn(
+                    "relative overflow-hidden w-full h-full",
+                    isCalm ? "rounded-3xl" : "rounded-2xl"
+                  )}
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  {/* Main image */}
+                  <div className={cn("relative w-full h-full", resolvedImageFit === "contain" && "p-4 sm:p-6")}>
+                    <Image
+                      src={resolvedImageUrl}
+                      alt={resolvedImageAlt}
+                      fill
+                      className={cn(getImageFitClass(resolvedImageFit), getImageFocusClass(resolvedImageFocus))}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+                      priority
+                    />
+                  </div>
+
+                  {/* Overlay decorations - only for cover mode */}
+                  {resolvedImageFit === "cover" && (
+                    <>
+                      {isCalm ? (
+                        <div className="absolute inset-0 bg-linear-to-t from-primary/10 to-transparent pointer-events-none" />
+                      ) : (
+                        <div className="absolute inset-y-0 -inset-x-12 bg-linear-to-t from-background/60 via-transparent to-transparent pointer-events-none" />
+                      )}
+                    </>
+                  )}
+
+                  {/* Floating card for PhysioKonzept */}
+                  {!isCalm && (resolvedFloatingTitle?.trim() || resolvedFloatingValue?.trim()) && (
+                    <div
+                      className={cn(
+                        "absolute bottom-6 left-6 right-6 rounded-xl bg-card/90 p-4 backdrop-blur-sm animate-slide-in-left",
+                        shouldAnimateIn && "animate-delay-500"
+                      )}
+                    >
+                      {resolvedFloatingTitle?.trim() && (
+                        <p
+                          className={cn(
+                            "text-sm font-semibold uppercase tracking-wide text-card-foreground",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={resolvedFloatingTitleColor ? ({ color: resolvedFloatingTitleColor } as React.CSSProperties) : undefined}
+                          onClick={(e) => handleInlineEdit(e, "floatingTitle")}
+                        >
+                          {resolvedFloatingTitle}
+                        </p>
+                      )}
+                      {resolvedFloatingValue?.trim() && (
+                        <p
+                          className={cn(
+                            "mt-1 text-2xl font-bold text-primary",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={resolvedFloatingValueColor ? ({ color: resolvedFloatingValueColor } as React.CSSProperties) : undefined}
+                          onClick={(e) => handleInlineEdit(e, "floatingValue")}
+                        >
+                          {resolvedFloatingValue}
+                        </p>
+                      )}
+                      {resolvedFloatingLabel && (
+                        <p
+                          className={cn(
+                            "mt-1 text-sm text-muted-foreground",
+                            editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                          )}
+                          style={resolvedFloatingLabelColor ? ({ color: resolvedFloatingLabelColor } as React.CSSProperties) : undefined}
+                          onClick={(e) => handleInlineEdit(e, "floatingLabel")}
+                        >
+                          {resolvedFloatingLabel}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              </ElementAnimated>
+            )}
+
+            {/* Decorative floating element for calm mood */}
+            {isCalm && (resolvedFloatingTitle?.trim() || resolvedFloatingValue?.trim()) && (
+              <div
+                className={cn(
+                  "-mt-6 ml-auto w-fit rounded-2xl bg-card p-6 shadow-lg animate-float lg:absolute lg:-bottom-6 lg:-right-6 lg:mt-0",
+                  shouldAnimateIn && "animate-delay-500"
+                )}
+              >
+                {resolvedFloatingValue?.trim() && (
+                  <p
+                    className={cn(
+                      "text-3xl font-bold text-primary",
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                    )}
+                    style={resolvedFloatingValueColor ? ({ color: resolvedFloatingValueColor } as React.CSSProperties) : undefined}
+                    onClick={(e) => handleInlineEdit(e, "floatingValue")}
+                  >
+                    {resolvedFloatingValue}
+                  </p>
+                )}
+                {resolvedFloatingTitle?.trim() && (
+                  <p
+                    className={cn(
+                      "text-sm text-muted-foreground",
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                    )}
+                    style={resolvedFloatingTitleColor ? ({ color: resolvedFloatingTitleColor } as React.CSSProperties) : undefined}
+                    onClick={(e) => handleInlineEdit(e, "floatingTitle")}
+                  >
+                    {resolvedFloatingTitle}
+                  </p>
+                )}
+                {resolvedFloatingLabel && (
+                  <p
+                    className={cn(
+                      "text-xs text-muted-foreground mt-1",
+                      editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10"
+                    )}
+                    style={resolvedFloatingLabelColor ? ({ color: resolvedFloatingLabelColor } as React.CSSProperties) : undefined}
+                    onClick={(e) => handleInlineEdit(e, "floatingLabel")}
+                  >
+                    {resolvedFloatingLabel}
+                  </p>
+                )}
+              </div>
+            )}
+          </figure>
+        )}
+      </div>
+
+      {/* Bottom scroll indicator */}
+      <div className="hero-scroll-indicator absolute left-1/2 -translate-x-1/2 pointer-events-none bottom-2 sm:bottom-2 lg:bottom-8" aria-hidden="true">
+        <div className={cn("h-12 w-6 rounded-full border-2", isCalm ? "border-primary/30" : "border-primary/50")}>
+          <div
+            className={cn("mx-auto mt-2 h-2 w-1 animate-bounce rounded-full", isCalm ? "bg-primary/50" : "bg-primary")}
+          />
+        </div>
+      </div>
+      </section>
+    </AnimatedBlock>
+  )
+}
+
+/**
+ * HeroTrustItem Component - Extracted to use Hooks properly (not in map)
+ */
+interface HeroTrustItemProps {
+  item: string
+  index: number
+  questionColor?: string
+  answerColor?: string
+  elements?: Record<string, unknown>
+  blockId?: string
+  onElementClick?: (blockId: string, elementId: string) => void
+  resolvedTrustItemsColor?: string
+  editable?: boolean
+  blockIdValue?: string
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+}
+
+function HeroTrustItem({
+  item,
+  index,
+  elements,
+  blockId,
+  onElementClick,
+  resolvedTrustItemsColor,
+}: HeroTrustItemProps) {
+  // Hook call is safe here (not in map)
+  const trustItemId = `trustItems.${index}`
+  const trustElementMap = (elements ?? {}) as Record<string, ElementConfig>
+  const trustItemShadow = useElementShadowStyle({
+    elementId: trustItemId,
+    elementConfig: trustElementMap[trustItemId],
+  })
+
+  return (
+    <div
+      data-element-id={trustItemId}
+      className="flex items-center gap-2 rounded-lg p-2 cursor-pointer transition-colors hover:bg-primary/5"
+      style={trustItemShadow}
+      onClick={() => onElementClick?.(blockId || "", trustItemId)}
+    >
+      <div
+        className="h-2 w-2 rounded-full bg-primary animate-pulse-slow"
+        aria-hidden="true"
+        style={resolvedTrustItemsColor ? ({ backgroundColor: resolvedTrustItemsColor } as React.CSSProperties) : undefined}
+      />
+      <span
+        style={resolvedTrustItemsColor ? ({ color: resolvedTrustItemsColor } as React.CSSProperties) : undefined}
+      >
+        {item}
+      </span>
+    </div>
+  )
+}

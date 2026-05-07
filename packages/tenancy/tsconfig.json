@@ -1,0 +1,8 @@
+{
+  "extends": "@sovereign-cms/config/tsconfig/library",
+  "compilerOptions": {
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

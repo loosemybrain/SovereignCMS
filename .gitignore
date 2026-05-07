@@ -1,0 +1,53 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# --- Build, deps, secrets (Phase 2.1) ---
+.next
+**/.next
+.turbo
+**/.turbo
+*.tsbuildinfo
+node_modules
+**/node_modules
+dist
+**/dist
+.env*
+!.env.example
+!legacy/physio-source/cookie-scan-worker/.env.example
+*.zip
+
+# PnP / Yarn
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next / output / deploy
+/out/
+/build
+.vercel
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# archives
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.lzma
+*.tar.lz
+*.tar.lz4
+*.tar.zstd

@@ -1,0 +1,155 @@
+"use client"
+
+import * as React from "react"
+
+function isInteractive(el: Element | null) {
+  if (!el) return false
+  return Boolean(
+    el.closest(
+      [
+        "a[href]",
+        "button",
+        "[role='button']",
+        "input",
+        "select",
+        "textarea",
+        "[data-cursor='hover']",
+      ].join(",")
+    )
+  )
+}
+
+function isTextInputLike(el: Element | null) {
+  if (!el) return false
+  return Boolean(el.closest(["input", "select", "textarea", "[contenteditable='true']", "[data-cursor='input']"].join(",")))
+}
+
+export default function CustomCursor() {
+  const dotRef = React.useRef<HTMLDivElement | null>(null)
+  const ringRef = React.useRef<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    // never enable in admin
+    if (window.location.pathname.startsWith("/admin")) return
+
+    const canHover =
+      window.matchMedia?.("(hover: hover) and (pointer: fine)")?.matches ?? false
+    if (!canHover) return
+
+    const root = document.documentElement
+    root.classList.add("has-custom-cursor")
+
+    let raf = 0
+    let x = window.innerWidth / 2
+    let y = window.innerHeight / 2
+    let rx = x
+    let ry = y
+
+    const show = () => {
+      if (dotRef.current) dotRef.current.style.opacity = "1"
+      if (ringRef.current) ringRef.current.style.opacity = "0.75"
+    }
+
+    const hide = () => {
+      if (dotRef.current) dotRef.current.style.opacity = "0"
+      if (ringRef.current) ringRef.current.style.opacity = "0"
+    }
+
+    const onMove = (e: MouseEvent) => {
+      x = e.clientX
+      y = e.clientY
+      const target = document.elementFromPoint(x, y)
+      root.classList.toggle("cursor-hover", isInteractive(target))
+      root.classList.toggle("cursor-input", isTextInputLike(target))
+      show()
+    }
+
+    const onLeave = () => hide()
+
+    const onDown = () => root.classList.add("cursor-down")
+    const onUp = () => {
+      root.classList.remove("cursor-down")
+      // DOM can change on click handlers (e.g. cookie consent). Re-evaluate hover/input state.
+      const target = document.elementFromPoint(x, y)
+      root.classList.toggle("cursor-hover", isInteractive(target))
+      root.classList.toggle("cursor-input", isTextInputLike(target))
+    }
+
+    const onOver = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (isInteractive(target)) root.classList.add("cursor-hover")
+      if (isTextInputLike(target)) root.classList.add("cursor-input")
+    }
+
+    const onOut = (e: MouseEvent) => {
+      const target = e.target as Element | null
+      if (isInteractive(target)) root.classList.remove("cursor-hover")
+      if (isTextInputLike(target)) root.classList.remove("cursor-input")
+    }
+
+    const onWindowBlur = () => {
+      root.classList.remove("cursor-hover", "cursor-down", "cursor-input")
+      hide()
+    }
+
+    const tick = () => {
+      // ring lags slightly behind cursor for a “smooth” feel
+      rx += (x - rx) * 0.18
+      ry += (y - ry) * 0.18
+
+      // store css vars for optional transforms
+      root.style.setProperty("--dx", `${x}px`)
+      root.style.setProperty("--dy", `${y}px`)
+      root.style.setProperty("--cx", `${rx}px`)
+      root.style.setProperty("--cy", `${ry}px`)
+
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      }
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate3d(${rx}px, ${ry}px, 0)`
+      }
+
+      raf = requestAnimationFrame(tick)
+    }
+
+    window.addEventListener("mousemove", onMove, { passive: true })
+    window.addEventListener("mouseleave", onLeave)
+    window.addEventListener("mousedown", onDown)
+    window.addEventListener("mouseup", onUp)
+    window.addEventListener("mouseover", onOver)
+    window.addEventListener("mouseout", onOut)
+    window.addEventListener("blur", onWindowBlur)
+
+    raf = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseleave", onLeave)
+      window.removeEventListener("mousedown", onDown)
+      window.removeEventListener("mouseup", onUp)
+      window.removeEventListener("mouseover", onOver)
+      window.removeEventListener("mouseout", onOut)
+      window.removeEventListener("blur", onWindowBlur)
+      root.classList.remove("has-custom-cursor", "cursor-hover", "cursor-down", "cursor-input")
+      root.style.removeProperty("--dx")
+      root.style.removeProperty("--dy")
+      root.style.removeProperty("--cx")
+      root.style.removeProperty("--cy")
+    }
+  }, [])
+
+  // IMPORTANT: keep it in the tree; CSS hides it on touch devices
+  // fixed inset-0 pointer-events-none: aus dem Layout-Fluss, verhindert Leerraum unter body
+  // z-[999999]: über Footer und allen anderen Panels sichtbar
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 z-999999 pointer-events-none text-primary"
+    >
+      <div ref={ringRef} className="cursor-ring" />
+      <div ref={dotRef} className="cursor-dot" />
+    </div>
+  )
+}

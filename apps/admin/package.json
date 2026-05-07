@@ -1,0 +1,35 @@
+{
+  "name": "@sovereign-cms/admin",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sovereign-cms/auth": "*",
+    "@sovereign-cms/core": "*",
+    "@sovereign-cms/db": "*",
+    "@sovereign-cms/runtime": "*",
+    "@sovereign-cms/tenancy": "*",
+    "@sovereign-cms/ui": "*",
+    "next": "16.1.2",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@sovereign-cms/config": "*",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.2",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

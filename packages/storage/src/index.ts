@@ -1,0 +1,1 @@
+export type { StorageObject, StorageAdapter } from "./adapter"

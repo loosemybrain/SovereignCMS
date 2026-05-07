@@ -1,0 +1,321 @@
+"use client"
+
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ArrowRight } from "lucide-react"
+import { AnimatedBlock } from "@/components/blocks/AnimatedBlock"
+import { ElementAnimated } from "@/components/blocks/ElementAnimated"
+import type { BlockSectionProps, ElementConfig } from "@/types/cms"
+import { useElementShadowStyle } from "@/lib/shadow"
+import { resolveButtonPresetStyles } from "@/lib/buttonPresets"
+import { mergeTypographyClasses, type TypographySettings } from "@/lib/typography"
+
+interface CtaBlockProps {
+  section?: BlockSectionProps
+  typography?: unknown
+  headline: string
+  subheadline?: string
+  primaryCtaText: string
+  primaryCtaHref: string
+  secondaryCtaText?: string
+  secondaryCtaHref?: string
+  variant?: "default" | "centered" | "split"
+  backgroundColor?: string
+  headlineColor?: string
+  subheadlineColor?: string
+  primaryCtaTextColor?: string
+  primaryCtaBgColor?: string
+  primaryCtaHoverBgColor?: string
+  primaryCtaBorderColor?: string
+  primaryCtaBorderRadius?: string
+  secondaryCtaTextColor?: string
+  secondaryCtaBgColor?: string
+  secondaryCtaHoverBgColor?: string
+  secondaryCtaBorderColor?: string
+  secondaryCtaBorderRadius?: string
+  
+  // CMS/Inline Edit Props
+  editable?: boolean
+  blockId?: string
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+  
+  // Shadow/Element Props
+  elements?: Record<string, unknown>
+  onElementClick?: (blockId: string, elementId: string) => void
+  selectedElementId?: string | null
+
+  buttonPreset?: string
+}
+
+export function CtaBlock({
+  section,
+  typography,
+  headline,
+  subheadline,
+  primaryCtaText,
+  primaryCtaHref,
+  secondaryCtaText,
+  secondaryCtaHref,
+  variant = "centered",
+  backgroundColor,
+  headlineColor,
+  subheadlineColor,
+  primaryCtaTextColor,
+  primaryCtaBgColor,
+  primaryCtaHoverBgColor,
+  primaryCtaBorderColor,
+  primaryCtaBorderRadius,
+  secondaryCtaTextColor,
+  secondaryCtaBgColor,
+  secondaryCtaHoverBgColor,
+  secondaryCtaBorderColor,
+  secondaryCtaBorderRadius,
+  
+  editable = false,
+  blockId,
+  onEditField,
+  elements,
+  onElementClick,
+  selectedElementId,
+  buttonPreset,
+}: CtaBlockProps) {
+  const isCentered = variant === "centered"
+  const isSplit = variant === "split"
+  const [primaryHover, setPrimaryHover] = React.useState(false)
+  const [secondaryHover, setSecondaryHover] = React.useState(false)
+
+  const primaryPreset = resolveButtonPresetStyles(buttonPreset, undefined, undefined)
+  const secondaryPreset = resolveButtonPresetStyles(buttonPreset, "outline", undefined)
+  const elementMap = (elements ?? {}) as Record<string, ElementConfig>
+  const typographyMap = (typography as Record<string, TypographySettings | undefined> | undefined) ?? {}
+
+  // Element shadows
+  const headlineShadow = useElementShadowStyle({
+    elementId: "headline",
+    elementConfig: elementMap["headline"],
+  })
+  const subheadlineShadow = useElementShadowStyle({
+    elementId: "subheadline",
+    elementConfig: elementMap["subheadline"],
+  })
+  const primaryCtaShadow = useElementShadowStyle({
+    elementId: "primaryCta",
+    elementConfig: elementMap["primaryCta"],
+  })
+  const secondaryCtaShadow = useElementShadowStyle({
+    elementId: "secondaryCta",
+    elementConfig: elementMap["secondaryCta"],
+  })
+  
+  const canInlineEdit = Boolean(editable && blockId && onEditField)
+  
+  // FIELD PATHS
+  const FP = {
+    headline: "headline",
+    subheadline: "subheadline",
+    primaryCtaText: "primaryCtaText",
+    primaryCtaHref: "primaryCtaHref",
+    secondaryCtaText: "secondaryCtaText",
+    secondaryCtaHref: "secondaryCtaHref",
+  } as const
+  
+  function handleInlineEdit(e: React.SyntheticEvent, fieldPath: string, elementId?: string) {
+    if (!canInlineEdit || !blockId || !onEditField) return
+    
+    if (elementId && onElementClick) {
+      onElementClick(blockId, elementId)
+    }
+    
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const el = e.currentTarget as HTMLElement | null
+    const rect = el?.getBoundingClientRect?.()
+    onEditField(blockId, fieldPath, rect)
+  }
+  
+  const dataBlockId = editable ? (blockId ?? undefined) : undefined
+  const dataEditable = editable ? "true" : undefined
+
+  // Determine which background color to use
+  const primaryBgColor = primaryHover && primaryCtaHoverBgColor ? primaryCtaHoverBgColor : primaryCtaBgColor
+  const secondaryBgColor = secondaryHover && secondaryCtaHoverBgColor ? secondaryCtaHoverBgColor : secondaryCtaBgColor
+
+  return (
+    <AnimatedBlock config={section?.animation}>
+      <section>
+        <div>
+          <div
+            className={cn(
+              "flex flex-col gap-6",
+              isCentered && "items-center text-center max-w-2xl mx-auto",
+              isSplit && "lg:flex-row lg:items-center lg:justify-between"
+            )}
+          >
+            <div className={cn("flex-1", isSplit && "lg:max-w-xl")}>
+              <ElementAnimated elementId="headline" elements={elementMap}>
+                <h2
+                  className={cn(
+                    mergeTypographyClasses(
+                      "text-3xl font-bold tracking-tight text-foreground md:text-4xl",
+                      typographyMap["cta.headline"]
+                    ),
+                    canInlineEdit && "cursor-pointer"
+                  )}
+                  style={{
+                    ...headlineShadow,
+                    ...(headlineColor ? { color: headlineColor } : {}),
+                  }}
+                  data-element-id="headline"
+                  onClick={canInlineEdit ? (e) => handleInlineEdit(e, FP.headline, "headline") : undefined}
+                >
+                  {headline}
+                </h2>
+              </ElementAnimated>
+              {(subheadline || canInlineEdit) && (
+                <ElementAnimated elementId="subheadline" elements={elementMap}>
+                  <p
+                    className={cn(
+                      mergeTypographyClasses(
+                        "mt-4 text-lg text-muted-foreground",
+                        typographyMap["cta.subheadline"]
+                      ),
+                      canInlineEdit && "cursor-pointer"
+                    )}
+                    style={{
+                      ...subheadlineShadow,
+                      ...(subheadlineColor ? { color: subheadlineColor } : {}),
+                    }}
+                    data-element-id="subheadline"
+                    onClick={canInlineEdit ? (e) => handleInlineEdit(e, FP.subheadline, "subheadline") : undefined}
+                  >
+                    {subheadline || "(Subheadline)"}
+                  </p>
+                </ElementAnimated>
+              )}
+            </div>
+            <div
+              className={cn(
+                "flex flex-wrap gap-4",
+                isCentered && "justify-center",
+                isSplit && "lg:shrink-0"
+              )}
+            >
+              <ElementAnimated elementId="primaryCta" elements={elementMap}>
+                <div className="contents" data-element-id="primaryCta" style={primaryCtaShadow as React.CSSProperties}>
+                  {/* Primary CTA */}
+                  {canInlineEdit ? (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant={primaryPreset.variant}
+                        size="lg"
+                        className={cn(primaryPreset.className, "gap-2")}
+                        style={{
+                          color: primaryCtaTextColor || undefined,
+                          backgroundColor: primaryBgColor || undefined,
+                          borderColor: primaryCtaBorderColor || undefined,
+                          borderRadius: primaryCtaBorderRadius || undefined,
+                        }}
+                        onMouseEnter={() => setPrimaryHover(true)}
+                        onMouseLeave={() => setPrimaryHover(false)}
+                        onClick={(e) => handleInlineEdit(e, FP.primaryCtaText, "primaryCta")}
+                      >
+                        {primaryCtaText}
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                        onClick={(e) => handleInlineEdit(e, FP.primaryCtaHref, "primaryCta")}
+                      >
+                        Link
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      asChild
+                      variant={primaryPreset.variant}
+                      size="lg"
+                      className={cn(primaryPreset.className, "gap-2")}
+                      style={{
+                        color: primaryCtaTextColor || undefined,
+                        backgroundColor: primaryBgColor || undefined,
+                        borderColor: primaryCtaBorderColor || undefined,
+                        borderRadius: primaryCtaBorderRadius || undefined,
+                      }}
+                      onMouseEnter={() => setPrimaryHover(true)}
+                      onMouseLeave={() => setPrimaryHover(false)}
+                    >
+                      <a href={primaryCtaHref}>
+                        {primaryCtaText}
+                        <ArrowRight className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </ElementAnimated>
+
+              {/* Secondary CTA */}
+              {(secondaryCtaText || canInlineEdit) && (
+                <ElementAnimated elementId="secondaryCta" elements={elementMap}>
+                  <div className="contents" data-element-id="secondaryCta" style={secondaryCtaShadow as React.CSSProperties}>
+                    {canInlineEdit ? (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={secondaryPreset.variant}
+                          size="lg"
+                          className={secondaryPreset.className}
+                          style={{
+                            color: secondaryCtaTextColor || undefined,
+                            backgroundColor: secondaryBgColor || undefined,
+                            borderColor: secondaryCtaBorderColor || undefined,
+                            borderRadius: secondaryCtaBorderRadius || undefined,
+                          }}
+                          onMouseEnter={() => setSecondaryHover(true)}
+                          onMouseLeave={() => setSecondaryHover(false)}
+                          onClick={(e) => handleInlineEdit(e, FP.secondaryCtaText, "secondaryCta")}
+                        >
+                          {secondaryCtaText || "Secondary CTA"}
+                        </Button>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                          onClick={(e) => handleInlineEdit(e, FP.secondaryCtaHref, "secondaryCta")}
+                        >
+                          Link
+                        </button>
+                      </div>
+                    ) : (
+                      secondaryCtaText &&
+                      secondaryCtaHref && (
+                        <Button
+                          asChild
+                          variant={secondaryPreset.variant}
+                          size="lg"
+                          className={secondaryPreset.className}
+                          style={{
+                            color: secondaryCtaTextColor || undefined,
+                            backgroundColor: secondaryBgColor || undefined,
+                            borderColor: secondaryCtaBorderColor || undefined,
+                            borderRadius: secondaryCtaBorderRadius || undefined,
+                          }}
+                          onMouseEnter={() => setSecondaryHover(true)}
+                          onMouseLeave={() => setSecondaryHover(false)}
+                        >
+                          <a href={secondaryCtaHref}>{secondaryCtaText}</a>
+                        </Button>
+                      )
+                    )}
+                  </div>
+                </ElementAnimated>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </AnimatedBlock>
+  )
+}

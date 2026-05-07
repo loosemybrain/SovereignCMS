@@ -1,0 +1,31 @@
+.env
+.env.*
+!.env.example
+
+# local secrets / overrides
+.env.local
+.env.development
+.env.production
+
+# dependencies
+node_modules
+**/node_modules
+cookie-scan-worker/node_modules
+
+# archives / exports
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# build outputs
+.next
+out
+dist
+**/dist
+cookie-scan-worker/dist
+
+# tooling caches
+.turbo
+.vercel
+

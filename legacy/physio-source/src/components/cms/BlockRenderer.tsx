@@ -1,0 +1,635 @@
+"use client"
+
+import { cn } from "@/lib/utils"
+import dynamic from "next/dynamic"
+import type { CMSBlock } from "@/types/cms"
+import { SectionWrapper } from "@/components/cms/SectionWrapper"
+import { HeroSection } from "@/components/blocks/hero-section"
+import { TextBlock } from "@/components/blocks/text-block"
+import { ImageTextBlock } from "@/components/blocks/image-text-block"
+import { FeatureGridBlock } from "@/components/blocks/feature-grid-block"
+import { CtaBlock } from "@/components/blocks/cta-block"
+import { SectionBlock } from "@/components/blocks/section-block"
+import { CardBlock } from "@/components/blocks/card-block"
+import { ServicesGridBlock } from "@/components/blocks/services-grid-block"
+import { TeamGridBlock } from "@/components/blocks/team-grid"
+import { ContactFormBlock } from "@/components/blocks/contact-form-block"
+import { TestimonialsBlock } from "@/components/blocks/testimonials-block"
+import { GalleryBlock } from "@/components/blocks/gallery-block"
+import { OpeningHoursBlock } from "@/components/blocks/opening-hours-block"
+import { ExternalEmbedBlock } from "@/components/blocks/external-embed-block"
+import { ImageSliderBlock } from "@/components/blocks/image-slider-block"
+import { TestimonialSliderBlock } from "@/components/blocks/testimonial-slider"
+import { CourseScheduleBlock } from "@/components/blocks/course-schedule-block"
+import { LegalHero } from "@/components/legal/LegalHero"
+import { LegalSection } from "@/components/blocks/LegalSection"
+import { LegalRichText } from "@/components/legal/LegalRichText"
+import { LegalTable } from "@/components/legal/LegalTable"
+import { LegalInfoBox } from "@/components/legal/LegalInfoBox"
+import { LegalCookieCategories } from "@/components/legal/LegalCookieCategories"
+import { LegalContactCard } from "@/components/legal/LegalContactCard"
+import type { BlockSectionProps, ElementConfig, HeroBlock, LegalHeroBlock } from "@/types/cms"
+import { blockRegistry } from "@/cms/blocks/registry"
+import { mergeBlockSectionWithDefaults } from "@/lib/cms/mergeBlockSection"
+import { CMS_BLOCK_GLOBAL_WIDTH_WRAP_CLASS } from "@/lib/cms/cmsContentWidthClasses"
+import { getTypographyClassName, type TypographySettings } from "@/lib/typography"
+import { getBlockAnchorId } from "@/lib/navigation/scrollToAnchor"
+
+const FaqAccordion = dynamic(() => import("@/components/blocks/faq-accordion").then(mod => ({ default: mod.FaqAccordion })), { ssr: false })
+
+interface BlockRendererProps {
+  block: CMSBlock
+  editable?: boolean
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+  onElementClick?: (blockId: string, elementId: string) => void
+  selectedElementId?: string | null
+  pageSlug?: string
+  isFirst?: boolean
+  brand?: string
+  /** Admin Live-Preview: Klick auf Kurs-Slot öffnet zugehörige Inspector-Card */
+  courseSchedulePreview?: {
+    interactivePreview: boolean
+    activeSlotId: string | null
+    onSlotSelect: (slotId: string) => void
+  }
+  /** Admin Live-Preview: Klick auf Repeater-Item (Card/Member/FAQ/Slide) öffnet zugehörige Inspector-Card */
+  repeaterPreview?: {
+    activeItemId: string | null
+    onItemSelect: (itemId: string) => void
+  }
+  /**
+   * Legal hero rendered outside the article grid: parent is full page width — SectionWrapper uses
+   * w-full instead of 100vw margin breakout (see SectionWrapper.edgeToEdgeShell).
+   */
+  edgeToEdgeShell?: boolean
+}
+
+/**
+ * Central block renderer that switches on block type and renders the appropriate component
+ * Inline-edit is handled via data-cms-field attributes on block elements
+ */
+export function BlockRenderer({
+  block,
+  editable,
+  onEditField,
+  onElementClick,
+  selectedElementId,
+  pageSlug,
+  isFirst,
+  brand,
+  courseSchedulePreview,
+  repeaterPreview,
+  edgeToEdgeShell = false,
+}: BlockRendererProps) {
+  const definition = blockRegistry[block.type]
+  const allowInlineEdit = definition?.allowInlineEdit ?? false
+  const canEdit = editable && allowInlineEdit && onEditField
+
+  const blockProps = (block.props ?? {}) as Record<string, unknown>
+  const sectionValue = blockProps.section
+  const rawSection: BlockSectionProps | undefined =
+    sectionValue && typeof sectionValue === "object"
+      ? (sectionValue as BlockSectionProps)
+      : undefined
+  const defaultSectionFromRegistry = (definition?.defaults as { section?: BlockSectionProps } | undefined)?.section
+  const section = mergeBlockSectionWithDefaults(rawSection, defaultSectionFromRegistry)
+
+  const typographyValue = blockProps.typography
+  const typography =
+    typographyValue && typeof typographyValue === "object"
+      ? (typographyValue as TypographySettings)
+      : null
+
+  const renderContent = () => {
+    switch (block.type) {
+      case "hero": {
+        const heroProps = block.props as HeroBlock["props"]
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const heroTypographyValue = extras.typography
+        const heroTypography =
+          heroTypographyValue && typeof heroTypographyValue === "object"
+            ? (heroTypographyValue as Record<string, TypographySettings>)
+            : undefined
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <HeroSection
+            {...heroProps}
+            elements={elements}
+            props={heroProps}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            typography={heroTypography}
+          />
+        )
+      }
+
+      case "text": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, ElementConfig | undefined> | undefined
+        return (
+          <TextBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "imageText": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <ImageTextBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "featureGrid": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <FeatureGridBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "cta": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <CtaBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "section": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <SectionBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "card": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <CardBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "servicesGrid": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <ServicesGridBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={!!repeaterPreview}
+            activeItemId={repeaterPreview?.activeItemId ?? null}
+            onItemSelect={repeaterPreview?.onItemSelect}
+          />
+        )
+      }
+
+      case "faq": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <FaqAccordion
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={!!repeaterPreview}
+            activeItemId={repeaterPreview?.activeItemId ?? null}
+            onItemSelect={repeaterPreview?.onItemSelect}
+          />
+        )
+      }
+
+      case "team": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <TeamGridBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={!!repeaterPreview}
+            activeItemId={repeaterPreview?.activeItemId ?? null}
+            onItemSelect={repeaterPreview?.onItemSelect}
+          />
+        )
+      }
+
+      case "contactForm": {
+        const props = block.props
+        const elementsValue = (props as Record<string, unknown>).elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <ContactFormBlock
+            {...props}
+            elements={elements}
+            blockId={block.id}
+            pageSlug={pageSlug}
+            editable={editable}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "testimonials": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <TestimonialsBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={!!repeaterPreview}
+            activeItemId={repeaterPreview?.activeItemId ?? null}
+            onItemSelect={repeaterPreview?.onItemSelect}
+          />
+        )
+      }
+
+      case "testimonialSlider": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <TestimonialSliderBlock
+            data={block.props}
+            brand={brand}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "gallery": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, Record<string, unknown>> | undefined
+        return (
+          <GalleryBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "openingHours": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <OpeningHoursBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+          />
+        )
+      }
+
+      case "externalEmbed": {
+        const { section: _s, elements: _e, typography: _t, ...embedRest } = block.props as import("@/types/cms").ExternalEmbedBlock["props"]
+        return <ExternalEmbedBlock {...embedRest} />
+      }
+
+      case "imageSlider": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, unknown> | undefined
+        return (
+          <ImageSliderBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={!!repeaterPreview}
+            activeItemId={repeaterPreview?.activeItemId ?? null}
+            onItemSelect={repeaterPreview?.onItemSelect}
+          />
+        )
+      }
+
+      case "courseSchedule": {
+        const props = block.props
+        const extras = (block.props ?? {}) as Record<string, unknown>
+        const elementsValue = extras.elements
+        const elements = elementsValue as Record<string, import("@/types/cms").ElementConfig> | undefined
+        return (
+          <CourseScheduleBlock
+            {...props}
+            elements={elements}
+            editable={editable}
+            blockId={block.id}
+            onEditField={onEditField}
+            onElementClick={onElementClick}
+            selectedElementId={selectedElementId}
+            interactivePreview={courseSchedulePreview?.interactivePreview}
+            activeSlotId={courseSchedulePreview?.activeSlotId ?? null}
+            onSlotSelect={courseSchedulePreview?.onSlotSelect}
+          />
+        )
+      }
+
+      case "legalHero": {
+        // `section` is consumed by the outer SectionWrapper; LegalHero is content-only (no duplicate wrapper/spacing).
+        const { section: _omitSection, ...legalHeroProps } = block.props as LegalHeroBlock["props"]
+        return <LegalHero {...legalHeroProps} edgeToEdgeShell={edgeToEdgeShell} />
+      }
+
+      case "legalSection":
+        return <LegalSection {...(block.props as import("@/types/cms").LegalSectionBlock["props"])} />
+
+      case "legalRichText":
+        return (
+          <LegalRichText
+            {...(block.props as import("@/types/cms").LegalRichTextBlock["props"])}
+            cmsBlockId={editable ? block.id : undefined}
+            previewAssistEditing={editable}
+          />
+        )
+
+      case "legalTable":
+        return <LegalTable {...(block.props as import("@/types/cms").LegalTableBlock["props"])} />
+
+      case "legalInfoBox":
+        return <LegalInfoBox {...(block.props as import("@/types/cms").LegalInfoBoxBlock["props"])} />
+
+      case "legalCookieCategories":
+        return <LegalCookieCategories {...(block.props as import("@/types/cms").LegalCookieCategoriesBlock["props"])} />
+
+      case "legalContactCard":
+        return <LegalContactCard {...(block.props as import("@/types/cms").LegalContactCardBlock["props"])} />
+
+      default: {
+        // TypeScript exhaustive check
+        const _exhaustive: never = block
+        console.warn(`Unknown block type: ${(_exhaustive as CMSBlock).type}`)
+        return null
+      }
+    }
+  }
+
+  const content = renderContent()
+
+  const typographyClassName = getTypographyClassName(typography)
+
+  // Block types that manage their own width (e.g. legal hero as page header)
+  const skipGlobalWidthWrap = definition?.skipGlobalWidthWrap === true
+  // Check if block should be full bleed (no width constraint)
+  const isFullBleed = section?.fullBleed === true
+
+  // Wrapper function for unified global width
+  const wrapWithGlobalWidth = (blockContent: React.ReactNode) => {
+    if (isFullBleed) {
+      // Full bleed: no max-width, no horizontal padding
+      return blockContent
+    }
+    // Standard: apply consistent width and padding
+    return <div className={CMS_BLOCK_GLOBAL_WIDTH_WRAP_CLASS}>{blockContent}</div>
+  }
+
+  const wrappedContent = skipGlobalWidthWrap ? content : wrapWithGlobalWidth(content)
+  const fullBleedChildren = skipGlobalWidthWrap
+
+  const blockAnchorId = block.id ? getBlockAnchorId(block.id) : undefined
+
+  if (!editable) {
+    // Apply typography classes to wrapper even in non-editable mode; stable ID für Anchor-Navigation
+    if (typographyClassName) {
+      return (
+        <div id={blockAnchorId} data-block-id={block.id} className={typographyClassName}>
+          <SectionWrapper
+            section={section}
+            isFirst={isFirst}
+            fullBleedChildren={fullBleedChildren}
+            edgeToEdgeShell={edgeToEdgeShell}
+          >
+            {wrappedContent}
+          </SectionWrapper>
+        </div>
+      )
+    }
+    return (
+      <div id={blockAnchorId} data-block-id={block.id}>
+        <SectionWrapper
+          section={section}
+          isFirst={isFirst}
+          fullBleedChildren={fullBleedChildren}
+          edgeToEdgeShell={edgeToEdgeShell}
+        >
+          {wrappedContent}
+        </SectionWrapper>
+      </div>
+    )
+  }
+
+  // Wrap content with editable overlay that detects clicks on data-cms-field and data-element-id elements
+  return (
+    <div
+      id={blockAnchorId}
+      data-block-id={block.id}
+      className={cn(
+        "relative group",
+        "hover:outline-2 hover:outline-primary/30 hover:outline-offset-2",
+        "transition-all rounded-lg",
+        typographyClassName
+      )}
+      onClick={(e) => {
+        // Protect interactive elements (forms, buttons, links) unless they have data-cms-field or data-element-id
+        const interactiveEl = (e.target as HTMLElement).closest("a,button,input,textarea,select,[role='button'],[role='link']")
+        const fieldEl = (e.target as HTMLElement).closest("[data-cms-field]")
+        const elementEl = (e.target as HTMLElement).closest("[data-element-id]")
+        
+        // If clicking on interactive element without special attributes, allow default behavior
+        if (interactiveEl && !fieldEl && !elementEl) {
+          return
+        }
+
+        // Handle data-cms-field clicks (for inline text editing)
+        if (canEdit && onEditField && fieldEl) {
+          const fieldPath = fieldEl.getAttribute("data-cms-field")
+          if (fieldPath) {
+            e.preventDefault()
+            e.stopPropagation()
+            const anchorRect = fieldEl.getBoundingClientRect()
+            onEditField(block.id, fieldPath, anchorRect)
+            return
+          }
+        }
+
+        // Handle data-element-id clicks (for shadow/styling inspector)
+        // Only if not already handled by Editable component (check if it's a direct element click, not nested in Editable)
+        if (elementEl && onElementClick && !elementEl.closest("[role='region']")) {
+          const elementId = elementEl.getAttribute("data-element-id")
+          if (elementId) {
+            e.preventDefault()
+            e.stopPropagation()
+            onElementClick(block.id, elementId)
+            return
+          }
+        }
+      }}
+    >
+      <SectionWrapper
+        section={section}
+        editable
+        isFirst={isFirst}
+        fullBleedChildren={fullBleedChildren}
+        edgeToEdgeShell={edgeToEdgeShell}
+      >
+        {wrappedContent}
+      </SectionWrapper>
+    </div>
+  )
+}
+
+
+interface CMSRendererProps {
+  blocks: CMSBlock[]
+  editable?: boolean
+  onEditField?: (blockId: string, fieldPath: string, anchorRect?: DOMRect) => void
+  pageSlug?: string
+  brand?: string
+  edgeToEdgeShell?: boolean
+  /** Global index of `blocks[0]` on the page (for split legal-hero + body renderers). */
+  firstBlockGlobalIndex?: number
+}
+
+/**
+ * Renders multiple CMS blocks in sequence
+ */
+export function CMSRenderer({
+  blocks,
+  editable,
+  onEditField,
+  pageSlug,
+  brand,
+  edgeToEdgeShell = false,
+  firstBlockGlobalIndex = 0,
+}: CMSRendererProps) {
+  return (
+    <>
+      {blocks.map((block, index) => (
+        <BlockRenderer
+          key={block.id}
+          block={block}
+          isFirst={firstBlockGlobalIndex + index === 0}
+          editable={editable}
+          onEditField={onEditField}
+          pageSlug={pageSlug}
+          brand={brand}
+          edgeToEdgeShell={edgeToEdgeShell}
+        />
+      ))}
+    </>
+  )
+}

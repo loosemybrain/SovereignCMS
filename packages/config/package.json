@@ -1,0 +1,14 @@
+{
+  "name": "@sovereign-cms/config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Gemeinsame TypeScript-, ESLint- und Build-Konventionen",
+  "exports": {
+    "./tsconfig/base": "./tsconfig/base.json",
+    "./tsconfig/next": "./tsconfig/next.json",
+    "./tsconfig/library": "./tsconfig/library.json"
+  },
+  "scripts": {
+    "typecheck": "node -e \"console.log('config package: no TS sources to typecheck')\""
+  }
+}

@@ -1,0 +1,779 @@
+"use client"
+
+import React, { useCallback, useRef, useState, useEffect } from "react"
+import { cn } from "@/lib/utils"
+import {
+  ArrowRight,
+  Globe,
+  Linkedin,
+  Instagram,
+  Mail,
+} from "lucide-react"
+import { resolveSectionBg } from "@/lib/theme/resolveSectionBg"
+import { resolveContainerBg } from "@/lib/theme/resolveContainerBg"
+import { resolveBoxShadow } from "@/lib/shadow/resolveBoxShadow"
+import { mergeTypographyClasses, type TypographySettings } from "@/lib/typography"
+import { AnimatedBlock } from "@/components/blocks/AnimatedBlock"
+import { ElementAnimated } from "@/components/blocks/ElementAnimated"
+import type { BlockSectionProps, ElementConfig, ElementShadow } from "@/types/cms"
+import type { GradientPresetValue } from "@/lib/theme/gradientPresets"
+
+interface TeamMember {
+  id: string
+  name: string
+  role?: string
+  bio?: string
+  bioAlign?: "left" | "center" | "right"
+  imageUrl?: string | { url?: string; src?: string; publicUrl?: string; path?: string }
+  imageAlt?: string
+  avatarGradient?: "auto" | "g1" | "g2" | "g3" | "g4" | "g5" | "g6" | "g7" | "g8" | "g9" | "g10"
+  avatarFit?: "cover" | "contain"
+  avatarFocus?: "center" | "top" | "bottom" | "left" | "right"
+  tags?: string[]
+  socials?: Array<{
+    type: "website" | "linkedin" | "instagram" | "email"
+    href: string
+  }>
+  ctaText?: string
+  ctaHref?: string
+  nameColor?: string
+  roleColor?: string
+  bioColor?: string
+  ctaColor?: string
+  cardBgColor?: string
+  cardBorderColor?: string
+}
+
+export interface TeamGridBlockProps {
+  blockId?: string
+  editable?: boolean
+  onEditField?: (
+    blockId: string,
+    fieldPath: string,
+    anchorRect?: DOMRect,
+  ) => void
+  onElementClick?: (blockId: string, elementId: string) => void
+  selectedElementId?: string | null
+  elements?: Record<string, unknown>
+  typography?: Record<string, unknown>
+
+  section?: BlockSectionProps
+
+  headline?: string
+  subheadline?: string
+  eyebrow?: string
+
+  columns?: 2 | 3 | 4
+  layout?: "cards" | "compact"
+  background?: "none" | "muted" | "gradient"
+
+  members: TeamMember[]
+
+  headlineColor?: string
+  subheadlineColor?: string
+  eyebrowColor?: string
+  nameColor?: string
+  roleColor?: string
+  bioColor?: string
+  bioAlign?: "left" | "center" | "right"
+  ctaColor?: string
+  cardBgColor?: string
+  cardBorderColor?: string
+
+  // Inner Container Background (Panel behind Header + Grid)
+  containerBackgroundMode?: "transparent" | "color" | "gradient"
+  containerBackgroundColor?: string
+  containerBackgroundGradientPreset?: GradientPresetValue
+  containerGradientFrom?: string
+  containerGradientVia?: string
+  containerGradientTo?: string
+  containerGradientAngle?: number
+  containerOpacity?: number
+  
+  // Container Shadow
+  containerShadow?: ElementShadow
+  containerBorder?: boolean
+  containerBorderColor?: string
+
+  /** Admin Live-Preview: Klick auf Member-Card öffnet zugehörige Inspector-Card */
+  interactivePreview?: boolean
+  activeItemId?: string | null
+  onItemSelect?: (itemId: string) => void
+}
+
+/* Gradient presets keyed g1..g10 */
+const gradientPresets: string[] = [
+  "from-emerald-500 to-teal-600",
+  "from-sky-500 to-blue-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-pink-600",
+  "from-violet-500 to-purple-600",
+  "from-cyan-500 to-teal-500",
+  "from-lime-500 to-green-600",
+  "from-fuchsia-500 to-pink-500",
+  "from-indigo-500 to-blue-500",
+  "from-red-500 to-rose-600",
+]
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function stableHash(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) {
+    h = ((h << 5) - h + id.charCodeAt(i)) | 0
+  }
+  return Math.abs(h)
+}
+
+function stableGradientKey(id: string): number {
+  return stableHash(id) % 10
+}
+
+function getMediaUrl(
+  avatar?: string | { url?: string; src?: string; publicUrl?: string; path?: string },
+): string | null {
+  if (!avatar) return null
+  if (typeof avatar === "string") return avatar
+  return avatar.url || avatar.src || avatar.publicUrl || avatar.path || null
+}
+
+function resolveGradient(
+  avatarGradient: TeamMember["avatarGradient"],
+  memberId: string,
+): string {
+  if (!avatarGradient || avatarGradient === "auto") {
+    return gradientPresets[stableGradientKey(memberId)]
+  }
+  const idx = parseInt(avatarGradient.replace("g", ""), 10) - 1
+  return gradientPresets[Math.max(0, Math.min(idx, 9))]
+}
+
+function getAvatarFitClass(fit?: "cover" | "contain"): string {
+  return fit === "contain" ? "object-contain" : "object-cover"
+}
+
+function getAvatarFocusClass(focus?: "center" | "top" | "bottom" | "left" | "right"): string {
+  const focusMap: Record<string, string> = {
+    center: "object-center",
+    top: "object-top",
+    bottom: "object-bottom",
+    left: "object-left",
+    right: "object-right",
+  }
+  return focusMap[focus || "center"] || "object-center"
+}
+
+const columnsMap: Record<2 | 3 | 4, string> = {
+  2: "grid-cols-1 md:grid-cols-2",
+  3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
+}
+
+const socialIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  website: Globe,
+  linkedin: Linkedin,
+  instagram: Instagram,
+  email: Mail,
+}
+
+const socialLabelMap: Record<string, string> = {
+  website: "Website",
+  linkedin: "LinkedIn",
+  instagram: "Instagram",
+  email: "E-Mail",
+}
+
+function MemberAvatar({
+  member,
+  size = "lg",
+}: {
+  member: TeamMember
+  size?: "sm" | "lg"
+}) {
+  const imageUrl = getMediaUrl(member.imageUrl)
+  const initials = getInitials(member.name)
+  const gradient = resolveGradient(member.avatarGradient, member.id)
+
+  const sizeClasses = size === "lg" ? "h-28 w-28" : "h-16 w-16"
+  const textSize = size === "lg" ? "text-2xl" : "text-base"
+
+  // Avatar Fit und Focus (mit Defaults)
+  const avatarFit = member.avatarFit || "cover"
+  const avatarFocus = member.avatarFocus || "center"
+  const fitClass = getAvatarFitClass(avatarFit)
+  const focusClass = getAvatarFocusClass(avatarFocus)
+
+  if (imageUrl) {
+    return (
+      <div
+        className={cn(
+          "relative shrink-0 overflow-hidden rounded-2xl ring-[3px] ring-border/40 ring-offset-2 ring-offset-card transition-all duration-500 group-hover:ring-primary/40",
+          avatarFit === "contain" && "bg-muted/30",
+          sizeClasses,
+        )}
+      >
+        <img
+          src={imageUrl}
+          alt={member.name}
+          className={cn(
+            "h-full w-full transition-transform duration-500 group-hover:scale-110",
+            fitClass,
+            focusClass
+          )}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(
+        "relative flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br font-bold text-white ring-[3px] ring-border/40 ring-offset-2 ring-offset-card transition-all duration-500 group-hover:ring-primary/40 group-hover:shadow-lg",
+        gradient,
+        sizeClasses,
+        textSize,
+      )}
+    >
+      {initials}
+    </div>
+  )
+}
+
+function Bio({
+  text,
+  color,
+  editable,
+  onClick,
+  align = "center",
+}: {
+  text: string
+  color?: string
+  editable?: boolean
+  onClick?: (e: React.MouseEvent) => void
+  align?: "left" | "center" | "right"
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [needsClamp, setNeedsClamp] = useState(false)
+  const ref = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (el) setNeedsClamp(el.scrollHeight > el.clientHeight + 2)
+  }, [text])
+
+  const alignClass = {
+    left: "text-left",
+    center: "text-center",
+    right: "text-right",
+  }[align]
+
+  return (
+    <div className="relative">
+      <p
+        ref={ref}
+        onClick={editable ? onClick : undefined}
+        className={cn(
+          "text-sm leading-relaxed text-muted-foreground transition-all duration-300",
+          !expanded && "line-clamp-3",
+          editable && "cursor-pointer rounded px-1 hover:bg-primary/10",
+          alignClass,
+        )}
+        style={color ? { color } : undefined}
+      >
+        {text}
+      </p>
+      {!editable && needsClamp && !expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="mt-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          Mehr lesen
+        </button>
+      )}
+    </div>
+  )
+}
+
+function MemberCard({
+  member,
+  index,
+  layout,
+  nameColor,
+  roleColor,
+  bioColor,
+  bioAlign,
+  ctaColor,
+  cardBgColor,
+  cardBorderColor,
+  editable,
+  blockId,
+  onEditField,
+  typography,
+  elements,
+  interactivePreview,
+  activeItemId,
+  onItemSelect,
+}: {
+  member: TeamMember
+  index: number
+  layout: "cards" | "compact"
+  nameColor?: string
+  roleColor?: string
+  bioColor?: string
+  bioAlign?: "left" | "center" | "right"
+  ctaColor?: string
+  cardBgColor?: string
+  cardBorderColor?: string
+  editable?: boolean
+  blockId?: string
+  onEditField?: TeamGridBlockProps["onEditField"]
+  typography?: Record<string, unknown>
+  elements?: Record<string, unknown>
+  interactivePreview?: boolean
+  activeItemId?: string | null
+  onItemSelect?: (itemId: string) => void
+}) {
+  const handleEdit = useCallback(
+    (e: React.MouseEvent, fieldPath: string) => {
+      if (!editable || !blockId || !onEditField) return
+      e.preventDefault()
+      e.stopPropagation()
+      onEditField(
+        blockId,
+        fieldPath,
+        (e.currentTarget as HTMLElement).getBoundingClientRect(),
+      )
+    },
+    [editable, blockId, onEditField],
+  )
+
+  const isCompact = layout === "compact"
+
+  const isActive = interactivePreview && activeItemId === member.id
+  return (
+    <article
+      data-repeater-field="members"
+      data-repeater-item-id={member.id}
+      role={interactivePreview && onItemSelect ? "button" : undefined}
+      tabIndex={interactivePreview && onItemSelect ? 0 : undefined}
+      onClick={
+        interactivePreview && onItemSelect
+          ? (e) => {
+              if ((e.target as HTMLElement).closest("button, a, [data-inline-edit]")) return
+              onItemSelect(member.id)
+            }
+          : undefined
+      }
+      onKeyDown={
+        interactivePreview && onItemSelect
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onItemSelect(member.id)
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        "group relative flex overflow-hidden rounded-2xl border bg-card/60 backdrop-blur-sm",
+        "shadow-[0_1px_3px_rgba(0,0,0,0.04),0_10px_32px_-10px_rgba(0,0,0,0.10)]",
+        "transition-all duration-500 ease-out",
+        "hover:-translate-y-1.5 hover:border-primary/30",
+        "hover:shadow-[0_1px_3px_rgba(0,0,0,0.04),0_24px_56px_-16px_rgba(0,0,0,0.18)]",
+        isCompact ? "flex-row items-center gap-5 p-5" : "flex-col",
+        !cardBorderColor && "border-border/30",
+        interactivePreview && onItemSelect && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        isActive && "ring-2 ring-primary ring-offset-2",
+      )}
+      style={{
+        backgroundColor: cardBgColor || undefined,
+        borderColor: cardBorderColor || undefined,
+      }}
+    >
+      {/* Top accent bar (cards layout only) */}
+      {!isCompact && (
+        <div className="h-1 w-full bg-linear-to-r from-primary/60 via-primary/30 to-transparent" />
+      )}
+
+      {/* Hover spotlight */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(ellipse at 30% 0%, oklch(0.45 0.12 160 / 0.06), transparent 60%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Avatar */}
+      <div className={cn("relative", isCompact ? "shrink-0" : "flex justify-center px-7 pt-8")}>
+        <MemberAvatar member={member} size={isCompact ? "sm" : "lg"} />
+      </div>
+
+      {/* Content */}
+      <div
+        className={cn(
+          "relative flex min-w-0 flex-1 flex-col",
+          isCompact ? "py-1" : "px-7 pb-7 pt-5",
+          !isCompact && "items-center text-center",
+        )}
+      >
+        {/* Name */}
+        <ElementAnimated elementId="team.member.name" elements={elements as Record<string, ElementConfig | undefined> | undefined}>
+        <h3
+          data-element-id="team.member.name"
+          onClick={(e) => handleEdit(e, `members.${index}.name`)}
+          className={cn(
+            mergeTypographyClasses(
+              // Allow long names to wrap (no truncation/cropping)
+              "w-full text-balance text-lg font-semibold leading-tight tracking-tight text-card-foreground wrap-break-word",
+              ((typography ?? {}) as Record<string, TypographySettings | undefined>)["team.member.name"]
+            ),
+            editable && blockId && onEditField && "cursor-pointer rounded px-1 hover:bg-primary/10",
+          )}
+          style={{ color: nameColor || undefined }}
+        >
+          {member.name}
+        </h3>
+        </ElementAnimated>
+
+        {/* Role */}
+        {member.role && (
+          <ElementAnimated elementId="team.member.role" elements={elements as Record<string, ElementConfig | undefined> | undefined}>
+          <p
+            data-element-id="team.member.role"
+            onClick={(e) => handleEdit(e, `members.${index}.role`)}
+            className={cn(
+              mergeTypographyClasses(
+                "mt-1 w-full text-pretty text-sm leading-snug text-muted-foreground wrap-break-word",
+                ((typography ?? {}) as Record<string, TypographySettings | undefined>)["team.member.role"]
+              ),
+              editable && blockId && onEditField && "cursor-pointer rounded px-1 hover:bg-primary/10",
+            )}
+            style={{ color: roleColor || undefined }}
+          >
+            {member.role}
+          </p>
+          </ElementAnimated>
+        )}
+
+        {/* Bio */}
+        {member.bio && (
+          <div className={cn("mt-4 w-full min-w-0")}>
+            <Bio
+              text={member.bio}
+              color={bioColor}
+              editable={editable}
+              onClick={(e) => handleEdit(e, `members.${index}.bio`)}
+              align={member.bioAlign ?? (isCompact ? "left" : "center")}
+            />
+          </div>
+        )}
+
+        {/* Tags */}
+        {member.tags && (
+          (() => {
+            const tagsArray = typeof member.tags === "string" 
+              ? (member.tags as string).split(",").map((t) => t.trim()).filter(Boolean)
+              : Array.isArray(member.tags) 
+                ? member.tags as string[]
+                : []
+            
+            return tagsArray.length > 0 ? (
+              <div className={cn("mt-3 flex flex-wrap gap-1.5", !isCompact && "justify-center")}>
+                {tagsArray.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-border/50 bg-muted/50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null
+          })()
+        )}
+
+        {/* Socials */}
+        {member.socials && member.socials.length > 0 && (
+          <div className={cn("mt-4 flex items-center gap-2", !isCompact && "justify-center")}>
+            {member.socials.map((social) => {
+              const Icon = socialIconMap[social.type] || Globe
+              const label = socialLabelMap[social.type] || social.type
+              return (
+                <a
+                  key={social.type}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${label} von ${member.name}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/40 bg-muted/30 text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              )
+            })}
+          </div>
+        )}
+
+        {/* CTA */}
+        {member.ctaText && (
+          <div className={cn("mt-5", !isCompact && "w-full")}>
+            <div className="border-t border-border/30 pt-4">
+              {editable && blockId && onEditField ? (
+                <button
+                  type="button"
+                  onClick={(e) => handleEdit(e, `members.${index}.ctaText`)}
+                  className="group/cta inline-flex cursor-pointer items-center gap-2 rounded px-1 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                  style={{ color: ctaColor || undefined }}
+                >
+                  {member.ctaText}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-0.5" />
+                </button>
+              ) : (
+                <a
+                  href={member.ctaHref || "#"}
+                  className="group/cta inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                  style={{ color: ctaColor || undefined }}
+                >
+                  {member.ctaText}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover/cta:translate-x-1" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
+export function TeamGridBlock({
+  blockId,
+  editable = false,
+  onEditField,
+  section,
+  headline,
+  subheadline,
+  eyebrow,
+  columns = 3,
+  layout = "cards",
+  members,
+  headlineColor,
+  subheadlineColor,
+  eyebrowColor,
+  nameColor,
+  roleColor,
+  bioColor,
+  bioAlign,
+  ctaColor,
+  cardBgColor,
+  cardBorderColor,
+  containerBackgroundMode,
+  containerBackgroundColor,
+  containerBackgroundGradientPreset,
+  containerGradientFrom,
+  containerGradientVia,
+  containerGradientTo,
+  containerGradientAngle,
+  containerOpacity = 1,
+  containerShadow,
+  containerBorder = false,
+  containerBorderColor,
+  typography,
+  elements,
+  interactivePreview = false,
+  activeItemId = null,
+  onItemSelect,
+}: TeamGridBlockProps) {
+  const sectionBg = resolveSectionBg(section)
+  const usesContainerPanel = containerBackgroundMode && containerBackgroundMode !== "transparent"
+  const resolvedContainerOpacity =
+    typeof containerOpacity === "number" && Number.isFinite(containerOpacity)
+      ? Math.min(1, Math.max(0, containerOpacity))
+      : 1
+  const containerBg = resolveContainerBg({
+    mode: containerBackgroundMode,
+    color: containerBackgroundColor,
+    gradientPreset: containerBackgroundGradientPreset,
+    gradient: {
+      from: containerGradientFrom || "",
+      via: containerGradientVia || "",
+      to: containerGradientTo || "",
+      angle: containerGradientAngle ?? 135,
+    },
+  })
+  const containerShadowCss = resolveBoxShadow(containerShadow)
+  const containerBorderStyle: React.CSSProperties = {}
+  if (containerBorder) {
+    containerBorderStyle.borderWidth = "1px"
+    containerBorderStyle.borderStyle = "solid"
+    const hex = containerBorderColor?.trim()
+    containerBorderStyle.borderColor = hex && /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : "var(--border)"
+  }
+  const handleInlineEdit = useCallback(
+    (e: React.MouseEvent, fieldPath: string) => {
+      if (!editable || !blockId || !onEditField) return
+      e.preventDefault()
+      e.stopPropagation()
+      onEditField(
+        blockId,
+        fieldPath,
+        (e.currentTarget as HTMLElement).getBoundingClientRect(),
+      )
+    },
+    [editable, blockId, onEditField],
+  )
+
+  return (
+    <section
+      className={cn(
+        "relative overflow-x-hidden",
+        // Wenn wir ein Inner-Panel nutzen, soll außerhalb des Panels kein zusätzlicher Hintergrund sichtbar sein.
+        !usesContainerPanel && sectionBg.className
+      )}
+      style={!usesContainerPanel ? sectionBg.style : undefined}
+      aria-label={headline || "Team"}
+    >
+      {/* Inner Container Panel (Header + Grid) */}
+      <AnimatedBlock config={section?.animation}>
+        <div
+          className={cn(
+            // Mobile: use more width, less side padding/margins so cards don't feel cramped.
+            // Desktop: keep existing spacious container.
+            // NOTE: Avoid `w-full` + horizontal margins (can exceed viewport and get clipped by overflow-x-hidden).
+            "relative overflow-hidden w-[calc(100%-1rem)] max-w-6xl mx-auto rounded-3xl px-4 py-6 sm:w-[calc(100%-2rem)] sm:px-6 sm:py-8 md:w-full md:px-14 md:py-10",
+            // backdrop blur should affect the background layer; applied on overlay below
+          )}
+          style={{
+            ...(containerBorder ? containerBorderStyle : {}),
+            ...(containerShadowCss ? { boxShadow: containerShadowCss } : {}),
+          }}
+        >
+        {/* Panel Background (only affects background, not content opacity) */}
+        {usesContainerPanel && (
+          <div
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0 z-0 rounded-3xl",
+              containerBackgroundMode === "gradient" && "backdrop-blur-sm"
+            )}
+            style={{
+              ...(containerBg.style ?? {}),
+              opacity: resolvedContainerOpacity,
+            }}
+          />
+        )}
+        {/* Content Wrapper */}
+        <div className="relative z-10 w-full px-0 sm:px-0">
+        {/* ---- Header ---- */}
+        {(eyebrow || headline || subheadline) && (
+          <header className="mb-10 md:mb-12 text-center">
+            {/* Eyebrow */}
+            {eyebrow && (
+              <div className="mb-5 flex items-center justify-center gap-4">
+                <div className="h-px w-12 bg-linear-to-r from-transparent to-primary/40" />
+                <ElementAnimated elementId="team.eyebrow" elements={elements as Record<string, ElementConfig | undefined> | undefined}>
+                <span
+                  data-element-id="team.eyebrow"
+                  onClick={(e) => handleInlineEdit(e, "eyebrow")}
+                  className={cn(
+                    mergeTypographyClasses(
+                      "text-xs font-semibold uppercase tracking-[0.2em] text-primary",
+                      ((typography ?? {}) as Record<string, TypographySettings | undefined>)["team.eyebrow"]
+                    ),
+                    editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10",
+                  )}
+                  style={eyebrowColor ? { color: eyebrowColor } : undefined}
+                >
+                  {eyebrow}
+                </span>
+                </ElementAnimated>
+                <div className="h-px w-12 bg-linear-to-l from-transparent to-primary/40" />
+              </div>
+            )}
+
+            {/* Headline */}
+            {headline && (
+              <ElementAnimated elementId="team.headline" elements={elements as Record<string, ElementConfig | undefined> | undefined}>
+              <h2
+                data-element-id="team.headline"
+                onClick={(e) => handleInlineEdit(e, "headline")}
+                className={cn(
+                  mergeTypographyClasses(
+                    "mx-auto max-w-3xl text-balance text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl",
+                    ((typography ?? {}) as Record<string, TypographySettings | undefined>)["team.headline"]
+                  ),
+                  editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10",
+                )}
+                style={headlineColor ? { color: headlineColor } : undefined}
+              >
+                {headline}
+              </h2>
+              </ElementAnimated>
+            )}
+
+            {/* Subheadline */}
+            {subheadline && (
+              <ElementAnimated elementId="team.subheadline" elements={elements as Record<string, ElementConfig | undefined> | undefined}>
+              <p
+                data-element-id="team.subheadline"
+                onClick={(e) => handleInlineEdit(e, "subheadline")}
+                className={cn(
+                  mergeTypographyClasses(
+                    "mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg",
+                    ((typography ?? {}) as Record<string, TypographySettings | undefined>)["team.subheadline"]
+                  ),
+                  editable && blockId && onEditField && "cursor-pointer rounded px-1 transition-colors hover:bg-primary/10",
+                )}
+                style={subheadlineColor ? { color: subheadlineColor } : undefined}
+              >
+                {subheadline}
+              </p>
+              </ElementAnimated>
+            )}
+          </header>
+        )}
+
+        {/* ---- Grid ---- */}
+        <div
+          className={cn("grid gap-6 lg:gap-8", columnsMap[columns])}
+        >
+          {members.map((member, index) => (
+            <MemberCard
+              key={member.id}
+              member={member}
+              index={index}
+              layout={layout}
+              nameColor={nameColor}
+              roleColor={roleColor}
+              bioColor={bioColor}
+              bioAlign={bioAlign}
+              ctaColor={ctaColor}
+              cardBgColor={cardBgColor}
+              cardBorderColor={cardBorderColor}
+              editable={editable}
+              blockId={blockId}
+              onEditField={onEditField}
+              typography={typography}
+              elements={elements as Record<string, ElementConfig | undefined> | undefined}
+              interactivePreview={interactivePreview}
+              activeItemId={activeItemId}
+              onItemSelect={onItemSelect}
+            />
+          ))}
+        </div>
+      </div>
+        </div>
+      </AnimatedBlock>
+    </section>
+  )
+}

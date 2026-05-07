@@ -1,0 +1,1529 @@
+"use client"
+
+import { useMemo, useState, useCallback } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
+import { ImageField } from "./ImageField"
+import { Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, Save, Zap } from "lucide-react"
+import { arrayMove, arrayRemove } from "@/lib/cms/arrayOps"
+import { uuid } from "@/lib/cms/arrayOps"
+import type { BrandKey } from "@/components/brand/brandAssets"
+import type { NavConfig, NavLink } from "@/types/navigation"
+import { DEFAULT_NAV_CONFIG } from "@/lib/consent/navigation-defaults"
+import type { PageForNavigation, AnchorTargetPage } from "@/lib/supabase/pages.server"
+import { getLogoSizeClasses } from "@/lib/theme/logoSize"
+import type { BlockSectionProps, MediaValue, SectionBackgroundPreset } from "@/types/cms"
+import { useEffect } from "react"
+import { cn } from "@/lib/utils"
+import { ensureDefaultPresets } from "@/lib/cms/sectionPresets"
+import { HEADER_PRESETS } from "@/lib/admin/header-presets"
+import { NAV_STYLE_PRESETS, getPresetById, type NavStylePresetId } from "@/lib/navigation/nav-style-presets"
+import { NAV_HOVER_PRESETS, getNavHoverPreset, type NavHoverPresetId } from "@/lib/navigation/nav-hover-presets"
+import { HeaderClient } from "@/components/navigation/HeaderClient"
+import { blockRegistry } from "@/cms/blocks/registry"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+
+type NavigationEditorClientProps = {
+  initialPhysio: NavConfig
+  initialKonzept: NavConfig
+  initialPages: PageForNavigation[]
+  initialAnchorTargetsPhysio?: AnchorTargetPage[]
+  initialAnchorTargetsKonzept?: AnchorTargetPage[]
+}
+
+export function NavigationEditorClient({
+  initialPhysio,
+  initialKonzept,
+  initialPages,
+  initialAnchorTargetsPhysio = [],
+  initialAnchorTargetsKonzept = [],
+}: NavigationEditorClientProps) {
+  const { toast } = useToast()
+  const [activeBrand, setActiveBrand] = useState<BrandKey>("physiotherapy")
+  const [physioConfig, setPhysioConfig] = useState<NavConfig>(
+    ensureDefaultPresets(initialPhysio || DEFAULT_NAV_CONFIG, "physiotherapy")
+  )
+  const [konzeptConfig, setKonzeptConfig] = useState<NavConfig>(
+    ensureDefaultPresets(initialKonzept || DEFAULT_NAV_CONFIG, "physio-konzept")
+  )
+  const [pages] = useState<PageForNavigation[]>(initialPages || [])
+  const [anchorTargetsPhysio] = useState<AnchorTargetPage[]>(initialAnchorTargetsPhysio || [])
+  const [anchorTargetsKonzept] = useState<AnchorTargetPage[]>(initialAnchorTargetsKonzept || [])
+  const [saving, setSaving] = useState(false)
+  const [presetJsonDraft, setPresetJsonDraft] = useState<Record<string, string>>({})
+  
+  // Collapse state for navigation links (UI-only, not persisted)
+  const [collapsedLinkItems, setCollapsedLinkItems] = useState<Record<string, boolean>>({})
+  
+  // Header draft/saved state
+  const [physioHeaderDraft, setPhysioHeaderDraft] = useState<NavConfig>(physioConfig)
+  const [konzeptHeaderDraft, setKonzeptHeaderDraft] = useState<NavConfig>(konzeptConfig)
+  const [previewBrand, setPreviewBrand] = useState<BrandKey>("physiotherapy")
+  const [previewViewport, setPreviewViewport] = useState<"desktop" | "mobile">("desktop")
+
+  // Seed defaults persistently (idempotent) for both brands when admin opens this page
+  useEffect(() => {
+    void fetch(`/api/admin/section-presets?brand=physiotherapy`, { cache: "no-store" }).catch(() => {})
+    void fetch(`/api/admin/section-presets?brand=physio-konzept`, { cache: "no-store" }).catch(() => {})
+  }, [])
+
+  const navConfig = useMemo(() => {
+    return activeBrand === "physiotherapy" ? physioConfig : konzeptConfig
+  }, [activeBrand, physioConfig, konzeptConfig])
+
+  const headerDraft = useMemo(() => {
+    return activeBrand === "physiotherapy" ? physioHeaderDraft : konzeptHeaderDraft
+  }, [activeBrand, physioHeaderDraft, konzeptHeaderDraft])
+
+  // Initialize collapse state after mount to avoid hydration mismatch
+  useEffect(() => {
+    if (Object.keys(collapsedLinkItems).length === 0 && navConfig?.links) {
+      const collapsed: Record<string, boolean> = {}
+      navConfig.links.forEach((link) => {
+        collapsed[link.id] = true
+      })
+      setCollapsedLinkItems(collapsed)
+    }
+  }, [activeBrand])
+
+  // Save navigation
+  const handleSave = useCallback(async (configToSave?: NavConfig) => {
+    const configData = configToSave || navConfig
+    if (!configData) return
+
+    setSaving(true)
+    try {
+      const response = await fetch("/api/navigation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          brand: activeBrand,
+          config: configData,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to save navigation")
+      }
+
+      // Sync draft with saved config
+      if (activeBrand === "physiotherapy") {
+        setPhysioHeaderDraft(configData)
+      } else {
+        setKonzeptHeaderDraft(configData)
+      }
+
+      toast({
+        title: "Gespeichert",
+        description: "Navigation wurde erfolgreich gespeichert",
+      })
+    } catch (error) {
+      console.error("Error saving navigation:", error)
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Navigation konnte nicht gespeichert werden",
+        variant: "destructive",
+      })
+    } finally {
+      setSaving(false)
+    }
+  }, [activeBrand, toast])
+
+  // Update config helper
+  const updateConfig = useCallback(
+    (updates: Partial<NavConfig>) => {
+      if (activeBrand === "physiotherapy") {
+        setPhysioConfig((prev) => ({ ...prev, ...updates }))
+      } else {
+        setKonzeptConfig((prev) => ({ ...prev, ...updates }))
+      }
+    },
+    [activeBrand]
+  )
+
+  // Header-specific helpers
+  const applyHeaderPreset = useCallback(
+    (presetId: string) => {
+      const preset = HEADER_PRESETS.find((p) => p.id === presetId)
+      if (!preset) return
+
+      const updatedDraft = {
+        ...headerDraft,
+        ...preset.config,
+      }
+
+      if (activeBrand === "physiotherapy") {
+        setPhysioHeaderDraft(updatedDraft)
+      } else {
+        setKonzeptHeaderDraft(updatedDraft)
+      }
+
+      toast({
+        title: "Preset angewendet",
+        description: `Header-Preset "${preset.name}" wurde auf Draft übernommen`,
+      })
+    },
+    [activeBrand, headerDraft, toast]
+  )
+
+  const resetHeaderDraft = useCallback(() => {
+    if (activeBrand === "physiotherapy") {
+      setPhysioHeaderDraft(physioConfig)
+    } else {
+      setKonzeptHeaderDraft(konzeptConfig)
+    }
+
+    toast({
+      title: "Draft zurückgesetzt",
+      description: "Header-Draft wurde auf zuletzt gespeicherte Version zurückgesetzt",
+    })
+  }, [activeBrand, physioConfig, konzeptConfig, toast])
+
+  const saveHeaderDraft = useCallback(async () => {
+    const configToSave = activeBrand === "physiotherapy" 
+      ? { ...physioConfig, ...physioHeaderDraft } 
+      : { ...konzeptConfig, ...konzeptHeaderDraft }
+
+    if (activeBrand === "physiotherapy") {
+      setPhysioConfig(configToSave)
+    } else {
+      setKonzeptConfig(configToSave)
+    }
+
+    // Trigger save with the new config
+    await handleSave(configToSave)
+  }, [activeBrand, physioConfig, konzeptConfig, physioHeaderDraft, konzeptHeaderDraft, handleSave])
+
+  const updateHeaderDraft = useCallback(
+    (updates: Partial<NavConfig>) => {
+      if (activeBrand === "physiotherapy") {
+        setPhysioHeaderDraft((prev) => ({ ...prev, ...updates }))
+      } else {
+        setKonzeptHeaderDraft((prev) => ({ ...prev, ...updates }))
+      }
+    },
+    [activeBrand]
+  )
+
+  const presets = navConfig.presets?.sectionBackground ?? []
+  const updatePresets = useCallback(
+    (next: SectionBackgroundPreset[]) => {
+      updateConfig({
+        presets: {
+          ...(navConfig.presets ?? {}),
+          sectionBackground: next,
+        },
+      })
+    },
+    [navConfig.presets, updateConfig]
+  )
+
+  const addPreset = useCallback(() => {
+    const baseSection: BlockSectionProps = {
+      layout: { width: "contained", paddingY: "lg", minHeight: "auto" },
+      background: { type: "none", parallax: false },
+    }
+    const next: SectionBackgroundPreset = {
+      id: uuid(),
+      name: "Neues Preset",
+      description: "",
+      section: baseSection,
+    }
+    updatePresets([...presets, next])
+  }, [presets, updatePresets])
+
+  const removePreset = useCallback(
+    (index: number) => {
+      updatePresets(arrayRemove(presets, index))
+    },
+    [presets, updatePresets]
+  )
+
+  const movePreset = useCallback(
+    (index: number, direction: -1 | 1) => {
+      const to = index + direction
+      if (to < 0 || to >= presets.length) return
+      updatePresets(arrayMove(presets, index, to))
+    },
+    [presets, updatePresets]
+  )
+
+  const updatePreset = useCallback(
+    (index: number, updates: Partial<SectionBackgroundPreset>) => {
+      const next = [...presets]
+      next[index] = { ...next[index], ...updates }
+      updatePresets(next)
+    },
+    [presets, updatePresets]
+  )
+
+  const validateSectionJson = useCallback((section: unknown): string | null => {
+    if (!section || typeof section !== "object") return "Section fehlt"
+    const s = section as Record<string, unknown>
+    if (!s.layout || typeof s.layout !== "object") return "layout fehlt"
+    if (!s.background || typeof s.background !== "object") return "background fehlt"
+    const bg = s.background as Record<string, unknown>
+    if (bg.type === "gradient") {
+      const gradient = (bg.gradient && typeof bg.gradient === "object" ? (bg.gradient as Record<string, unknown>) : null)
+      const stops = gradient?.stops
+      if (!Array.isArray(stops) || stops.length < 2 || stops.length > 5) return "Gradient: stops müssen 2–5 sein"
+      for (const stop of stops) {
+        if (!stop || typeof stop !== "object") return "Gradient: stop ungültig"
+        const st = stop as Record<string, unknown>
+        const pos = st.pos
+        const color = st.color
+        if (typeof pos !== "number" || pos < 0 || pos > 100) return "Gradient: pos muss 0–100 sein"
+        if (typeof color !== "string" || !color) return "Gradient: color fehlt"
+      }
+    }
+    return null
+  }, [])
+
+  const removeLink = useCallback(
+    (index: number) => {
+      if (!navConfig) return
+      updateConfig({ links: arrayRemove(navConfig.links, index) })
+    },
+    [navConfig, updateConfig]
+  )
+
+  const moveLink = useCallback(
+    (index: number, direction: -1 | 1) => {
+      if (!navConfig) return
+      const to = index + direction
+      if (to < 0 || to >= navConfig.links.length) return
+      const moved = arrayMove(navConfig.links, index, to)
+      // Update sort values
+      const withSort = moved.map((link, i) => ({ ...link, sort: i }))
+      updateConfig({ links: withSort })
+    },
+    [navConfig, updateConfig]
+  )
+
+  const updateLink = useCallback(
+    (index: number, updates: Partial<NavLink>) => {
+      if (!navConfig) return
+      const updated = [...navConfig.links]
+      updated[index] = { ...updated[index], ...updates }
+      updateConfig({ links: updated })
+    },
+    [navConfig, updateConfig]
+  )
+
+  // Collapse/expand helpers
+  const toggleLinkCollapse = useCallback((linkId: string) => {
+    setCollapsedLinkItems((prev) => ({
+      ...prev,
+      [linkId]: !prev[linkId],
+    }))
+  }, [])
+
+  const expandAllLinks = useCallback(() => {
+    setCollapsedLinkItems({})
+  }, [])
+
+  const collapseAllLinks = useCallback(() => {
+    if (!navConfig) return
+    const allCollapsed: Record<string, boolean> = {}
+    navConfig.links.forEach((link) => {
+      allCollapsed[link.id] = true
+    })
+    setCollapsedLinkItems(allCollapsed)
+  }, [navConfig])
+
+  const addLinkWithExpand = useCallback(() => {
+    if (!navConfig) return
+    const newLink: NavLink = {
+      id: uuid(),
+      label: "Neuer Link",
+      type: "page",
+      visibility: "both",
+      sort: navConfig.links.length,
+    }
+    updateConfig({ links: [...navConfig.links, newLink] })
+    setCollapsedLinkItems((prev) => ({
+      ...prev,
+      [newLink.id]: false,
+    }))
+  }, [navConfig, updateConfig])
+
+  const removeLinkWithCleanup = useCallback(
+    (index: number) => {
+      if (!navConfig) return
+      const linkToRemove = navConfig.links[index]
+      setCollapsedLinkItems((prev) => {
+        const updated = { ...prev }
+        delete updated[linkToRemove.id]
+        return updated
+      })
+      removeLink(index)
+    },
+    [navConfig, removeLink]
+  )
+
+  if (!navConfig) {
+    return <div className="flex items-center justify-center">Laden...</div>
+  }
+
+  return (
+    <div className="flex w-full min-h-0 flex-col">
+      <div className="border-b border-border bg-background sticky top-0 z-40 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Navigation</h1>
+          <Button onClick={() => handleSave(navConfig)} disabled={saving} size="lg">
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? "Speichern..." : "Speichern"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6 overflow-x-hidden p-6">
+        <div className="grid w-full grid-cols-2 gap-2">
+          <button
+            onClick={() => setActiveBrand("physiotherapy")}
+            className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+              activeBrand === "physiotherapy"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-muted/80"
+            }`}
+          >
+            Physiotherapie
+          </button>
+          <button
+            onClick={() => setActiveBrand("physio-konzept")}
+            className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
+              activeBrand === "physio-konzept"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground hover:bg-muted/80"
+            }`}
+          >
+            Physio-Konzept
+          </button>
+        </div>
+            {/* Logo */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <ImageField
+                  id="navigation-logo"
+                  label=""
+                  value={navConfig.logo && "url" in navConfig.logo ? navConfig.logo.url : ""}
+                  onChange={(url) => {
+                    updateConfig({
+                      logo: url ? { url } : null,
+                    })
+                  }}
+                  onMediaSelect={(mediaId, url) => {
+                    updateConfig({
+                      logo: { mediaId, url },
+                    })
+                  }}
+                  placeholder="/placeholder-logo.svg"
+                />
+              </div>
+              
+              {/* Logo Size */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Logo-Größe</Label>
+                <Select
+                  value={navConfig.logoSize || "md"}
+                  onValueChange={(value: "sm" | "md" | "lg") => {
+                    updateConfig({ logoSize: value })
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sm">Klein (36px)</SelectItem>
+                    <SelectItem value="md">Mittel (48px)</SelectItem>
+                    <SelectItem value="lg">Groß (56px)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Höhe des Logos im Header
+                </p>
+              </div>
+              
+              {/* Logo Fit */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Darstellung</Label>
+                <Select
+                  value={navConfig.logoFit || "contain"}
+                  onValueChange={(value: "contain" | "cover") => {
+                    updateConfig({ logoFit: value })
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="contain">Vollständig anzeigen</SelectItem>
+                    <SelectItem value="cover">Ausfüllen</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Vollständig: Logo wird nicht abgeschnitten. Ausfüllen: Logo füllt den Container.
+                </p>
+              </div>
+              
+              {/* Logo Preview */}
+              {navConfig.logo && <LogoPreview logo={navConfig.logo} logoSize={navConfig.logoSize} logoFit={navConfig.logoFit} activeBrand={activeBrand} />}
+            </div>
+
+            <Separator />
+
+            {/* STYLE PRESET SELECTION */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Navigation Style
+              </Label>
+              
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Vordefinierter Stil</Label>
+                <Select
+                  value={navConfig.navStylePresetId ?? "minimal"}
+                  onValueChange={(value) => updateConfig({ navStylePresetId: value as NavStylePresetId })}
+                >
+                  <SelectTrigger className="px-4 py-2.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NAV_STYLE_PRESETS.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{preset.label}</span>
+                          <span className="text-xs text-muted-foreground">{preset.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {getPresetById(navConfig.navStylePresetId ?? "minimal")?.description}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+            
+            {/* Link Hover Preset */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Link Hover-Effekt
+              </Label>
+              
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">Effekt-Voreinstellung</Label>
+                <Select
+                  value={navConfig.navHoverPresetId ?? "underline-slide"}
+                  onValueChange={(value) => updateConfig({ navHoverPresetId: value as NavHoverPresetId })}
+                >
+                  <SelectTrigger className="px-4 py-2.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NAV_HOVER_PRESETS.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{preset.label}</span>
+                          <span className="text-xs text-muted-foreground">{preset.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {getNavHoverPreset(navConfig.navHoverPresetId)?.description}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Link Farben */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Link Farben
+              </Label>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* Grundfarbe */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Grundfarbe</Label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={navConfig.navLinkColor ?? "#000000"}
+                      onChange={(e) => updateConfig({ navLinkColor: e.target.value })}
+                      className="h-10 w-14 rounded border border-border cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={navConfig.navLinkColor ?? ""}
+                      onChange={(e) => updateConfig({ navLinkColor: e.target.value || null })}
+                      placeholder="#000000"
+                      className="flex-1 h-9 text-xs font-mono"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateConfig({ navLinkColor: null })}
+                    className="w-full text-xs"
+                  >
+                    Zurücksetzen
+                  </Button>
+                </div>
+
+                {/* Hover-Farbe */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Hover-Farbe</Label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={navConfig.navLinkHoverColor ?? "#0000ff"}
+                      onChange={(e) => updateConfig({ navLinkHoverColor: e.target.value })}
+                      className="h-10 w-14 rounded border border-border cursor-pointer"
+                    />
+                    <Input
+                      type="text"
+                      value={navConfig.navLinkHoverColor ?? ""}
+                      onChange={(e) => updateConfig({ navLinkHoverColor: e.target.value || null })}
+                      placeholder="#0000ff"
+                      className="flex-1 h-9 text-xs font-mono"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateConfig({ navLinkHoverColor: null })}
+                    className="w-full text-xs"
+                  >
+                    Zurücksetzen
+                  </Button>
+                </div>
+              </div>
+
+              {/* Active und Indicator (optional) */}
+              <details className="cursor-pointer">
+                <summary className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                  Erweiterte Farben (optional)
+                </summary>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mt-3">
+                  {/* Active-Farbe */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Active-Farbe</Label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={navConfig.navLinkActiveColor ?? "#00ff00"}
+                        onChange={(e) => updateConfig({ navLinkActiveColor: e.target.value })}
+                        className="h-10 w-14 rounded border border-border cursor-pointer"
+                      />
+                      <Input
+                        type="text"
+                        value={navConfig.navLinkActiveColor ?? ""}
+                        onChange={(e) => updateConfig({ navLinkActiveColor: e.target.value || null })}
+                        placeholder="#00ff00"
+                        className="flex-1 h-9 text-xs font-mono"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateConfig({ navLinkActiveColor: null })}
+                      className="w-full text-xs"
+                    >
+                      Zurücksetzen
+                    </Button>
+                  </div>
+
+                  {/* Glow/Indicator Farbe */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Glow-Farbe</Label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={navConfig.navIndicatorColor ?? "#ffaa00"}
+                        onChange={(e) => updateConfig({ navIndicatorColor: e.target.value })}
+                        className="h-10 w-14 rounded border border-border cursor-pointer"
+                      />
+                      <Input
+                        type="text"
+                        value={navConfig.navIndicatorColor ?? ""}
+                        onChange={(e) => updateConfig({ navIndicatorColor: e.target.value || null })}
+                        placeholder="#ffaa00"
+                        className="flex-1 h-9 text-xs font-mono"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateConfig({ navIndicatorColor: null })}
+                      className="w-full text-xs"
+                    >
+                      Zurücksetzen
+                    </Button>
+                  </div>
+                </div>
+              </details>
+
+              <p className="text-xs text-muted-foreground">
+                Leer lassen = Theme-Standard verwenden. Farben sind hex (#RRGGBB) oder mit Alpha (#RRGGBBAA).
+              </p>
+            </div>
+
+            <Separator />
+            <div className="space-y-4">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Header Konfiguration
+              </Label>
+
+              {/* Header Presets Grid */}
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground">Schnellauswahl</Label>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-5 lg:grid-cols-5">
+                  {HEADER_PRESETS.map((preset) => {
+                    const isSelected =
+                      headerDraft.headerLayoutColumns === preset.config.headerLayoutColumns &&
+                      headerDraft.headerFontPreset === preset.config.headerFontPreset &&
+                      headerDraft.headerMotionPreset === preset.config.headerMotionPreset
+                    return (
+                      <button
+                        key={preset.id}
+                        onClick={() => applyHeaderPreset(preset.id)}
+                        className={cn(
+                          "group relative px-3 py-3 rounded-lg border-2 transition-all duration-200",
+                          "flex flex-col items-start gap-1.5 text-left",
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "border-border bg-card hover:border-primary/50 hover:bg-primary/5"
+                        )}
+                      >
+                        <span className="text-xs font-semibold leading-tight">{preset.name}</span>
+                        <span className="text-xs text-muted-foreground leading-tight">{preset.description}</span>
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Header Controls - 3 Column Grid */}
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground">Individuelle Einstellungen</Label>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {/* Columns */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Spalten</Label>
+                    <Select
+                      value={String(headerDraft.headerLayoutColumns ?? 4)}
+                      onValueChange={(v) => updateHeaderDraft({ headerLayoutColumns: parseInt(v) as 3 | 4 | 5 })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 Spalten (Kompakt)</SelectItem>
+                        <SelectItem value="4">4 Spalten (Standard)</SelectItem>
+                        <SelectItem value="5">5 Spalten (Erweitert)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Font Preset */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Font-Stil</Label>
+                    <Select
+                      value={headerDraft.headerFontPreset ?? "brand"}
+                      onValueChange={(v: "brand" | "sans" | "serif" | "mono") => updateHeaderDraft({ headerFontPreset: v })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="brand">Brand (Standard)</SelectItem>
+                        <SelectItem value="sans">Sans-Serif</SelectItem>
+                        <SelectItem value="serif">Serif</SelectItem>
+                        <SelectItem value="mono">Monospace</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Motion Preset */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium">Animation</Label>
+                    <Select
+                      value={headerDraft.headerMotionPreset ?? "subtle"}
+                      onValueChange={(v: "none" | "subtle" | "glassy" | "snappy") => updateHeaderDraft({ headerMotionPreset: v })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Keine</SelectItem>
+                        <SelectItem value="subtle">Subtil</SelectItem>
+                        <SelectItem value="glassy">Glasig</SelectItem>
+                        <SelectItem value="snappy">Schnell</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Header Draft Actions - Split Layout */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={saveHeaderDraft}
+                  disabled={saving}
+                  className="flex-1 transition-all hover:shadow-md"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? "Speichern..." : "Speichern"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={resetHeaderDraft}
+                  className="transition-all hover:bg-destructive/5"
+                >
+                  Zurücksetzen
+                </Button>
+              </div>
+
+              {/* Live Preview */}
+              <div className="space-y-3 pt-4 border-t">
+                <Label className="text-xs font-medium text-muted-foreground">Live-Vorschau</Label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="flex gap-1 rounded-lg border border-border p-1 bg-muted/50">
+                    {(["physiotherapy", "physio-konzept"] as const).map((brand) => (
+                      <Button
+                        key={brand}
+                        size="sm"
+                        variant={previewBrand === brand ? "default" : "ghost"}
+                        onClick={() => setPreviewBrand(brand)}
+                        className="text-xs h-8"
+                      >
+                        {brand === "physiotherapy" ? "Physio" : "Konzept"}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 ml-auto rounded-lg border border-border p-1 bg-muted/50">
+                    {(["desktop", "mobile"] as const).map((viewport) => (
+                      <Button
+                        key={viewport}
+                        size="sm"
+                        variant={previewViewport === viewport ? "default" : "ghost"}
+                        onClick={() => setPreviewViewport(viewport)}
+                        className="text-xs h-8 capitalize"
+                      >
+                        {viewport}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div
+                  className={cn(
+                    "border border-border rounded-lg bg-white shadow-sm overflow-hidden dark:bg-slate-950",
+                    previewViewport === "mobile" ? "mx-auto" : ""
+                  )}
+                  style={{ width: previewViewport === "mobile" ? "390px" : "100%" }}
+                >
+                  <div className="relative h-[500px] overflow-auto">
+                    <HeaderClient brand={previewBrand} navConfig={headerDraft} />
+                    <div className="bg-muted/50 flex items-center justify-center py-6">
+                      <span className="text-xs text-muted-foreground">
+                        {previewViewport === "mobile" ? "Mobile (390px)" : "Desktop"} • Scroll zum Testen
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Links */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Links</Label>
+                <Button variant="outline" size="sm" onClick={addLinkWithExpand}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Link hinzufügen
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex gap-2 mb-2">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={expandAllLinks}>
+                    Alle aufklappen
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={collapseAllLinks}>
+                    Alle zuklappen
+                  </Button>
+                </div>
+
+                {navConfig.links.map((link, index) => {
+                  const isCollapsed = collapsedLinkItems[link.id] ?? true
+                  const displayLabel = link.label || "Neuer Link"
+                  const displayType = link.type === "page" ? "Seite" : link.type === "url" ? "URL" : "Anker"
+                  const displayTarget =
+                    link.type === "page"
+                      ? link.pageSlug
+                      : link.type === "url"
+                        ? link.href?.substring(0, 30)
+                        : link.anchorPageSlug
+
+                  return (
+                    <div key={link.id} className="rounded-lg border border-border bg-card overflow-hidden">
+                      {/* Collapsible Header */}
+                      <div
+                        onClick={() => toggleLinkCollapse(link.id)}
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <ChevronRight
+                              className={cn(
+                                "h-4 w-4 shrink-0 transition-transform",
+                                !isCollapsed && "rotate-90"
+                              )}
+                            />
+                            <span className="text-sm font-medium truncate">{displayLabel}</span>
+                          </div>
+                          {isCollapsed && displayTarget && (
+                            <div className="text-xs text-muted-foreground mt-1 ml-6 truncate">
+                              {displayType}: {displayTarget}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              moveLink(index, -1)
+                            }}
+                            disabled={index === 0}
+                            title="Nach oben"
+                          >
+                            <ChevronUp className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              moveLink(index, 1)
+                            }}
+                            disabled={index === navConfig.links.length - 1}
+                            title="Nach unten"
+                          >
+                            <ChevronDown className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeLinkWithCleanup(index)
+                            }}
+                            title="Löschen"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Expandable Content */}
+                      {!isCollapsed && (
+                        <div className="px-4 py-3 border-t border-border space-y-3 bg-muted/20">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Label</Label>
+                              <Input
+                                value={link.label}
+                                onChange={(e) => updateLink(index, { label: e.target.value })}
+                                placeholder="Link-Text"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Typ</Label>
+                              <Select
+                                value={link.type}
+                                onValueChange={(v: "page" | "url" | "anchor") => {
+                                  updateLink(index, {
+                                    type: v,
+                                    pageSlug: v === "page" ? link.pageSlug : undefined,
+                                    href: v === "url" ? link.href : undefined,
+                                    anchorPageSlug: v === "anchor" ? link.anchorPageSlug : undefined,
+                                    anchorBlockId: v === "anchor" ? link.anchorBlockId : undefined,
+                                  })
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="page">Interne Seite</SelectItem>
+                                  <SelectItem value="url">Externe URL</SelectItem>
+                                  <SelectItem value="anchor">Anker (Onepage-Scroll)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {link.type === "anchor" ? (
+                            <>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Seite</Label>
+                                <Select
+                                  value={link.anchorPageSlug ?? ""}
+                                  onValueChange={(slug) =>
+                                    updateLink(index, {
+                                      anchorPageSlug: slug || undefined,
+                                      anchorBlockId: undefined,
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Seite wählen" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(activeBrand === "physiotherapy" ? anchorTargetsPhysio : anchorTargetsKonzept).map(
+                                      (p) => (
+                                        <SelectItem key={p.slug} value={p.slug}>
+                                          {p.title}
+                                          {p.blocks.length > 0 && (
+                                            <span className="text-muted-foreground text-xs ml-1">
+                                              ({p.blocks.length})
+                                            </span>
+                                          )}
+                                        </SelectItem>
+                                      )
+                                    )}
+                                    {((activeBrand === "physiotherapy" ? anchorTargetsPhysio : anchorTargetsKonzept).length === 0) && (
+                                      <SelectItem value="" disabled>
+                                        Keine Seiten
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">Block</Label>
+                                <Select
+                                  value={link.anchorBlockId ?? ""}
+                                  onValueChange={(id) => updateLink(index, { anchorBlockId: id || undefined })}
+                                  disabled={!link.anchorPageSlug}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Block wählen" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(
+                                      (activeBrand === "physiotherapy" ? anchorTargetsPhysio : anchorTargetsKonzept).find(
+                                        (p) => p.slug === link.anchorPageSlug
+                                      )?.blocks ?? []
+                                    ).map((b) => (
+                                      <SelectItem key={b.id} value={b.id}>
+                                        {blockRegistry[b.type as keyof typeof blockRegistry]?.label ?? b.type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </>
+                          ) : link.type === "page" ? (
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Seite</Label>
+                              <Select
+                                value={link.pageSlug || ""}
+                                onValueChange={(slug) => updateLink(index, { pageSlug: slug })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seite auswählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {pages.length === 0 ? (
+                                    <SelectItem value="" disabled>
+                                      Keine Seiten gefunden
+                                    </SelectItem>
+                                  ) : (
+                                    pages.map((page) => (
+                                      <SelectItem key={page.id} value={page.slug || ""}>
+                                        {page.title || "Untitled"} ({page.slug || "no-slug"})
+                                        {page.status === "draft" && " [Draft]"}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">URL</Label>
+                              <Input
+                                value={link.href || ""}
+                                onChange={(e) => updateLink(index, { href: e.target.value })}
+                                placeholder="https://..."
+                              />
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Sichtbarkeit</Label>
+                              <Select
+                                value={link.visibility}
+                                onValueChange={(v: "physiotherapy" | "physio-konzept" | "both") =>
+                                  updateLink(index, { visibility: v })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="both">Beide</SelectItem>
+                                  <SelectItem value="physiotherapy">Nur Physiotherapie</SelectItem>
+                                  <SelectItem value="physio-konzept">Nur Physio-Konzept</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {link.type === "url" && (
+                              <div className="flex items-center space-x-2 pt-6">
+                                <Switch
+                                  id={`link-${link.id}-newtab`}
+                                  checked={link.newTab || false}
+                                  onCheckedChange={(checked) => updateLink(index, { newTab: checked })}
+                                />
+                                <Label htmlFor={`link-${link.id}-newtab`} className="text-xs">
+                                  In neuem Tab öffnen
+                                </Label>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Presets - In Accordion for Advanced Mode */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="advanced-presets" className="border border-border rounded-lg px-4">
+                <AccordionTrigger className="text-base font-semibold hover:no-underline">
+                  Advanced Configuration (JSON) — Section/Background Presets
+                </AccordionTrigger>
+                <AccordionContent className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Definiere Hintergrund- und Layout-Presets für Abschnitte
+                    </p>
+                    <Button variant="outline" size="sm" onClick={addPreset}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Preset hinzufügen
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {presets.length === 0 ? (
+                      <div className="text-sm text-muted-foreground py-4 text-center">
+                        Keine Section-Presets vorhanden. Fügen Sie eines hinzu, um zu beginnen.
+                      </div>
+                    ) : (
+                      presets.map((p, index) => (
+                        <div key={p.id} className="rounded-lg border border-border bg-card p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Preset {index + 1}: {p.name}</span>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => movePreset(index, -1)}
+                                disabled={index === 0}
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => movePreset(index, 1)}
+                                disabled={index === presets.length - 1}
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive"
+                                onClick={() => removePreset(index)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Name</Label>
+                              <Input value={p.name} onChange={(e) => updatePreset(index, { name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs">Beschreibung</Label>
+                              <Input
+                                value={p.description || ""}
+                                onChange={(e) => updatePreset(index, { description: e.target.value })}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Section JSON</Label>
+                            <Textarea
+                              className="min-h-40 font-mono text-xs"
+                              value={
+                                presetJsonDraft[p.id] ??
+                                JSON.stringify(p.section ?? {}, null, 2)
+                              }
+                              onChange={(e) => {
+                                const v = e.target.value
+                                setPresetJsonDraft((prev) => ({ ...prev, [p.id]: v }))
+                              }}
+                              onBlur={() => {
+                                const raw = presetJsonDraft[p.id]
+                                if (!raw) return
+                                try {
+                                  const parsed = JSON.parse(raw)
+                                  const err = validateSectionJson(parsed)
+                                  if (err) throw new Error(err)
+                                  updatePreset(index, { section: parsed as BlockSectionProps })
+                                  toast({ title: "Preset aktualisiert", description: "Section JSON wurde übernommen." })
+                                } catch (e) {
+                                  toast({
+                                    title: "Ungültiges JSON",
+                                    description: e instanceof Error ? e.message : "Section JSON ist ungültig",
+                                    variant: "destructive",
+                                  })
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Validierung: Gradient stops 2–5, pos 0–100. MediaIds optional.
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <Separator />
+
+            {/* CTA */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="cta-enabled"
+                  checked={navConfig.cta?.enabled || false}
+                  onCheckedChange={(enabled) => {
+                    updateConfig({
+                      cta: enabled
+                        ? {
+                            enabled: true,
+                            label: "Kontakt",
+                            type: "page",
+                            variant: "default",
+                          }
+                        : null,
+                    })
+                  }}
+                />
+                <Label htmlFor="cta-enabled" className="text-base font-semibold">
+                  CTA Button aktivieren
+                </Label>
+              </div>
+
+              {navConfig.cta?.enabled && (
+                <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Label</Label>
+                      <Input
+                        value={navConfig.cta.label}
+                        onChange={(e) =>
+                          updateConfig({
+                            cta: { ...navConfig.cta!, label: e.target.value },
+                          })
+                        }
+                        placeholder="Button-Text"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Typ</Label>
+                      <Select
+                        value={navConfig.cta.type}
+                        onValueChange={(v: "page" | "url") => {
+                          updateConfig({
+                            cta: {
+                              ...navConfig.cta!,
+                              type: v,
+                              pageSlug: v === "page" ? undefined : navConfig.cta?.pageSlug,
+                              href: v === "url" ? undefined : navConfig.cta?.href,
+                            },
+                          })
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="page">Interne Seite</SelectItem>
+                          <SelectItem value="url">Externe URL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {navConfig.cta.type === "page" ? (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Seite</Label>
+                      <Select
+                        value={navConfig.cta.pageSlug || ""}
+                        onValueChange={(slug) =>
+                          updateConfig({
+                            cta: { ...navConfig.cta!, pageSlug: slug },
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seite auswählen" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pages.length === 0 ? (
+                            <SelectItem value="" disabled>
+                              Keine Seiten gefunden
+                            </SelectItem>
+                          ) : (
+                            pages.map((page) => (
+                              <SelectItem key={page.id} value={page.slug || ""}>
+                                {page.title || "Untitled"} ({page.slug || "no-slug"})
+                                {page.status === "draft" && " [Draft]"}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">URL</Label>
+                      <Input
+                        value={navConfig.cta.href || ""}
+                        onChange={(e) =>
+                          updateConfig({
+                            cta: { ...navConfig.cta!, href: e.target.value },
+                          })
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Variante</Label>
+                    <Select
+                      value={navConfig.cta.variant || "default"}
+                      onValueChange={(v: "default" | "secondary" | "outline") =>
+                        updateConfig({
+                          cta: { ...navConfig.cta!, variant: v },
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Standard</SelectItem>
+                        <SelectItem value="secondary">Sekundär</SelectItem>
+                        <SelectItem value="outline">Outline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Search */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="search-enabled"
+                checked={navConfig.searchEnabled}
+                onCheckedChange={(enabled) => updateConfig({ searchEnabled: enabled })}
+              />
+              <Label htmlFor="search-enabled" className="text-base font-semibold">
+                Suche anzeigen
+              </Label>
+            </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Logo Preview Component for Admin
+ * Shows a preview of the logo with brand-aware background
+ */
+function LogoPreview({
+  logo,
+  logoSize = "md",
+  logoFit = "contain",
+  activeBrand,
+}: {
+  logo: MediaValue | null
+  logoSize?: "sm" | "md" | "lg"
+  logoFit?: "contain" | "cover"
+  activeBrand: BrandKey
+}) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const resolveLogo = async () => {
+      if (!logo) {
+        setLogoUrl(null)
+        setLoading(false)
+        return
+      }
+
+      // If logo has url, use it directly
+      if ("url" in logo && logo.url) {
+        const { normalizeMediaUrl } = await import("@/lib/cms/normalizeMediaUrl")
+        setLogoUrl(normalizeMediaUrl(logo.url))
+        setLoading(false)
+        return
+      }
+
+      // If logo has mediaId, fetch from database
+      if ("mediaId" in logo && logo.mediaId) {
+        try {
+          const { createSupabaseBrowserClient } = await import("@/lib/supabase/client")
+          const { getMediaPublicUrl } = await import("@/lib/cms/mediaStore")
+          const { normalizeMediaUrl } = await import("@/lib/cms/normalizeMediaUrl")
+          
+          const supabase = createSupabaseBrowserClient()
+          const { data, error } = await supabase
+            .from("media")
+            .select("url, path")
+            .eq("id", logo.mediaId)
+            .single()
+
+          if (error || !data) {
+            console.error("Error fetching logo from database:", error)
+            setLogoUrl(null)
+          } else if (data.path) {
+            // Prefer path: build the public URL
+            setLogoUrl(getMediaPublicUrl(data.path))
+          } else if (data.url) {
+            // Fallback to url if path is not available
+            setLogoUrl(normalizeMediaUrl(data.url))
+          } else {
+            setLogoUrl(null)
+          }
+        } catch (error) {
+          console.error("Error resolving logo:", error)
+          setLogoUrl(null)
+        } finally {
+          setLoading(false)
+        }
+        return
+      }
+
+      setLogoUrl(null)
+      setLoading(false)
+    }
+
+    resolveLogo()
+  }, [logo])
+
+  if (!logo) return null
+
+  const logoClasses = getLogoSizeClasses(logoSize)
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">Vorschau</Label>
+      <div
+        className={cn(
+          "relative h-20 w-full max-w-[260px] rounded-md border p-2 flex items-center justify-center",
+          activeBrand === "physio-konzept"
+            ? "bg-[#0f0f10] border-white/10"
+            : "bg-white border-border"
+        )}
+      >
+        {loading ? (
+          <span className="text-xs text-muted-foreground">Logo wird geladen...</span>
+        ) : logoUrl ? (
+          <div className={cn("relative", logoClasses.height, logoClasses.maxWidth)}>
+            <img
+              src={logoUrl}
+              alt="Logo Vorschau"
+              className={cn(
+                "h-full w-auto object-contain"
+              )}
+              onError={(e) => {
+                console.error("Logo failed to load:", logoUrl)
+                console.error("Check if Supabase storage path exists and CORS is configured")
+                ;(e.target as HTMLImageElement).style.display = "none"
+              }}
+            />
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            Logo konnte nicht geladen werden
+            <br />
+            <span className="text-xs text-muted-foreground/70">(Überprüfen Sie die Supabase Storage)</span>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

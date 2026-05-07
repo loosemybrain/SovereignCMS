@@ -1,0 +1,897 @@
+"use client"
+
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import Link from "next/link"
+import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { Menu, Search } from "lucide-react"
+import { motion, AnimatePresence, useReducedMotion, type TargetAndTransition, type Transition } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
+} from "@/components/ui/command"
+import { cn } from "@/lib/utils"
+import type { NavConfig, NavLink } from "@/types/navigation"
+import type { BrandKey } from "@/components/brand/brandAssets"
+import { getNavTheme } from "@/lib/theme/navTheme"
+import { applyPresetToTheme } from "@/lib/navigation/nav-style-presets"
+import { getNavHoverPreset } from "@/lib/navigation/nav-hover-presets"
+import {
+  getLogoSizeClasses,
+  getLogoImageDimensions,
+} from "@/lib/theme/logoSize"
+import {
+  scrollToBlockAnchor,
+  isSamePage,
+  buildAnchorHref,
+  resolvePagePathForBrand,
+  normalizeAnchorToBlockId,
+} from "@/lib/navigation/scrollToAnchor"
+import { useScrollSpy } from "@/components/navigation/ScrollSpyProvider"
+import { SearchWindow } from "@/components/search"
+import { buildSearchItemsFromNav } from "@/lib/search/buildSearchItems"
+
+/* ------------------------------------------------------------------ */
+/*  Font preset resolution                                            */
+/* ------------------------------------------------------------------ */
+
+const BRAND_FONT_MAP: Record<BrandKey, string> = {
+  physiotherapy: "font-sans",
+  "physio-konzept": "font-serif",
+}
+
+function resolveFontClass(
+  brand: BrandKey,
+  preset?: NavConfig["headerFontPreset"]
+): string {
+  switch (preset) {
+    case "sans":
+      return "font-sans"
+    case "serif":
+      return "font-serif"
+    case "mono":
+      return "font-mono"
+    case "brand":
+    default:
+      return BRAND_FONT_MAP[brand] ?? "font-sans"
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Motion preset transitions                                          */
+/* ------------------------------------------------------------------ */
+
+function getMotionTransition(
+  preset?: NavConfig["headerMotionPreset"],
+  prefersReducedMotion?: boolean
+): { type?: "spring"; stiffness?: number; damping?: number; duration: number } {
+  if (prefersReducedMotion) return { duration: 0 }
+
+  switch (preset) {
+    case "glassy":
+      return { type: "spring", stiffness: 300, damping: 25, duration: 0.3 }
+    case "snappy":
+      return { type: "spring", stiffness: 500, damping: 20, duration: 0.25 }
+    case "subtle":
+    default:
+      return { type: "spring", stiffness: 400, damping: 30, duration: 0.3 }
+  }
+}
+
+function getStaggerMultiplier(preset?: NavConfig["headerMotionPreset"]): number {
+  switch (preset) {
+    case "snappy":
+      return 0.08
+    case "none":
+      return 0
+    default:
+      return 0.05
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Grid column templates (desktop)                                    */
+/* ------------------------------------------------------------------ */
+
+function getGridTemplate(cols: 3 | 4 | 5, hasSecondary: boolean, hasInfo: boolean): string {
+  // Deterministic grid template based on column count and presence of content
+  if (cols === 5) {
+    if (hasSecondary && hasInfo) return "auto 1fr auto auto auto"
+    if (hasSecondary) return "auto 1fr auto auto"
+    return "auto 1fr auto"
+  }
+  if (cols === 4) {
+    if (hasSecondary) return "auto 1fr auto auto"
+    return "auto 1fr auto"
+  }
+  // 3 columns (default)
+  return "auto 1fr auto"
+}
+
+/* ================================================================ */
+/*  HeaderClient - Fully theme-driven, no hardcoded colors          */
+/* ================================================================ */
+
+interface HeaderClientProps {
+  brand: BrandKey
+  navConfig: NavConfig
+}
+
+export function HeaderClient({ brand, navConfig }: HeaderClientProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
+  const prefersReducedMotion = useReducedMotion()
+  const headerRef = useRef<HTMLElement>(null)
+  const { activeAnchor } = useScrollSpy()
+
+  /* ---- Resolve theme with style preset (brand-aware) ---- */
+  const baseTheme = getNavTheme(brand)
+  const theme = applyPresetToTheme(baseTheme, navConfig.navStylePresetId, brand)
+
+  /* ---- sizing, font, layout ---- */
+  const logoSize = navConfig.logoSize || "md"
+  const logoFit = navConfig.logoFit || "contain"
+  const logoClasses = getLogoSizeClasses(logoSize)
+  const logoDimensions = getLogoImageDimensions(logoSize)
+  const fontClass = resolveFontClass(brand, navConfig.headerFontPreset)
+
+  const cols = navConfig.headerLayoutColumns ?? 4
+  const hasSecondary =
+    (navConfig.secondaryLinks ?? []).length > 0
+  const hasInfo = !!navConfig.infoBadge
+  const gridTemplate = getGridTemplate(cols, hasSecondary, hasInfo)
+
+  /* ---- visible links (filtered + sorted) ---- */
+  const visibleLinks = useMemo(
+    () =>
+      navConfig.links
+        .filter(
+          (link) =>
+            link.visibility === "both" || link.visibility === brand
+        )
+        .sort((a, b) => a.sort - b.sort),
+    [navConfig.links, brand]
+  )
+
+  const visibleSecondary = useMemo(
+    () =>
+      (navConfig.secondaryLinks ?? [])
+        .filter(
+          (link) =>
+            link.visibility === "both" || link.visibility === brand
+        )
+        .sort((a, b) => a.sort - b.sort),
+    [navConfig.secondaryLinks, brand]
+  )
+
+  /* ---- logo resolution ---- */
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoAlt, setLogoAlt] = useState<string>("Logo")
+
+  useEffect(() => {
+    const resolveLogo = async () => {
+      if (!navConfig.logo) {
+        setLogoUrl(null)
+        setLogoAlt("Logo")
+        return
+      }
+      if ("url" in navConfig.logo && navConfig.logo.url) {
+        setLogoUrl(navConfig.logo.url)
+        setLogoAlt(navConfig.logo.alt || "Logo")
+        return
+      }
+      if ("mediaId" in navConfig.logo && navConfig.logo.mediaId) {
+        try {
+          const { createSupabaseBrowserClient } = await import(
+            "@/lib/supabase/client"
+          )
+          const supabase = createSupabaseBrowserClient()
+          const { data, error } = await supabase
+            .from("media")
+            .select("url, alt")
+            .eq("id", navConfig.logo.mediaId)
+            .single()
+          if (error || !data) {
+            setLogoUrl(null)
+            return
+          }
+          setLogoUrl(data.url)
+          setLogoAlt(navConfig.logo.alt || data.alt || "Logo")
+        } catch {
+          setLogoUrl(null)
+        }
+        return
+      }
+      setLogoUrl(null)
+    }
+    resolveLogo()
+  }, [navConfig.logo])
+
+  /* ---- scroll detection (sticky state with offset) ---- */
+  useEffect(() => {
+    let ticking = false
+    const SCROLL_OFFSET = 16 // Trigger animation nach 16px scroll
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > SCROLL_OFFSET)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  /* ---- href helpers ---- */
+  const getLinkHref = useCallback((link: NavLink): string => {
+    if (link.type === "page" && link.pageSlug != null) {
+      // Brand-aware Pfadauflösung
+      return resolvePagePathForBrand(link.pageSlug, brand)
+    }
+    if (link.type === "url" && link.href) return link.href
+    if (link.type === "anchor" && link.anchorBlockId) {
+      // Brand-aware Anchor-Href
+      return buildAnchorHref(link.anchorBlockId, link.anchorPageSlug, brand)
+    }
+    return "#"
+  }, [brand])
+
+  /** Anchor-Links auf derselben Seite: Default verhindern, mit Header-Offset scrollen, Hash aktualisieren. */
+  const handleNavLinkClick = useCallback(
+    (link: NavLink, e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (link.type !== "anchor" || !link.anchorBlockId) return
+      // Brand-aware Same-page Erkennung
+      const samePage = isSamePage(pathname || "/", link.anchorPageSlug, brand)
+      if (!samePage) return
+      e.preventDefault()
+      const blockId = normalizeAnchorToBlockId(link.anchorBlockId)
+      if (!blockId) return
+      const headerOffset = headerRef.current ? Math.ceil(headerRef.current.getBoundingClientRect().height) : 80
+      scrollToBlockAnchor(blockId, headerOffset)
+      if (typeof history !== "undefined" && history.replaceState) {
+        const hash = `#block-${blockId}`
+        const url = `${pathname || "/"}${hash}`
+        history.replaceState(undefined, "", url)
+      }
+    },
+    [pathname, brand]
+  )
+
+  const getCtaHref = useCallback((): string => {
+    if (!navConfig.cta?.enabled) return "#"
+    if (navConfig.cta.type === "page" && navConfig.cta.pageSlug)
+      return `/${navConfig.cta.pageSlug}`
+    if (navConfig.cta.type === "url" && navConfig.cta.href)
+      return navConfig.cta.href
+    return "#"
+  }, [navConfig.cta])
+
+  /* ---- search ---- */
+  const searchItems = useMemo(() => buildSearchItemsFromNav(navConfig, brand), [navConfig, brand])
+
+  useEffect(() => {
+    if (!navConfig.searchEnabled) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault()
+        setSearchOpen(true)
+      } else if (
+        e.key === "/" &&
+        !searchOpen &&
+        document.activeElement?.tagName !== "INPUT"
+      ) {
+        e.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [navConfig.searchEnabled, searchOpen])
+
+  // Querying + ranking is handled inside SearchWindow.
+
+  const normalizePathForActive = useCallback((raw: string | null | undefined): string | null => {
+    if (!raw) return null
+    const v = raw.trim()
+    if (!v) return null
+
+    // Pure hash links are handled by anchor logic.
+    if (v.startsWith("#")) return null
+
+    // Absolute URL (possibly same-origin)
+    if (/^https?:\/\//i.test(v)) {
+      try {
+        const u = new URL(v)
+        if (typeof window !== "undefined" && u.origin !== window.location.origin) return null
+        const p = u.pathname || "/"
+        return p !== "/" && p.endsWith("/") ? p.slice(0, -1) : p
+      } catch {
+        return null
+      }
+    }
+
+    // Internal path, tolerant for missing leading slash ("team" -> "/team")
+    const withoutQueryHash = v.split(/[?#]/)[0] || "/"
+    const withSlash = withoutQueryHash.startsWith("/") ? withoutQueryHash : `/${withoutQueryHash}`
+    return withSlash !== "/" && withSlash.endsWith("/") ? withSlash.slice(0, -1) : withSlash
+  }, [])
+
+  /* ---- active link check (Seiten + Anchor-ScrollSpy) ---- */
+  const isLinkActive = useCallback(
+    (href: string) => {
+      const current = normalizePathForActive(pathname || "/")
+      const target = normalizePathForActive(href)
+      if (!current || !target) return false
+
+      // Brand-specific hash URL handling:
+      // In physio-konzept, some CMS links can be stored as "/konzept#block-...".
+      // They must not be "always active" based on path alone.
+      if (brand === "physio-konzept" && href.includes("#")) {
+        const hash = href.slice(href.indexOf("#") + 1).trim()
+        if (!hash) return false
+        const currentHash = typeof window !== "undefined" ? (window.location.hash || "").replace(/^#/, "") : ""
+        const targetBlockId = normalizeAnchorToBlockId(hash)
+        const currentBlockId = normalizeAnchorToBlockId(currentHash)
+
+        // If hash path points to another page, it's not active here.
+        const hashPath = normalizePathForActive(href.slice(0, href.indexOf("#")))
+        if (hashPath && hashPath !== current) return false
+
+        return currentHash === hash || (targetBlockId && currentBlockId === targetBlockId) || (targetBlockId && activeAnchor === targetBlockId)
+      }
+
+      // Brand-specific guard:
+      // In physio-konzept, "/konzept" is the brand home prefix and must NOT mark all subpages as active.
+      if (brand === "physio-konzept" && target === "/konzept") {
+        return current === target
+      }
+      return current === target || (target !== "/" && current.startsWith(`${target}/`))
+    },
+    [pathname, normalizePathForActive, brand, activeAnchor]
+  )
+
+  /** Anchor-Links: aktiv, wenn gleiche Seite und dieser Block aktuell sichtbar (ScrollSpy). */
+  const isAnchorLinkActive = useCallback(
+    (link: NavLink): boolean => {
+      if (link.type !== "anchor" || !link.anchorBlockId) return false
+      const samePage = isSamePage(pathname || "/", link.anchorPageSlug, brand)
+      const linkBlockId = normalizeAnchorToBlockId(link.anchorBlockId)
+      if (!samePage || !linkBlockId) return false
+      const hashBlockId =
+        typeof window !== "undefined"
+          ? normalizeAnchorToBlockId((window.location.hash || "").replace(/^#/, ""))
+          : ""
+      return activeAnchor === linkBlockId || hashBlockId === linkBlockId
+    },
+    [pathname, activeAnchor, brand]
+  )
+
+  /* ---- motion presets ---- */
+  const motionPreset = navConfig.headerMotionPreset ?? "subtle"
+  const transition = getMotionTransition(motionPreset, prefersReducedMotion ?? false)
+  const staggerChildren = getStaggerMultiplier(motionPreset)
+
+  /* ---- Scroll state styling (theme-driven) ---- */
+  const wrapperClass = isScrolled ? theme.wrapperScrolled : theme.wrapper
+
+  /* ---- Desktop Nav Link ---- */
+  const DesktopLink = ({
+    link,
+    secondary,
+  }: {
+    link: NavLink
+    secondary?: boolean
+  }) => {
+    const href = getLinkHref(link)
+    const active = isLinkActive(href) || isAnchorLinkActive(link)
+    const hoverPreset = getNavHoverPreset(navConfig.navHoverPresetId)
+    
+    // Check if we should apply motion (respect reduced motion)
+    const hasMotion = hoverPreset.motion && !prefersReducedMotion
+    
+    const linkContent = (
+      <>
+        {link.label}
+        {/* Animated active indicator -- layout-safe absolute underline */}
+        {active && (
+          <motion.span
+            layoutId={secondary ? "nav-indicator-sec" : "nav-indicator"}
+            className={cn(
+              "absolute -bottom-1 left-0 right-0 h-0.5 rounded-full",
+              theme.indicator
+            )}
+            transition={transition}
+          />
+        )}
+      </>
+    )
+
+    const linkClass = cn(
+      "relative py-1 text-sm font-medium transition-colors duration-200",
+      fontClass,
+      secondary ? "text-xs" : "",
+      theme.link.base,
+      theme.link.hover,
+      active && theme.link.active,
+      hoverPreset.linkClass,
+      theme.focus,
+      // Apply CSS variables for custom link colors (override theme if set)
+      navConfig.navLinkColor && "text-(--nav-link)",
+      navConfig.navLinkHoverColor && "hover:text-(--nav-link-hover)",
+      navConfig.navLinkActiveColor && active && "text-(--nav-link-active)"
+    )
+
+    const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => handleNavLinkClick(link, e)
+
+    // Use motion wrapper if preset has motion and reduced motion is not set
+    if (hasMotion) {
+      return (
+        <motion.a
+          href={href}
+          target={link.newTab ? "_blank" : undefined}
+          rel={link.newTab ? "noopener noreferrer" : undefined}
+          className={linkClass}
+          onClick={onClick}
+          whileHover={hoverPreset.motion?.whileHover as TargetAndTransition}
+          transition={hoverPreset.motion?.transition as Transition}
+        >
+          {linkContent}
+        </motion.a>
+      )
+    }
+
+    return (
+      <Link
+        href={href}
+        target={link.newTab ? "_blank" : undefined}
+        rel={link.newTab ? "noopener noreferrer" : undefined}
+        className={linkClass}
+        onClick={onClick}
+      >
+        {linkContent}
+      </Link>
+    )
+  }
+
+  /* ================================================================ */
+  /*  RENDER - All styling from theme, no hardcoded colors            */
+  /* ================================================================ */
+
+  return (
+    <>
+      <div 
+        className={cn(
+          "sticky top-0 z-50 w-full transition-shadow duration-300",
+          isScrolled ? "shadow-md" : "shadow-none"
+        )}
+      >
+        <motion.header
+          ref={headerRef}
+          initial={false}
+          animate={isScrolled ? "scrolled" : "top"}
+          className={cn(
+            "w-full transition-colors duration-300",
+            wrapperClass
+          )}
+        >
+        <motion.div
+          variants={
+            motionPreset === "none"
+              ? { top: { paddingTop: 6, paddingBottom: 6 }, scrolled: { paddingTop: 6, paddingBottom: 6 } }
+              : {
+                  top: { paddingTop: 6, paddingBottom: 6 },
+                  scrolled: { paddingTop: 2, paddingBottom: 2 },
+                }
+          }
+          animate={isScrolled ? "scrolled" : "top"}
+          transition={
+            prefersReducedMotion ? { duration: 0 } : { duration: 0.25 }
+          }
+          className="container mx-auto px-4"
+        >
+          {/* ---- Desktop: CSS Grid ---- */}
+          <div
+            className="hidden md:grid items-center gap-6 h-16"
+            style={{ gridTemplateColumns: gridTemplate }}
+          >
+            {/* Col 1: Logo */}
+            <motion.div
+              variants={
+                motionPreset === "none"
+                  ? { top: { scale: 1 }, scrolled: { scale: 1 } }
+                  : {
+                      top: { scale: 1 },
+                      scrolled: { scale: 0.92 },
+                    }
+              }
+              animate={isScrolled ? "scrolled" : "top"}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { duration: 0.25 }
+              }
+              className="origin-left"
+            >
+              <Link
+                href="/"
+                className={cn(
+                  "flex items-center shrink-0",
+                  logoClasses.width,
+                  "h-16",
+                  theme.focus
+                )}
+                aria-label="Zur Startseite"
+              >
+                <div className="relative flex items-center justify-start shrink-0 h-16 w-auto">
+                  {logoUrl ? (
+                    <Image
+                      src={logoUrl}
+                      alt={logoAlt || `${brand} Logo`}
+                      width={logoDimensions.width}
+                      height={logoDimensions.height}
+                      className={cn(
+                        "h-full w-auto shrink-0",
+                        logoFit === "cover"
+                          ? "object-cover"
+                          : "object-contain",
+                        logoClasses.maxWidth
+                      )}
+                      priority
+                      sizes="(max-width: 768px) 140px, 180px"
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        "font-semibold text-sm truncate shrink-0",
+                        fontClass
+                      )}
+                    >
+                      {brand === "physio-konzept"
+                        ? "Physio-Konzept"
+                        : "Physiotherapie"}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Col 2: Primary Nav */}
+            <motion.nav
+              className="flex items-center gap-6 justify-center"
+              aria-label="Hauptnavigation"
+              style={{
+                "--nav-link": navConfig.navLinkColor ?? "currentColor",
+                "--nav-link-hover": navConfig.navLinkHoverColor ?? "var(--nav-link)",
+                "--nav-link-active": navConfig.navLinkActiveColor ?? "var(--nav-link-hover)",
+                "--nav-glow": navConfig.navLinkHoverColor ?? "rgba(59,130,246,0.3)",
+              } as React.CSSProperties}
+              variants={
+                motionPreset === "none"
+                  ? { top: { gap: 24 }, scrolled: { gap: 24 } }
+                  : {
+                      top: { gap: 24 },
+                      scrolled: { gap: 16 },
+                    }
+              }
+              animate={isScrolled ? "scrolled" : "top"}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { duration: 0.25 }
+              }
+            >
+              {visibleLinks.map((link) => (
+                <DesktopLink key={link.id} link={link} />
+              ))}
+            </motion.nav>
+
+            {/* Col 3 (optional): Secondary / Utility */}
+            {cols >= 4 && hasSecondary && (
+              <nav
+                className="flex items-center gap-4 justify-end"
+                aria-label="Sekundäre Navigation"
+                style={{
+                  "--nav-link": navConfig.navLinkColor ?? "currentColor",
+                  "--nav-link-hover": navConfig.navLinkHoverColor ?? "var(--nav-link)",
+                  "--nav-link-active": navConfig.navLinkActiveColor ?? "var(--nav-link-hover)",
+                  "--nav-glow": navConfig.navLinkHoverColor ?? "rgba(59,130,246,0.3)",
+                } as React.CSSProperties}
+              >
+                {visibleSecondary.map((link) => (
+                  <DesktopLink key={link.id} link={link} secondary />
+                ))}
+              </nav>
+            )}
+
+            {/* Col 4 (optional): Info badge */}
+            {cols >= 5 && hasInfo && navConfig.infoBadge && (
+              <div className="flex items-center justify-center">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary",
+                    fontClass
+                  )}
+                >
+                  {navConfig.infoBadge}
+                </span>
+              </div>
+            )}
+
+            {/* Last Col: Actions */}
+            <div className="flex items-center gap-3 justify-end">
+              {navConfig.searchEnabled && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}
+                  aria-label="Suche öffnen (Ctrl+K)"
+                  className={cn(
+                    "transition-colors duration-200",
+                    theme.iconButton.base,
+                    theme.iconButton.hover,
+                    theme.focus
+                  )}
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
+              )}
+              {navConfig.cta?.enabled && (
+                <Button
+                  variant={navConfig.cta.variant || "default"}
+                  asChild
+                  className={cn(
+                    "transition-colors duration-200",
+                    fontClass,
+                    theme.cta.default,
+                    theme.cta.hover,
+                    theme.focus
+                  )}
+                >
+                  <Link href={getCtaHref()}>{navConfig.cta.label}</Link>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* ---- Mobile: Flex ---- */}
+          <div className="flex md:hidden items-center justify-between h-14">
+            {/* Logo */}
+            <Link
+              href="/"
+              className={cn(
+                "flex items-center shrink-0",
+                theme.focus
+              )}
+              aria-label="Zur Startseite"
+            >
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={logoAlt || `${brand} Logo`}
+                  width={logoDimensions.width}
+                  height={logoDimensions.height}
+                  className="h-10 w-auto object-contain"
+                  priority
+                  sizes="120px"
+                />
+              ) : (
+                <span className={cn("font-semibold text-sm", fontClass)}>
+                  {brand === "physio-konzept"
+                    ? "Physio-Konzept"
+                    : "Physiotherapie"}
+                </span>
+              )}
+            </Link>
+
+            {/* Mobile menu button */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Menü öffnen"
+                  className={cn(
+                    "transition-colors duration-200",
+                    theme.iconButton.base,
+                    theme.iconButton.hover,
+                    theme.focus
+                  )}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className={cn(
+                  "w-[300px] sm:w-[380px] transition-colors duration-200",
+                  theme.mobile.container,
+                  theme.border
+                )}
+                style={{
+                  "--nav-link": navConfig.navLinkColor ?? "currentColor",
+                  "--nav-link-hover": navConfig.navLinkHoverColor ?? "var(--nav-link)",
+                  "--nav-link-active": navConfig.navLinkActiveColor ?? "var(--nav-link-hover)",
+                  "--nav-glow": navConfig.navLinkHoverColor ?? "rgba(59,130,246,0.3)",
+                } as React.CSSProperties}
+              >
+                <SheetHeader>
+                  <SheetTitle className="sr-only">Navigation</SheetTitle>
+                </SheetHeader>
+                <nav
+                  className="flex flex-col gap-1 mt-8"
+                  aria-label="Mobile Navigation"
+                >
+                  <AnimatePresence>
+                    {visibleLinks.map((link, i) => {
+                      const href = getLinkHref(link)
+                      const active = isLinkActive(href) || isAnchorLinkActive(link)
+                      return (
+                        <motion.div
+                          key={link.id}
+                          initial={
+                            prefersReducedMotion
+                              ? false
+                              : { opacity: 0, x: 20 }
+                          }
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{
+                            delay: prefersReducedMotion
+                              ? 0
+                              : i * staggerChildren,
+                            duration: prefersReducedMotion ? 0 : 0.25,
+                          }}
+                        >
+                          <Link
+                            href={href}
+                            target={link.newTab ? "_blank" : undefined}
+                            rel={
+                              link.newTab
+                                ? "noopener noreferrer"
+                                : undefined
+                            }
+                            onClick={(e) => {
+                              handleNavLinkClick(link, e)
+                              setMobileMenuOpen(false)
+                            }}
+                            className={cn(
+                              "block text-base font-medium transition-colors duration-200 rounded-lg px-4 py-3",
+                              fontClass,
+                              theme.mobile.link.base,
+                              theme.mobile.link.hover,
+                              active && theme.mobile.link.active,
+                              theme.focus,
+                              navConfig.navLinkColor && "text-(--nav-link)",
+                              navConfig.navLinkHoverColor && "hover:text-(--nav-link-hover)",
+                              navConfig.navLinkActiveColor && active && "text-(--nav-link-active)"
+                            )}
+                          >
+                            {link.label}
+                          </Link>
+                        </motion.div>
+                      )
+                    })}
+
+                    {/* Secondary links */}
+                    {visibleSecondary.length > 0 && (
+                      <>
+                        <div className="my-2 h-px bg-border" />
+                        {visibleSecondary.map((link, i) => {
+                          const href = getLinkHref(link)
+                          const active = isLinkActive(href) || isAnchorLinkActive(link)
+                          return (
+                            <motion.div
+                              key={link.id}
+                              initial={
+                                prefersReducedMotion
+                                  ? false
+                                  : { opacity: 0, x: 20 }
+                              }
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{
+                                delay: prefersReducedMotion
+                                  ? 0
+                                  : (visibleLinks.length + i) *
+                                    staggerChildren,
+                                duration: prefersReducedMotion ? 0 : 0.25,
+                              }}
+                            >
+                              <Link
+                                href={href}
+                                target={
+                                  link.newTab ? "_blank" : undefined
+                                }
+                                rel={
+                                  link.newTab
+                                    ? "noopener noreferrer"
+                                    : undefined
+                                }
+                                onClick={(e) => {
+                                  handleNavLinkClick(link, e)
+                                  setMobileMenuOpen(false)
+                                }}
+                                className={cn(
+                                  "block text-sm font-medium transition-colors duration-200 rounded-lg px-4 py-2.5",
+                                  fontClass,
+                                  theme.mobile.link.base,
+                                  theme.mobile.link.hover,
+                                  active && theme.mobile.link.active,
+                                  theme.focus,
+                                  navConfig.navLinkColor && "text-(--nav-link)",
+                                  navConfig.navLinkHoverColor && "hover:text-(--nav-link-hover)",
+                                  navConfig.navLinkActiveColor && active && "text-(--nav-link-active)"
+                                )}
+                              >
+                                {link.label}
+                              </Link>
+                            </motion.div>
+                          )
+                        })}
+                      </>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Mobile actions */}
+                  <div className="mt-6 flex flex-col gap-3 px-4">
+                    {navConfig.searchEnabled && (
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "justify-start",
+                          theme.mobile.link.base,
+                          theme.mobile.link.hover,
+                          theme.focus
+                        )}
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          setSearchOpen(true)
+                        }}
+                      >
+                        <Search className="mr-2 h-4 w-4" />
+                        Suche
+                      </Button>
+                    )}
+                    {navConfig.cta?.enabled && (
+                      <Button
+                        variant={navConfig.cta.variant || "default"}
+                        className={cn(
+                          fontClass,
+                          theme.cta.default,
+                          theme.cta.hover,
+                          theme.focus
+                        )}
+                        asChild
+                      >
+                        <Link
+                          href={getCtaHref()}
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {navConfig.cta.label}
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </motion.div>
+        </motion.header>
+      </div>
+
+      {/* ---- Search Window (v0 design) ---- */}
+      {navConfig.searchEnabled && (
+        <SearchWindow brand={brand} navItems={searchItems} isOpen={searchOpen} onOpenChange={setSearchOpen} />
+      )}
+    </>
+  )
+}

@@ -1,0 +1,323 @@
+import type { MediaValue } from "./cms"
+import type { ElementShadow } from "./cms"
+import type { BrandKey } from "@/components/brand/brandAssets"
+import type { GradientPresetValue } from "@/lib/theme/gradientPresets"
+
+/**
+ * Footer spacing options
+ */
+export type FooterSpacing = "compact" | "normal" | "spacious"
+
+/**
+ * Section alignment options
+ */
+export type SectionAlign = "left" | "center" | "right"
+
+/**
+ * Typography options
+ */
+export type TypographySize = "sm" | "base" | "lg"
+export type TypographyWeight = "normal" | "semibold" | "bold"
+export type FontFamily = "sans" | "serif" | "mono" | "geist-sans" | "geist-mono"
+
+/**
+ * Footer design configuration
+ */
+export type FooterDesign = {
+  bgClass?: string
+  textClass?: string
+  headingClass?: string
+  borderClass?: string
+  linkClass?: string
+  linkHoverClass?: string
+  focus?: string
+  mutedText?: string
+  spacing?: {
+    py?: FooterSpacing
+  }
+  section?: {
+    align?: SectionAlign
+  }
+  typography?: {
+    bodySize?: TypographySize
+    bodyWeight?: TypographyWeight
+    bodyFont?: FontFamily
+    headingSize?: TypographySize
+    headingWeight?: TypographyWeight
+    headingFont?: FontFamily
+  }
+  colors?: {
+    bgCustom?: string
+    textCustom?: string
+    headingCustom?: string
+    accentCustom?: string
+  }
+  bottomBar?: {
+    dividerEnabled?: boolean
+    dividerClass?: string
+    align?: SectionAlign
+  }
+}
+
+/**
+ * Footer block types
+ */
+export type FooterBlock =
+  | { type: "text"; id: string; text: string }
+  | {
+      type: "links"
+      id: string
+      title?: string
+      links: Array<{ id: string; label: string; href: string; newTab?: boolean }>
+    }
+  | {
+      type: "pages"
+      id: string
+      title?: string
+      pageSlugs: string[]
+      showUnpublished?: boolean
+    }
+  | {
+      type: "logo"
+      id: string
+      mediaId?: string
+      url?: string
+      alt?: string
+      size?: "sm" | "md" | "lg"
+      fit?: "contain" | "cover"
+      href?: string
+      alignX?: "left" | "center" | "right"
+      alignY?: "top" | "center" | "bottom"
+    }
+  | { type: "copyright"; id: string; text: string }
+
+/**
+ * Footer section (column)
+ */
+export type FooterSection = {
+  id: string
+  title?: string
+  span: 2 | 3 | 4 | 6 // Grid span (out of 12 columns)
+  blocks: FooterBlock[]
+}
+
+/**
+ * Footer bottom bar configuration
+ */
+export type FooterBottomBar = {
+  enabled: boolean
+  /** Abstand zur vorherigen Footer-Sektion */
+  marginTop?: "none" | "sm" | "md" | "lg"
+  left?: FooterBlock
+  right?: FooterBlock
+}
+
+/**
+ * Footer background configuration (outer section)
+ */
+export type FooterBackground = {
+  mode?: "transparent" | "color" | "gradient" | "image" | "video"
+  color?: string
+  gradientPreset?: GradientPresetValue
+  gradient?: {
+    from?: string
+    via?: string
+    to?: string
+    angle?: number
+  }
+  mediaId?: string
+  mediaUrl?: string
+  overlay?: {
+    enabled?: boolean
+    color?: string
+    opacity?: number
+  }
+  parallax?: {
+    enabled?: boolean
+    strength?: number
+  }
+}
+
+/**
+ * Footer glassmorphism panel configuration (inner container)
+ */
+export type FooterGlassmorphism = {
+  enabled?: boolean
+  intensity?: "subtle" | "medium" | "strong"
+  blurPx?: number
+  panelOpacity?: number
+  borderOpacity?: number
+  borderColor?: string
+  highlightLine?: boolean
+  highlightColor?: string
+  shadowPreset?: string
+  /** Panel-Box-Shadow (wie in Blocks: Shadow Inspector) */
+  panelShadow?: ElementShadow
+  tintColor?: string
+}
+
+/**
+ * Placement of the Legal links block in the footer
+ */
+export type LegalLinksPlacement = "section" | "bottom-bar"
+
+/**
+ * Layout variant for Legal links
+ */
+export type LegalLinksLayout = "inline" | "stacked" | "separated" | "chips"
+
+/**
+ * Which legal items to show (by subtype). Only privacy, cookies, imprint – no AGB/Widerruf.
+ */
+export type LegalLinksItems = {
+  imprint?: boolean
+  privacy?: boolean
+  cookies?: boolean
+}
+
+/**
+ * Dedizierte Konfiguration für den Legal-Bereich im Footer.
+ * Steuert nur Sichtbarkeit, Auswahl und Darstellung; Inhalte kommen aus dem CMS.
+ */
+export type FooterLegalLinksConfig = {
+  enabled: boolean
+  title?: string
+  placement?: LegalLinksPlacement
+  layout?: LegalLinksLayout
+  align?: "left" | "center" | "right"
+  showTitle?: boolean
+  gap?: "sm" | "md" | "lg"
+  marginTop?: "none" | "sm" | "md" | "lg"
+  marginBottom?: "none" | "sm" | "md" | "lg"
+  textColor?: string
+  hoverColor?: string
+  activeColor?: string
+  separatorColor?: string
+  fontSize?: "xs" | "sm" | "base"
+  fontWeight?: "normal" | "medium" | "semibold"
+  uppercase?: boolean
+  items: LegalLinksItems
+}
+
+export type FooterSocialPlacement =
+  | "top"
+  | "section"
+  | "bottom"
+  | "bottomBar"
+  | "bottomBarLeft"
+  | "bottomBarCenter"
+  | "bottomBarRight"
+
+export type FooterSocialAlign = "left" | "center" | "right"
+export type FooterSocialIconStyle =
+  | "default"
+  | "round"
+  | "square"
+  | "outline"
+  | "minimal"
+  | "soft"
+  | "pill"
+  | "socialFillRise"
+  | "socialLiquidFill"
+export type FooterSocialIconSet = "brand" | "simple" | "monochrome"
+export type FooterSocialIconSize = "xs" | "sm" | "md" | "lg" | "xl"
+export type FooterSocialGap = "xs" | "sm" | "md" | "lg"
+export type FooterSocialHoverEffect = "none" | "lift" | "shrink" | "flip" | "draw"
+
+export type FooterSocialPlatformItem = {
+  enabled: boolean
+  url?: string
+  iconVariant?: string
+  label?: string
+}
+
+export type FooterSocialLinksConfig = {
+  enabled: boolean
+  title?: string
+  placement: FooterSocialPlacement
+  align: FooterSocialAlign
+  iconStyle: FooterSocialIconStyle
+  iconSet: FooterSocialIconSet
+  hoverEffect?: FooterSocialHoverEffect
+  iconSize: FooterSocialIconSize
+  gap: FooterSocialGap
+  color?: string
+  hoverColor?: string
+  backgroundColor?: string
+  borderColor?: string
+  openInNewTab: boolean
+  showLabels: boolean
+  labelColor?: string
+  /** socialFillRise-only: per network colors (facebook/instagram) when available */
+  fillRiseUseNetworkColors?: boolean
+  /** socialFillRise-only fallback fill color when network colors disabled/unavailable */
+  fillRiseFallbackColor?: string
+  /** socialFillRise-only icon rotation toggle */
+  fillRiseIconRotate?: boolean
+  /** socialFillRise-only rotation angle in degrees (0-720) */
+  fillRiseRotationDegrees?: number
+  /** socialFillRise-only rotation axis */
+  fillRiseRotationAxis?: "x" | "y" | "z"
+  /** socialFillRise-only rotation duration in ms */
+  fillRiseRotationDurationMs?: number
+  /** socialFillRise-only fill direction */
+  fillRiseDirection?: "bottom" | "top" | "left" | "right"
+  /** socialFillRise-only border width in px */
+  fillRiseBorderWidth?: number
+  /** socialFillRise-only base background color */
+  fillRiseBaseBg?: string
+  /** socialFillRise-only active icon color */
+  fillRiseActiveIconColor?: string
+  /** socialFillRise-only shape mode */
+  fillRiseRadiusMode?: "circle" | "rounded"
+  /** socialLiquidFill-only: per network colors when available */
+  liquidUseNetworkColors?: boolean
+  /** socialLiquidFill-only fallback color when network colors disabled/unavailable */
+  liquidFallbackColor?: string
+  /** socialLiquidFill-only base background color */
+  liquidBaseBg?: string
+  /** socialLiquidFill-only active icon color */
+  liquidActiveIconColor?: string
+  /** socialLiquidFill-only border width in px */
+  liquidBorderWidth?: number
+  /** socialLiquidFill-only wave intensity */
+  liquidWaveIntensity?: "subtle" | "medium"
+  /** socialLiquidFill-only fill speed */
+  liquidSpeed?: "slow" | "normal"
+  items: {
+    facebook: FooterSocialPlatformItem & {
+      iconVariant?: "facebook" | "facebook-f" | "facebook-round"
+    }
+    instagram: FooterSocialPlatformItem & {
+      iconVariant?: "instagram" | "instagram-outline" | "instagram-round"
+    }
+  }
+}
+
+/**
+ * Footer configuration for a brand
+ */
+export type FooterConfig = {
+  variant?: "default"
+  sections: FooterSection[] // min 2, max 5
+  bottomBar?: FooterBottomBar
+  design?: FooterDesign
+  layoutWidth?: "full" | "contained" // controls footer content width
+  background?: FooterBackground // outer section background
+  glassmorphism?: FooterGlassmorphism // inner panel glass effect
+  /** Dedizierter Legal-Bereich (Datenschutz, Cookies, Impressum). Optional für Rückwärtskompatibilität. */
+  legalLinks?: FooterLegalLinksConfig
+  /** Reine ausgehende Social-Links (ohne externe Embeds/Skripte). */
+  socialLinks?: FooterSocialLinksConfig
+}
+
+/**
+ * Footer row from database
+ */
+export type FooterRow = {
+  id: string
+  brand: BrandKey
+  config: FooterConfig
+  created_at: string
+  updated_at: string
+}
