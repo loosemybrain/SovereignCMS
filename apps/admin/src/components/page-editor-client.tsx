@@ -32,6 +32,8 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     setIsSaving,
     lastSavedAt,
     setLastSavedAt,
+    lastSavedStatus,
+    setLastSavedStatus,
     saveError,
     setSaveError,
   } = useEditorState(blocks)
@@ -134,6 +136,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       if (result.success) {
         setIsDirty(false)
         setLastSavedAt(result.savedAt)
+        setLastSavedStatus(result.status)
       }
     } catch (error) {
       console.error("[editor] failed to save draft", error)
@@ -155,9 +158,16 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
               {saveError && <p className="text-red-400 font-medium">{saveError}</p>}
               {isDirty && !isSaving && <p className="text-amber-400 font-medium">Unsaved changes</p>}
               {lastSavedAt && !isDirty && (
-                <p className="text-emerald-400 text-xs">
-                  Last saved: {new Date(lastSavedAt).toLocaleTimeString()}
-                </p>
+                <div className="space-y-1">
+                  <p className="text-emerald-400 text-xs">
+                    Last saved: {new Date(lastSavedAt).toLocaleTimeString()}
+                  </p>
+                  {lastSavedStatus && (
+                    <p className="text-zinc-400 text-xs">
+                      Status: <span className="capitalize font-medium">{lastSavedStatus}</span>
+                    </p>
+                  )}
+                </div>
               )}
             </div>
             <button

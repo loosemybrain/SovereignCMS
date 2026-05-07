@@ -8,14 +8,14 @@ export type CmsEntityBase = {
   updatedAt: string
 }
 
-export type CmsPageStatus = "draft" | "published" | "archived"
+export type ContentStatus = "draft" | "published" | "archived"
 export type CmsBlockVisibility = "visible" | "hidden" | "scheduled"
 
 export type CmsPage = CmsEntityBase & {
   slug: string
   locale: Locale
   title: string
-  status: CmsPageStatus
+  status: ContentStatus
   seo?: Record<string, unknown>
 }
 

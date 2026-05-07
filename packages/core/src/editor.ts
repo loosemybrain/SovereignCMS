@@ -1,4 +1,4 @@
-import type { CmsBlock, CmsPage, Locale, TenantId } from "./cms"
+import type { CmsBlock, CmsPage, Locale, TenantId, ContentStatus } from "./cms"
 
 /**
  * Input für das Speichern eines Seiten-Entwurfs (lokale Änderungen).
@@ -14,11 +14,13 @@ export type SavePageDraftInput = {
 /**
  * Rückgabe beim erfolgreichen Speichern eines Entwurfs.
  * persisted: false bedeutet, dass Änderungen lokal/temporär sind (Mock/InMemory).
+ * status: Content Status (normalerweise "draft" für Draft-Saves).
  */
 export type SavePageDraftResult = {
   success: boolean
   savedAt: string
   persisted: boolean
+  status: ContentStatus
   updatedBlocks?: CmsBlock[]
 }
 

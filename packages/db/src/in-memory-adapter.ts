@@ -124,14 +124,14 @@ function buildStores(): MutableStore {
     updatedAt: "2026-05-04T00:00:00.000Z",
   }
 
-  // English page
+  // English page (draft for status demo)
   const pageEN: InternalPageRow = {
     id: "page-demo-home-en",
     tenantId: "demo",
     slug: "home",
     locale: "en",
     title: "Home",
-    status: "published",
+    status: "draft",
     createdAt: "2026-05-03T00:00:00.000Z",
     updatedAt: "2026-05-04T00:00:00.000Z",
   }

@@ -1,25 +1,8 @@
 import { headers } from "next/headers"
 import Link from "next/link"
-import { cn } from "@sovereign-cms/ui"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
+import { ContentStatusBadge } from "@/components/content-status-badge"
 import { loadAdminPages } from "@/lib/load-admin-pages"
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-block px-2 py-1 rounded text-xs font-medium",
-        status === "published"
-          ? "bg-emerald-950 text-emerald-200"
-          : status === "draft"
-            ? "bg-amber-950 text-amber-200"
-            : "bg-zinc-800 text-zinc-300",
-      )}
-    >
-      {status}
-    </span>
-  )
-}
 
 type Props = {
   searchParams: Promise<{ locale?: string }>
@@ -91,7 +74,7 @@ export default async function PagesListPage({ searchParams }: Props) {
                   <td className="px-6 py-4 text-zinc-400 font-mono text-xs">{page.slug}</td>
                   <td className="px-6 py-4 text-zinc-400">{page.locale}</td>
                   <td className="px-6 py-4">
-                    <StatusBadge status={page.status} />
+                    <ContentStatusBadge status={page.status} />
                   </td>
                   <td className="px-6 py-4 text-zinc-500 text-xs">{new Date(page.updatedAt).toLocaleDateString()}</td>
                 </tr>

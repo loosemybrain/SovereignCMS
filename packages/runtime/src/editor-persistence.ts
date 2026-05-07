@@ -27,6 +27,7 @@ export function createEditorPersistence(input: CreateEditorPersistenceInput): Ed
           success: true,
           savedAt,
           persisted: false, // InMemory/Mock – not durable
+          status: "draft" as const, // Draft saves always return draft status
           updatedBlocks: blocks,
         }
       } catch (error) {

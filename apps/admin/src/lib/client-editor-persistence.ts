@@ -43,6 +43,7 @@ export const clientEditorPersistence: EditorPersistence = {
         success: false,
         savedAt: new Date().toISOString(),
         persisted: false,
+        status: "draft" as const,
         updatedBlocks: input.blocks,
       }
     }

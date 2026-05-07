@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useReducer } from "react"
-import type { CmsBlock } from "@sovereign-cms/core"
+import type { CmsBlock, ContentStatus } from "@sovereign-cms/core"
 
 type EditorState = {
   selectedBlockId: string | null
@@ -9,6 +9,7 @@ type EditorState = {
   isDirty: boolean
   isSaving: boolean
   lastSavedAt: string | null
+  lastSavedStatus: ContentStatus | null
   saveError: string | null
 }
 
@@ -18,6 +19,7 @@ type EditorAction =
   | { type: "setIsDirty"; isDirty: boolean }
   | { type: "setIsSaving"; isSaving: boolean }
   | { type: "setLastSavedAt"; savedAt: string | null }
+  | { type: "setLastSavedStatus"; status: ContentStatus | null }
   | { type: "setSaveError"; error: string | null }
   | { type: "resetFromServer"; blocks: CmsBlock[] }
 
@@ -33,6 +35,8 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, isSaving: action.isSaving }
     case "setLastSavedAt":
       return { ...state, lastSavedAt: action.savedAt }
+    case "setLastSavedStatus":
+      return { ...state, lastSavedStatus: action.status }
     case "setSaveError":
       return { ...state, saveError: action.error }
     case "resetFromServer":
@@ -42,6 +46,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         isDirty: false,
         isSaving: false,
         lastSavedAt: null,
+        lastSavedStatus: null,
         saveError: null,
       }
     default:
@@ -56,6 +61,7 @@ export function useEditorState(initialBlocks: CmsBlock[]) {
     isDirty: false,
     isSaving: false,
     lastSavedAt: null,
+    lastSavedStatus: null,
     saveError: null,
   })
 
@@ -79,6 +85,9 @@ export function useEditorState(initialBlocks: CmsBlock[]) {
     lastSavedAt: state.lastSavedAt,
     setLastSavedAt: (savedAt: string | null) =>
       dispatch({ type: "setLastSavedAt", savedAt }),
+    lastSavedStatus: state.lastSavedStatus,
+    setLastSavedStatus: (status: ContentStatus | null) =>
+      dispatch({ type: "setLastSavedStatus", status }),
     saveError: state.saveError,
     setSaveError: (error: string | null) =>
       dispatch({ type: "setSaveError", error }),
