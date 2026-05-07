@@ -343,11 +343,108 @@ All of these are additive – no backwards compatibility issues.
 | `packages/core/src/locale.ts` | Locale type definitions |
 | `packages/runtime/src/config.ts` | Locale config loading |
 | `packages/db/src/in-memory-adapter.ts` | Demo multi-locale data |
-| `apps/admin/src/lib/load-admin-pages.ts` | Pages loader with locale |
+| `apps/admin/src/lib/load-admin-pages.ts` | Pages loader with locale + counts |
 | `apps/admin/src/lib/load-admin-page-detail.ts` | Page detail loader with locale |
 | `apps/admin/src/app/(admin)/pages/page.tsx` | Pages list UI (shows locale) |
 | `apps/admin/src/app/(admin)/pages/[slug]/page.tsx` | Page detail UI (shows locale) |
 | `.env.example` | Locale config template |
+
+## Page Variants and Counts (Phase 24.2)
+
+### Page Record Uniqueness
+
+Each page is uniquely identified by `(tenantId, slug, locale)`:
+- **Same slug, different locales** = different page records
+- **Same locale, different tenants** = different page records
+- No "shared" pages across locales
+
+**Example**:
+```
+demo/home/de → Page Record 1 (German)
+demo/home/en → Page Record 2 (English)
+```
+
+### Terminology
+
+| Term | Meaning | Example |
+|------|---------|---------|
+| **Logical Page** | Unique slug (concept) | "home" |
+| **Page Variant** | Specific (slug, locale) record | "home/de" or "home/en" |
+| **Page Record** | Persisted row in database | PageID, blocks, status |
+
+### Counts
+
+The admin interface now distinguishes:
+
+#### activeLocalePagesCount
+- Pages available for **current active locale**
+- When user is viewing locale=de, counts pages where locale=de
+- Reset when locale switcher changes
+
+#### pageVariantsCount
+- Total number of (slug, locale) records for the tenant
+- Remains constant regardless of active locale
+- Helps user understand "how many total page variants exist"
+
+#### logicalPagesCount
+- Count of unique slugs across all locales
+- Example: If slugs are [home/de, home/en, about/de, about/en] → logicalPageCount=2
+- Helps user understand "how many distinct pages I'm managing"
+
+### Admin List Filtering
+
+The pages list is **always filtered to active locale**:
+- URL: `/admin/pages?locale=de`
+- Displays: Only pages where locale="de"
+- Other locales: Accessible via locale switcher
+
+**Why not show all locales in one table?**
+1. Clearer mental model: "I'm editing German pages now"
+2. Simpler block editing: One locale context at a time
+3. Smaller tables: Better for performance
+4. Foundation for future locale-specific workflows
+
+### UI Display
+
+#### Dashboard
+Before:
+```
+Pages: 1
+```
+
+After:
+```
+Pages (Current Locale): 1
+Page Variants: 2
+Logical Pages: 1
+```
+
+#### Pages List Header
+Before:
+```
+Title | Slug | Locale | Status
+```
+
+After:
+```
+Showing pages for locale: de
+Total variants: 2
+Logical pages: 1
+
+Title | Slug | Locale | Status
+```
+
+#### Empty State
+Before:
+```
+No pages for this locale
+```
+
+After:
+```
+No pages for locale de
+Other locale variants may exist. Use locale switcher above to view them.
+```
 
 ## TypeScript Safety
 

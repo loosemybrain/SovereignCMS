@@ -12,7 +12,15 @@ export default async function PagesListPage({ searchParams }: Props) {
   const params = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const { pages, error, localeContext, activeLocale } = await loadAdminPages({
+  const {
+    pages,
+    error,
+    localeContext,
+    activeLocale,
+    activeLocalePagesCount,
+    pageVariantsCount,
+    logicalPagesCount,
+  } = await loadAdminPages({
     host,
     searchParams: params,
   })
@@ -37,13 +45,29 @@ export default async function PagesListPage({ searchParams }: Props) {
         createHref={createHref}
       />
 
+      {/* Page Counts Info */}
+      <div className="flex flex-wrap gap-4 text-xs">
+        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
+          Showing pages for locale: <span className="font-medium text-zinc-100">{activeLocale}</span>
+        </div>
+        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
+          Total variants: <span className="font-medium text-zinc-100">{pageVariantsCount}</span>
+        </div>
+        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
+          Logical pages: <span className="font-medium text-zinc-100">{logicalPagesCount}</span>
+        </div>
+      </div>
+
       {error === true ? (
         <div className="rounded-lg border border-red-800/50 bg-red-900/20 p-4 text-red-300">
           Failed to load pages. Please try again.
         </div>
       ) : pages.length === 0 ? (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-8 text-center text-zinc-400">
-          <p className="text-sm">No pages for this locale ({activeLocale})</p>
+          <p className="text-sm">No pages for locale {activeLocale}</p>
+          <p className="text-xs text-zinc-500 mt-2">
+            Other locale variants may exist. Use locale switcher above to view them.
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">

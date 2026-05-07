@@ -12,7 +12,16 @@ export default async function DashboardPage({ searchParams }: Props) {
   const params = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const { tenant, runtimeConfig, pages, localeContext, activeLocale } = await loadAdminPages({
+  const {
+    tenant,
+    runtimeConfig,
+    pages,
+    localeContext,
+    activeLocale,
+    activeLocalePagesCount,
+    pageVariantsCount,
+    logicalPagesCount,
+  } = await loadAdminPages({
     host,
     searchParams: params,
   })
@@ -56,7 +65,21 @@ export default async function DashboardPage({ searchParams }: Props) {
           description={`Resolved via: ${tenant.source}`}
           variant="highlight"
         />
-        <DashboardCard title="Pages" value={pages.length} description={`Total CMS pages (${activeLocale})`} />
+        <DashboardCard
+          title="Pages (Current Locale)"
+          value={activeLocalePagesCount}
+          description={`Pages in ${activeLocale} locale`}
+        />
+        <DashboardCard
+          title="Page Variants"
+          value={pageVariantsCount}
+          description="All locale-specific records"
+        />
+        <DashboardCard
+          title="Logical Pages"
+          value={logicalPagesCount}
+          description="Unique slugs across locales"
+        />
         <DashboardCard title="Blocks" value={totalBlocks} description="Total content blocks" />
         <DashboardCard
           title="Database"

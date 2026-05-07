@@ -15,6 +15,9 @@ export async function loadAdminPages(input?: {
   pages: CmsPage[]
   localeContext: LocaleContext
   activeLocale: string
+  activeLocalePagesCount: number
+  pageVariantsCount: number
+  logicalPagesCount: number
   error?: boolean
 }> {
   const { runtime, tenant } = getAdminRuntime({ host: input?.host })
@@ -31,10 +34,24 @@ export async function loadAdminPages(input?: {
   })
 
   try {
+    // Load pages for active locale
     const pages: CmsPage[] = await runtime.db.pages.listByTenant({
       tenantId: tenant.tenantId,
       locale: activeLocale,
     })
+
+    // Load all locale variants to calculate counts
+    const allLocalePages: CmsPage[] = await runtime.db.pages.listByTenant({
+      tenantId: tenant.tenantId,
+    })
+
+    // Calculate counts
+    const activeLocalePagesCount = pages.length
+    const pageVariantsCount = allLocalePages.length
+
+    // Count unique slugs across all locales
+    const uniqueSlugs = new Set(allLocalePages.map((p) => p.slug))
+    const logicalPagesCount = uniqueSlugs.size
 
     return {
       tenant,
@@ -42,6 +59,9 @@ export async function loadAdminPages(input?: {
       pages,
       localeContext,
       activeLocale,
+      activeLocalePagesCount,
+      pageVariantsCount,
+      logicalPagesCount,
     }
   } catch (error) {
     console.error("[admin] failed to load pages", error)
@@ -51,6 +71,9 @@ export async function loadAdminPages(input?: {
       pages: [],
       localeContext,
       activeLocale,
+      activeLocalePagesCount: 0,
+      pageVariantsCount: 0,
+      logicalPagesCount: 0,
       error: true,
     }
   }
