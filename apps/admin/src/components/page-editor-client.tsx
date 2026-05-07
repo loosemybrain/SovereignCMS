@@ -1,16 +1,19 @@
 "use client"
 
-import type { CmsBlock, CmsPage } from "@sovereign-cms/core"
+import { useState } from "react"
+import type { CmsBlock, CmsPage, ContentTransitionAction } from "@sovereign-cms/core"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
 import { renderAdminBlock } from "@/components/admin-block-renderer-registry"
 import { clientEditorPersistence } from "@/lib/client-editor-persistence"
+import { clientPageStatusPersistence } from "@/lib/client-page-status-persistence"
 import { mergeProps } from "@/lib/merge-props"
 import { useEditorState } from "@/lib/editor-state"
 import { BlockPalette } from "@/components/block-palette"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
 import { moveBlockUp, moveBlockDown, cloneDefaultProps, normalizeBlockOrder, deleteBlock } from "@/lib/reorder-blocks"
+import { getAvailableActionsForStatus, getTransitionActionLabel } from "@sovereign-cms/core"
 import { cn } from "@sovereign-cms/ui"
 
 type PageEditorClientProps = {
@@ -37,6 +40,12 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     saveError,
     setSaveError,
   } = useEditorState(blocks)
+
+  // Page status transition state
+  const [currentPageStatus, setCurrentPageStatus] = useState(page.status)
+  const [isTransitioningStatus, setIsTransitioningStatus] = useState(false)
+  const [statusTransitionError, setStatusTransitionError] = useState<string | null>(null)
+
   const selectedBlock = draftBlocks.find((b) => b.id === selectedBlockId) ?? null
 
   // Maintain sorted order for rendering
@@ -116,6 +125,29 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     setIsDirty(true)
   }
 
+  const handleTransitionPageStatus = async (action: ContentTransitionAction) => {
+    try {
+      setIsTransitioningStatus(true)
+      setStatusTransitionError(null)
+
+      const result = await clientPageStatusPersistence.transitionPageStatus({
+        tenantId: tenant.tenantId,
+        pageId: page.id,
+        locale: page.locale,
+        action,
+      })
+
+      if (result.success) {
+        setCurrentPageStatus(result.status)
+      }
+    } catch (error) {
+      console.error("[editor] failed to transition page status", error)
+      setStatusTransitionError("Status transition failed")
+    } finally {
+      setIsTransitioningStatus(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!page || isSaving) return
 
@@ -182,6 +214,32 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
             >
               {isSaving ? "Saving..." : "Save"}
             </button>
+          </div>
+
+          {/* Page Status Transitions */}
+          {statusTransitionError && (
+            <p className="text-red-400 text-xs">{statusTransitionError}</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {getAvailableActionsForStatus(currentPageStatus).map((action) => (
+              <button
+                key={action}
+                onClick={() => handleTransitionPageStatus(action)}
+                disabled={isTransitioningStatus}
+                className={cn(
+                  "rounded px-3 py-1 text-xs font-medium transition-all duration-200",
+                  isTransitioningStatus
+                    ? "cursor-not-allowed bg-zinc-700 text-zinc-400"
+                    : action === "publish"
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
+                      : action === "archive"
+                        ? "bg-orange-600 text-white hover:bg-orange-700 active:scale-95"
+                        : "bg-amber-600 text-white hover:bg-amber-700 active:scale-95",
+                )}
+              >
+                {isTransitioningStatus ? "..." : getTransitionActionLabel(action)}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -1,3 +1,5 @@
+import type { ContentStatus } from "./content-status"
+
 export type TenantId = string
 export type Locale = string
 
@@ -8,7 +10,6 @@ export type CmsEntityBase = {
   updatedAt: string
 }
 
-export type ContentStatus = "draft" | "published" | "archived"
 export type CmsBlockVisibility = "visible" | "hidden" | "scheduled"
 
 export type CmsPage = CmsEntityBase & {

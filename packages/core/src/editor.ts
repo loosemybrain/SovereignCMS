@@ -1,4 +1,5 @@
-import type { CmsBlock, CmsPage, Locale, TenantId, ContentStatus } from "./cms"
+import type { CmsBlock, CmsPage, Locale, TenantId } from "./cms"
+import type { ContentStatus } from "./content-status"
 
 /**
  * Input für das Speichern eines Seiten-Entwurfs (lokale Änderungen).

@@ -12,6 +12,7 @@ import {
   selectStorageAdapter,
 } from "./adapter-selection"
 import { createEditorPersistence } from "./editor-persistence"
+import { createPageStatusPersistence } from "./page-status-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 
 export type SovereignRuntime = {
@@ -21,6 +22,7 @@ export type SovereignRuntime = {
   auth: AuthProvider
   tenantResolver: TenantResolver
   editorPersistence: EditorPersistence
+  pageStatusPersistence: ReturnType<typeof createPageStatusPersistence>
 }
 
 export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRuntime {
@@ -32,6 +34,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const auth = selectAuthProvider(mergedConfig)
   const tenantResolver = createDatabaseTenantResolver(db)
   const editorPersistence = createEditorPersistence({ db })
+  const pageStatusPersistence = createPageStatusPersistence({ db })
 
   return {
     config: mergedConfig,
@@ -40,6 +43,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     auth,
     tenantResolver,
     editorPersistence,
+    pageStatusPersistence,
   }
 }
 

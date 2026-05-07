@@ -213,6 +213,39 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
       }
       return list.map(toCmsPage)
     },
+
+    async transitionStatus(input) {
+      // Import transition logic
+      const { getNextStatusForAction } = await import("@sovereign-cms/core")
+
+      // Find page
+      const pageIndex = store.pages.findIndex(
+        (p) =>
+          p.id === input.pageId &&
+          p.tenantId === input.tenantId &&
+          p.locale === input.locale,
+      )
+
+      if (pageIndex === -1) {
+        throw new Error(
+          `Page not found: tenantId=${input.tenantId}, pageId=${input.pageId}, locale=${input.locale}`,
+        )
+      }
+
+      const page = store.pages[pageIndex]!
+      const nextStatus = getNextStatusForAction(page.status, input.action)
+
+      // Update status
+      const updatedPage: InternalPageRow = {
+        ...page,
+        status: nextStatus,
+        updatedAt: new Date().toISOString(),
+      }
+
+      store.pages[pageIndex] = updatedPage
+
+      return toCmsPage(updatedPage)
+    },
   }
 
   const blockRepo: BlockRepository = {
