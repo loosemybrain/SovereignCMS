@@ -18,3 +18,22 @@ export type { ContentTransitionAction, TransitionPageStatusInput, TransitionPage
 export { getNextStatusForAction, getTransitionActionLabel, getAvailableActionsForStatus } from "./content-transition"
 export type { CreatePageInput, CreatePageResult } from "./page-creation"
 export { normalizePageSlug, validatePageSlug, validatePageTitle } from "./page-creation"
+export type {
+  NavigationItemType,
+  NavigationItem,
+  CreateNavigationItemInput,
+  CreateNavigationItemResult,
+} from "./navigation"
+export { validateNavigationLabel, validateExternalHref } from "./navigation"
+export type {
+  MediaAssetType,
+  MediaAsset,
+  CreateMediaAssetInput,
+  CreateMediaAssetResult,
+} from "./media"
+export {
+  validateMediaTitle,
+  validateMediaUrl,
+  MEDIA_ASSET_TYPES,
+  isMediaAssetType,
+} from "./media"
