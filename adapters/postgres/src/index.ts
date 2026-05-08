@@ -32,5 +32,21 @@ export function createPostgresDatabaseAdapterPlaceholder(): DatabaseAdapter {
       return []
     },
   }
-  return { tenants, pages, blocks }
+  const navigation = {
+    async listByTenant() {
+      return []
+    },
+    async create() {
+      throw new Error("Not implemented in placeholder")
+    },
+  }
+  const media = {
+    async listByTenant() {
+      return []
+    },
+    async create() {
+      throw new Error("Not implemented in placeholder")
+    },
+  }
+  return { tenants, pages, blocks, navigation, media }
 }

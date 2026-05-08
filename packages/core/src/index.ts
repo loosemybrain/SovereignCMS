@@ -37,3 +37,10 @@ export {
   MEDIA_ASSET_TYPES,
   isMediaAssetType,
 } from "./media"
+export type { SeoMetadata } from "./seo"
+export {
+  createDefaultSeoMetadata,
+  validateCanonicalUrl,
+  validateSeoTitle,
+  validateSeoDescription,
+} from "./seo"

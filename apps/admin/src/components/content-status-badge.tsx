@@ -1,5 +1,6 @@
 import type { ContentStatus } from "@sovereign-cms/core"
 import { getContentStatusLabel } from "@sovereign-cms/core"
+import { AdminBadge } from "@/components/admin-ui"
 
 type ContentStatusBadgeProps = {
   status: ContentStatus
@@ -7,18 +8,15 @@ type ContentStatusBadgeProps = {
 
 export function ContentStatusBadge({ status }: ContentStatusBadgeProps) {
   const label = getContentStatusLabel(status)
-
-  const statusStyles: Record<ContentStatus, string> = {
-    draft: "bg-amber-900/30 text-amber-300 border-amber-700/50",
-    published: "bg-emerald-900/30 text-emerald-300 border-emerald-700/50",
-    archived: "bg-zinc-800/50 text-zinc-300 border-zinc-700/50",
+  const variant: Record<ContentStatus, "warning" | "success" | "muted"> = {
+    draft: "warning",
+    published: "success",
+    archived: "muted",
   }
 
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border ${statusStyles[status]}`}
-    >
+    <AdminBadge variant={variant[status]}>
       {label}
-    </span>
+    </AdminBadge>
   )
 }

@@ -2,6 +2,8 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
+import { CreatePageForm } from "@/components/create-page-form"
+import { AdminCard, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 type Props = {
@@ -13,11 +15,11 @@ export default async function PagesListPage({ searchParams }: Props) {
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
   const {
+    tenant,
     pages,
     error,
     localeContext,
     activeLocale,
-    activeLocalePagesCount,
     pageVariantsCount,
     logicalPagesCount,
   } = await loadAdminPages({
@@ -33,10 +35,7 @@ export default async function PagesListPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-zinc-100">Pages</h1>
-        <p className="text-sm text-zinc-400 mt-1">Manage your CMS pages</p>
-      </div>
+      <AdminPageHeader title="Pages" description="Manage your CMS pages" />
 
       {/* Locale Switcher */}
       <AdminLocaleSwitcher
@@ -45,49 +44,49 @@ export default async function PagesListPage({ searchParams }: Props) {
         createHref={createHref}
       />
 
+      <CreatePageForm tenantId={tenant.tenantId} activeLocale={activeLocale} />
+
       {/* Page Counts Info */}
       <div className="flex flex-wrap gap-4 text-xs">
-        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
-          Showing pages for locale: <span className="font-medium text-zinc-100">{activeLocale}</span>
+        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
+          Showing pages for locale: <span className="font-medium admin-text">{activeLocale}</span>
         </div>
-        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
-          Total variants: <span className="font-medium text-zinc-100">{pageVariantsCount}</span>
+        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
+          Total variants: <span className="font-medium admin-text">{pageVariantsCount}</span>
         </div>
-        <div className="px-3 py-2 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300">
-          Logical pages: <span className="font-medium text-zinc-100">{logicalPagesCount}</span>
+        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
+          Logical pages: <span className="font-medium admin-text">{logicalPagesCount}</span>
         </div>
       </div>
 
       {error === true ? (
-        <div className="rounded-lg border border-red-800/50 bg-red-900/20 p-4 text-red-300">
+        <AdminCard className="border-red-800/50 bg-red-900/20 text-red-300">
           Failed to load pages. Please try again.
-        </div>
+        </AdminCard>
       ) : pages.length === 0 ? (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-8 text-center text-zinc-400">
-          <p className="text-sm">No pages for locale {activeLocale}</p>
-          <p className="text-xs text-zinc-500 mt-2">
-            Other locale variants may exist. Use locale switcher above to view them.
-          </p>
-        </div>
+        <AdminEmptyState
+          title={`No pages for locale ${activeLocale}`}
+          description="Other locale variants may exist. Use locale switcher above to view them."
+        />
       ) : (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+        <AdminCard className="p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="px-6 py-3 text-left font-medium text-zinc-300">Title</th>
-                <th className="px-6 py-3 text-left font-medium text-zinc-300">Slug</th>
-                <th className="px-6 py-3 text-left font-medium text-zinc-300">Locale</th>
-                <th className="px-6 py-3 text-left font-medium text-zinc-300">Status</th>
-                <th className="px-6 py-3 text-left font-medium text-zinc-300">Updated</th>
+              <tr className="border-b admin-border admin-surface-muted">
+                <th className="px-6 py-3 text-left font-medium admin-text-muted">Title</th>
+                <th className="px-6 py-3 text-left font-medium admin-text-muted">Slug</th>
+                <th className="px-6 py-3 text-left font-medium admin-text-muted">Locale</th>
+                <th className="px-6 py-3 text-left font-medium admin-text-muted">Status</th>
+                <th className="px-6 py-3 text-left font-medium admin-text-muted">Updated</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y admin-border">
               {pages.map((page) => (
                 <tr
                   key={page.id}
                   className="hover:bg-zinc-900/40 transition-colors duration-200 cursor-pointer"
                 >
-                  <td className="px-6 py-4 text-zinc-100">
+                  <td className="px-6 py-4 admin-text">
                     <Link
                       href={`/pages/${page.slug}?locale=${activeLocale}`}
                       className="hover:underline font-medium"
@@ -95,17 +94,17 @@ export default async function PagesListPage({ searchParams }: Props) {
                       {page.title}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 text-zinc-400 font-mono text-xs">{page.slug}</td>
-                  <td className="px-6 py-4 text-zinc-400">{page.locale}</td>
+                  <td className="px-6 py-4 admin-text-muted font-mono text-xs">{page.slug}</td>
+                  <td className="px-6 py-4 admin-text-muted">{page.locale}</td>
                   <td className="px-6 py-4">
                     <ContentStatusBadge status={page.status} />
                   </td>
-                  <td className="px-6 py-4 text-zinc-500 text-xs">{new Date(page.updatedAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 admin-text-muted text-xs">{new Date(page.updatedAt).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </AdminCard>
       )}
     </div>
   )

@@ -1,4 +1,5 @@
 import type { ContentStatus } from "./content-status"
+import type { SeoMetadata } from "./seo"
 
 export type TenantId = string
 export type Locale = string
@@ -17,7 +18,7 @@ export type CmsPage = CmsEntityBase & {
   locale: Locale
   title: string
   status: ContentStatus
-  seo?: Record<string, unknown>
+  seo: SeoMetadata
 }
 
 export type CmsBlock = CmsEntityBase & {

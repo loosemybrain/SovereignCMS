@@ -3,11 +3,16 @@
 import type { CmsBlock } from "@sovereign-cms/core"
 import { InspectorFieldRenderer } from "./inspector/inspector-field-renderer"
 import { getInspectorFieldsForBlock } from "./inspector/block-field-registry"
+import { SeoEditorSection } from "@/components/seo-editor-section"
+
+import type { SeoMetadata } from "@sovereign-cms/core"
 
 type EditorInspectorProps = {
   selectedBlock: CmsBlock | null
   onUpdateProps?: (blockId: string, newProps: Record<string, unknown>) => void
   tenantId?: string
+  pageSeo?: SeoMetadata | null
+  onUpdatePageSeo?: (patch: Partial<SeoMetadata>) => void
 }
 
 function BlockInfo({ block }: { block: CmsBlock }) {
@@ -97,11 +102,39 @@ function PropsEditing({
   )
 }
 
-export function EditorInspector({ selectedBlock, onUpdateProps, tenantId }: EditorInspectorProps) {
+export function EditorInspector({
+  selectedBlock,
+  onUpdateProps,
+  tenantId,
+  pageSeo,
+  onUpdatePageSeo,
+}: EditorInspectorProps) {
+  // If no block is selected, show page SEO editor
   if (selectedBlock === null) {
-    return <p className="admin-text-muted">No block selected</p>
+    return (
+      <div className="space-y-4 text-sm">
+        <section>
+          <h3 className="mb-2 font-medium admin-text">Page SEO Metadata</h3>
+          {onUpdatePageSeo ? (
+            <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
+          ) : (
+            <p className="text-xs admin-text-muted">No block selected. Select a block or configure page SEO above.</p>
+          )}
+        </section>
+
+        {pageSeo && (
+          <section className="border-t admin-border pt-4">
+            <h3 className="mb-2 font-medium admin-text">Raw SEO Preview</h3>
+            <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
+              {JSON.stringify(pageSeo, null, 2)}
+            </pre>
+          </section>
+        )}
+      </div>
+    )
   }
 
+  // Block is selected: show block properties
   return (
     <div className="space-y-4 text-sm">
       <section>

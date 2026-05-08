@@ -4,6 +4,14 @@ import { useState } from "react"
 import type { CreatePageInput } from "@sovereign-cms/core"
 import { clientPageCreationPersistence } from "@/lib/client-page-creation-persistence"
 import { cn } from "@sovereign-cms/ui"
+import {
+  AdminButton,
+  AdminCard,
+  AdminCardDescription,
+  AdminCardHeader,
+  AdminCardTitle,
+  AdminInput,
+} from "@/components/admin-ui"
 
 type Props = {
   tenantId: string
@@ -47,11 +55,11 @@ export function CreatePageForm({ tenantId, activeLocale }: Props) {
   }
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-zinc-100">Create New Page</h2>
-        <p className="text-sm text-zinc-400 mt-1">Create a new page for locale: {activeLocale}</p>
-      </div>
+    <AdminCard className="space-y-4">
+      <AdminCardHeader>
+        <AdminCardTitle>Create New Page</AdminCardTitle>
+        <AdminCardDescription>Create a new page for locale: {activeLocale}</AdminCardDescription>
+      </AdminCardHeader>
 
       {error && (
         <div className="rounded bg-red-900/30 border border-red-800/50 p-3 text-red-300 text-sm">
@@ -61,10 +69,10 @@ export function CreatePageForm({ tenantId, activeLocale }: Props) {
 
       {createdPageSlug && (
         <div className="rounded bg-emerald-900/30 border border-emerald-800/50 p-3 text-emerald-300 text-sm">
-          <strong>Page created:</strong> {createdPageSlug}
+          <strong>Page erstellt:</strong> {createdPageSlug}
           <br />
           <span className="text-xs text-emerald-400/70">
-            Note: InMemory data is currently not persistent
+            Hinweis: InMemory-Daten sind aktuell nicht dauerhaft persistiert.
           </span>
         </div>
       )}
@@ -72,48 +80,38 @@ export function CreatePageForm({ tenantId, activeLocale }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">Title *</label>
-          <input
+          <AdminInput
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter page title"
             disabled={isCreating}
-            className={cn(
-              "w-full px-3 py-2 rounded border bg-zinc-900/40 text-zinc-100 placeholder-zinc-500 transition-colors",
-              isCreating ? "cursor-not-allowed opacity-50" : "border-zinc-800 hover:border-zinc-700",
-            )}
+            className={cn(isCreating && "cursor-not-allowed opacity-50")}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">Slug *</label>
-          <input
+          <AdminInput
             type="text"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="e.g., about or services/consulting"
             disabled={isCreating}
-            className={cn(
-              "w-full px-3 py-2 rounded border bg-zinc-900/40 text-zinc-100 placeholder-zinc-500 transition-colors",
-              isCreating ? "cursor-not-allowed opacity-50" : "border-zinc-800 hover:border-zinc-700",
-            )}
+            className={cn(isCreating && "cursor-not-allowed opacity-50")}
           />
-          <p className="text-xs text-zinc-500 mt-1">Only lowercase letters, numbers, hyphens, and forward slashes</p>
+          <p className="text-xs admin-text-muted mt-1">Only lowercase letters, numbers, hyphens, and forward slashes</p>
         </div>
 
-        <button
+        <AdminButton
           type="submit"
           disabled={isCreating || !title.trim() || !slug.trim()}
-          className={cn(
-            "w-full rounded px-4 py-2 text-sm font-medium transition-all duration-200",
-            isCreating || !title.trim() || !slug.trim()
-              ? "cursor-not-allowed bg-zinc-700 text-zinc-400"
-              : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95",
-          )}
+          variant="primary"
+          className="w-full"
         >
           {isCreating ? "Creating..." : "Create Page"}
-        </button>
+        </AdminButton>
       </form>
-    </div>
+    </AdminCard>
   )
 }

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import type { CmsBlock, CmsPage, ContentTransitionAction } from "@sovereign-cms/core"
+import type { CmsBlock, CmsPage, ContentTransitionAction, SeoMetadata } from "@sovereign-cms/core"
+import { createDefaultSeoMetadata } from "@sovereign-cms/core"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
@@ -47,6 +48,9 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
   const [isTransitioningStatus, setIsTransitioningStatus] = useState(false)
   const [statusTransitionError, setStatusTransitionError] = useState<string | null>(null)
 
+  // Page SEO metadata state (separate from block state)
+  const [pageSeo, setPageSeo] = useState<SeoMetadata>(page.seo || createDefaultSeoMetadata())
+
   const selectedBlock = draftBlocks.find((b) => b.id === selectedBlockId) ?? null
 
   // Maintain sorted order for rendering
@@ -64,6 +68,14 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
           : b,
       ),
     )
+    setIsDirty(true)
+  }
+
+  const updatePageSeo = (patch: Partial<SeoMetadata>) => {
+    setPageSeo((prev) => ({
+      ...prev,
+      ...patch,
+    }))
     setIsDirty(true)
   }
 
@@ -164,6 +176,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
         pageId: page.id,
         locale: page.locale,
         blocks: blocksToSave,
+        pageSeo,
       })
 
       if (result.success) {
@@ -352,6 +365,8 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                 selectedBlock={selectedBlock}
                 onUpdateProps={updateBlockProps}
                 tenantId={tenant.tenantId}
+                pageSeo={pageSeo}
+                onUpdatePageSeo={updatePageSeo}
               />
             </div>
           </AdminCard>

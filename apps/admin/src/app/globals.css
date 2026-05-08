@@ -11,3 +11,79 @@ body {
   color: var(--foreground);
   font-family: system-ui, sans-serif;
 }
+
+.admin-theme-root[data-theme="dark"] {
+  --admin-bg: #09090b;
+  --admin-surface: #18181b;
+  --admin-surface-muted: #27272a;
+  --admin-border: #3f3f46;
+  --admin-text: #fafafa;
+  --admin-text-muted: #a1a1aa;
+  --admin-accent: #38bdf8;
+  --admin-accent-muted: rgba(56, 189, 248, 0.14);
+  --admin-danger: #f87171;
+  --admin-success: #4ade80;
+}
+
+.admin-theme-root[data-theme="light"] {
+  --admin-bg: #f8fafc;
+  --admin-surface: #ffffff;
+  --admin-surface-muted: #f1f5f9;
+  --admin-border: #cbd5e1;
+  --admin-text: #0f172a;
+  --admin-text-muted: #64748b;
+  --admin-accent: #0284c7;
+  --admin-accent-muted: rgba(2, 132, 199, 0.1);
+  --admin-danger: #dc2626;
+  --admin-success: #16a34a;
+}
+
+.admin-theme-root {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.admin-bg {
+  background: var(--admin-bg);
+}
+
+.admin-surface {
+  background: var(--admin-surface);
+}
+
+.admin-surface-muted {
+  background: var(--admin-surface-muted);
+}
+
+.admin-border {
+  border-color: var(--admin-border);
+}
+
+.admin-text {
+  color: var(--admin-text);
+}
+
+.admin-text-muted {
+  color: var(--admin-text-muted);
+}
+
+.admin-accent {
+  color: var(--admin-accent);
+}
+
+.admin-accent-bg {
+  background: var(--admin-accent-muted);
+}
+
+.admin-focus {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+
+.admin-shadow {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.admin-radius {
+  border-radius: 1rem;
+}

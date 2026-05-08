@@ -1,4 +1,5 @@
 import { headers } from "next/headers"
+import { AdminAppearanceProvider } from "@/components/admin-appearance-provider"
 import { AdminShell } from "@/components/admin-shell"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
@@ -11,5 +12,11 @@ export default async function AdminLayout({ children }: Props) {
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
   const { runtime, tenant } = getAdminRuntime({ host })
 
-  return <AdminShell runtimeConfig={runtime.config} tenant={tenant}>{children}</AdminShell>
+  return (
+    <AdminAppearanceProvider>
+      <AdminShell runtimeConfig={runtime.config} tenant={tenant}>
+        {children}
+      </AdminShell>
+    </AdminAppearanceProvider>
+  )
 }

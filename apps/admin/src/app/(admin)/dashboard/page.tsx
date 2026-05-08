@@ -1,6 +1,8 @@
 import { headers } from "next/headers"
+import Link from "next/link"
 import { DashboardCard } from "@/components/dashboard-card"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
+import { AdminCard, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
@@ -40,10 +42,18 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-zinc-100">Dashboard</h1>
-        <p className="text-sm text-zinc-400 mt-1">Overview of your CMS</p>
-      </div>
+      <AdminPageHeader
+        title="Dashboard"
+        description="Overview of your CMS"
+        actions={
+          <Link
+            href={`/pages?locale=${activeLocale}`}
+            className="text-sm admin-accent hover:opacity-80 transition-colors"
+          >
+            Create new page in Pages overview →
+          </Link>
+        }
+      />
 
       {/* Locale Switcher */}
       <div className="flex items-center justify-between">
@@ -89,39 +99,39 @@ export default async function DashboardPage({ searchParams }: Props) {
       </div>
 
       {/* Runtime Configuration */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/40">
-        <div className="border-b border-zinc-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-zinc-100">Runtime Configuration</h2>
+      <AdminCard className="p-0 overflow-hidden">
+        <div className="border-b admin-border px-6 py-4 admin-surface-muted">
+          <h2 className="text-lg font-semibold admin-text">Runtime Configuration</h2>
         </div>
         <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">DB Adapter</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">{runtimeConfig.databaseAdapter}</p>
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">DB Adapter</p>
+            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.databaseAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Storage</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">{runtimeConfig.storageAdapter}</p>
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Storage</p>
+            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.storageAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Auth</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">{runtimeConfig.authAdapter}</p>
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Auth</p>
+            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.authAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Environment</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">{runtimeConfig.appEnv}</p>
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Environment</p>
+            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.appEnv}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Default Locale</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">{localeContext.defaultLocale}</p>
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Default Locale</p>
+            <p className="text-lg font-mono admin-text mt-2">{localeContext.defaultLocale}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Supported Locales</p>
-            <p className="text-lg font-mono text-zinc-100 mt-2">
+            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Supported Locales</p>
+            <p className="text-lg font-mono admin-text mt-2">
               {localeContext.supportedLocales.map((l) => l.code).join(", ")}
             </p>
           </div>
         </div>
-      </div>
+      </AdminCard>
     </div>
   )
 }

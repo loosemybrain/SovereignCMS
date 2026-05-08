@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { AdminAppearanceToggle } from "@/components/admin-appearance-toggle"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { cn } from "@sovereign-cms/ui"
@@ -15,6 +16,7 @@ type AdminShellProps = {
 const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/pages", label: "Pages", icon: "📄" },
+  { href: "/navigation", label: "Navigation", icon: "🧭" },
   { href: "/media", label: "Media", icon: "🖼️" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ]
@@ -32,13 +34,13 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
+    <div className="flex min-h-screen admin-bg admin-text">
       {/* Sidebar */}
-      <aside className="w-60 border-r border-zinc-800 bg-zinc-900/50 flex flex-col">
+      <aside className="w-60 border-r admin-border admin-surface flex flex-col">
         {/* Logo Section */}
-        <div className="p-6 border-b border-zinc-800">
-          <h1 className="text-sm font-bold text-white tracking-tight">SOVEREIGNCMS</h1>
-          <p className="text-xs text-zinc-500 mt-2 truncate">Tenant: {tenant.tenantId}</p>
+        <div className="p-6 border-b admin-border">
+          <h1 className="text-sm font-bold admin-text tracking-tight">SOVEREIGNCMS</h1>
+          <p className="text-xs admin-text-muted mt-2 truncate">Tenant: {tenant.tenantId}</p>
         </div>
 
         {/* Navigation */}
@@ -52,8 +54,8 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded text-sm transition-all duration-200",
                   isActive
-                    ? "bg-blue-950 text-blue-100 border border-blue-800/50"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/30",
+                    ? "admin-accent-bg admin-text border admin-border"
+                    : "admin-text-muted hover:bg-zinc-800/30 admin-surface-muted",
                 )}
               >
                 <span className="text-base">{item.icon}</span>
@@ -64,28 +66,31 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
         </nav>
 
         {/* Footer Config */}
-        <div className="border-t border-zinc-800 p-4 space-y-2 text-xs">
+        <div className="border-t admin-border p-4 space-y-2 text-xs">
           <div className="space-y-1">
-            <p className="text-zinc-500 font-medium">Runtime Config</p>
-            <div className="space-y-1 text-zinc-400">
-              <p className="truncate"><span className="text-zinc-600">DB:</span> {runtimeConfig.databaseAdapter}</p>
-              <p className="truncate"><span className="text-zinc-600">Storage:</span> {runtimeConfig.storageAdapter}</p>
-              <p className="truncate"><span className="text-zinc-600">Auth:</span> {runtimeConfig.authAdapter}</p>
+            <p className="admin-text-muted font-medium">Runtime Config</p>
+            <div className="space-y-1 admin-text-muted">
+              <p className="truncate"><span className="admin-text-muted">DB:</span> {runtimeConfig.databaseAdapter}</p>
+              <p className="truncate"><span className="admin-text-muted">Storage:</span> {runtimeConfig.storageAdapter}</p>
+              <p className="truncate"><span className="admin-text-muted">Auth:</span> {runtimeConfig.authAdapter}</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Area */}
-      <main className="flex-1 flex flex-col bg-zinc-950/50">
+      <main className="flex-1 flex flex-col admin-bg">
         {/* Header */}
-        <header className="border-b border-zinc-800 bg-zinc-900/30 px-8 py-4 sticky top-0 z-10">
+        <header className="border-b admin-border admin-surface px-8 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-zinc-100">
+            <h2 className="text-lg font-semibold admin-text">
               {navItems.find((item) => isRouteActive(item.href))?.label || "Admin"}
             </h2>
-            <div className="text-xs text-zinc-500 px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800">
-              {tenant.source}
+            <div className="flex items-center gap-2">
+              <AdminAppearanceToggle />
+              <div className="text-xs admin-text-muted px-2 py-1 rounded admin-surface-muted border admin-border">
+                {tenant.source}
+              </div>
             </div>
           </div>
         </header>

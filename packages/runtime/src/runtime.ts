@@ -14,6 +14,8 @@ import {
 import { createEditorPersistence } from "./editor-persistence"
 import { createPageStatusPersistence } from "./page-status-persistence"
 import { createPageCreationPersistence } from "./page-creation-persistence"
+import { createNavigationPersistence } from "./navigation-persistence"
+import { createMediaPersistence } from "./media-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 
 export type SovereignRuntime = {
@@ -25,6 +27,8 @@ export type SovereignRuntime = {
   editorPersistence: EditorPersistence
   pageStatusPersistence: ReturnType<typeof createPageStatusPersistence>
   pageCreationPersistence: ReturnType<typeof createPageCreationPersistence>
+  navigationPersistence: ReturnType<typeof createNavigationPersistence>
+  mediaPersistence: ReturnType<typeof createMediaPersistence>
 }
 
 export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRuntime {
@@ -38,6 +42,8 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const editorPersistence = createEditorPersistence({ db })
   const pageStatusPersistence = createPageStatusPersistence({ db })
   const pageCreationPersistence = createPageCreationPersistence({ db })
+  const navigationPersistence = createNavigationPersistence({ db })
+  const mediaPersistence = createMediaPersistence({ db })
 
   return {
     config: mergedConfig,
@@ -48,6 +54,8 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     editorPersistence,
     pageStatusPersistence,
     pageCreationPersistence,
+    navigationPersistence,
+    mediaPersistence,
   }
 }
 

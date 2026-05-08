@@ -5,8 +5,10 @@ import type {
   PageRepository,
   TenantRepository,
   ReplacePageBlocksInput,
+  NavigationRepository,
+  MediaRepository,
 } from "./contracts"
-import type { CmsBlock } from "@sovereign-cms/core"
+import type { CmsBlock, MediaAsset, NavigationItem, SeoMetadata } from "@sovereign-cms/core"
 
 type TenantRow = {
   id: string
@@ -34,6 +36,7 @@ type InternalPageRow = {
   locale: string
   title: string
   status: "draft" | "published" | "archived"
+  seo?: SeoMetadata
   createdAt: string
   updatedAt: string
 }
@@ -41,6 +44,8 @@ type InternalPageRow = {
 type MutableStore = {
   pages: InternalPageRow[]
   blocksByPageId: Map<string, BlockRow[]>
+  navigationItems: NavigationItem[]
+  mediaAssets: MediaAsset[]
 }
 
 function normalizeHost(hostHeader: string): string {
@@ -122,6 +127,14 @@ function buildStores(): MutableStore {
     status: "published",
     createdAt: "2026-05-03T00:00:00.000Z",
     updatedAt: "2026-05-04T00:00:00.000Z",
+    seo: {
+      seoTitle: "SovereignCMS Demo — Startseite",
+      seoDescription: "SovereignCMS ist ein modulares, tenant-aware CMS für portable Deployments.",
+      seoImageAssetId: null,
+      seoImageUrl: "",
+      canonicalUrl: "https://sovereign-cms-demo.local/de/home",
+      robotsIndex: true,
+    },
   }
 
   // English page (draft for status demo)
@@ -134,6 +147,14 @@ function buildStores(): MutableStore {
     status: "draft",
     createdAt: "2026-05-03T00:00:00.000Z",
     updatedAt: "2026-05-04T00:00:00.000Z",
+    seo: {
+      seoTitle: "SovereignCMS Demo — Home",
+      seoDescription: "SovereignCMS is a modular, tenant-aware CMS for portable deployments.",
+      seoImageAssetId: null,
+      seoImageUrl: "",
+      canonicalUrl: "https://sovereign-cms-demo.local/en/home",
+      robotsIndex: true,
+    },
   }
 
   const blocksByPageId = new Map<string, BlockRow[]>([
@@ -141,9 +162,50 @@ function buildStores(): MutableStore {
     [pageEN.id, blocksEN],
   ])
 
+  const navigationItems: NavigationItem[] = [
+    {
+      id: "nav-demo-de-home",
+      tenantId: "demo",
+      locale: "de",
+      label: "Startseite",
+      type: "page",
+      pageId: pageDE.id,
+      sortOrder: 1,
+      status: "published",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-en-home",
+      tenantId: "demo",
+      locale: "en",
+      label: "Home",
+      type: "page",
+      pageId: pageEN.id,
+      sortOrder: 1,
+      status: "draft",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+  ]
+
+  const demoMediaAsset: MediaAsset = {
+    id: "media-demo-1",
+    tenantId: "demo",
+    type: "image",
+    title: "Demo Image",
+    url: "/placeholder.svg",
+    alt: "Demo image",
+    status: "draft",
+    createdAt: "2026-05-03T00:00:00.000Z",
+    updatedAt: "2026-05-04T00:00:00.000Z",
+  }
+
   return {
     pages: [pageDE, pageEN],
     blocksByPageId,
+    navigationItems,
+    mediaAssets: [demoMediaAsset],
   }
 }
 
@@ -155,6 +217,7 @@ function toCmsPage(row: InternalPageRow): PageRecord {
     locale: row.locale,
     title: row.title,
     status: row.status,
+    seo: row.seo || {},
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }
@@ -348,10 +411,124 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
     },
   }
 
+  const navigationRepo: NavigationRepository = {
+    async listByTenant(input) {
+      let list = store.navigationItems.filter((item) => item.tenantId === input.tenantId)
+      if (input.locale !== undefined) {
+        list = list.filter((item) => item.locale === input.locale)
+      }
+      return list.sort((a, b) => a.sortOrder - b.sortOrder)
+    },
+
+    async create(input) {
+      const { validateNavigationLabel, validateExternalHref } = await import("@sovereign-cms/core")
+
+      const label = input.label.trim()
+      if (!validateNavigationLabel(label)) {
+        throw new Error("Invalid navigation label")
+      }
+
+      if (input.type === "page" && (!input.pageId || input.pageId.trim().length === 0)) {
+        throw new Error("Page navigation item requires pageId")
+      }
+
+      if (input.type === "external") {
+        if (!input.href || !validateExternalHref(input.href)) {
+          throw new Error("External navigation item requires a valid href")
+        }
+      }
+
+      const hasDuplicateLabel = store.navigationItems.some(
+        (item) =>
+          item.tenantId === input.tenantId &&
+          item.locale === input.locale &&
+          item.label.toLowerCase() === label.toLowerCase(),
+      )
+      if (hasDuplicateLabel) {
+        throw new Error("Navigation item label already exists for tenant and locale")
+      }
+
+      const existingForScope = store.navigationItems.filter(
+        (item) => item.tenantId === input.tenantId && item.locale === input.locale,
+      )
+      const maxSortOrder = existingForScope.length
+        ? Math.max(...existingForScope.map((item) => item.sortOrder))
+        : 0
+
+      const now = new Date().toISOString()
+      const created: NavigationItem = {
+        id: `nav-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        tenantId: input.tenantId,
+        locale: input.locale,
+        label,
+        type: input.type,
+        pageId: input.type === "page" ? input.pageId : undefined,
+        href: input.type === "external" ? input.href?.trim() : undefined,
+        sortOrder: maxSortOrder + 1,
+        status: "draft",
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      store.navigationItems.push(created)
+      return created
+    },
+  }
+
+  const mediaRepo: MediaRepository = {
+    async listByTenant(input) {
+      return store.mediaAssets
+        .filter((asset) => asset.tenantId === input.tenantId)
+        .sort((a, b) => {
+          const ta = Date.parse(a.updatedAt)
+          const tb = Date.parse(b.updatedAt)
+          return tb - ta
+        })
+    },
+
+    async create(input) {
+      const { validateMediaTitle, validateMediaUrl } = await import("@sovereign-cms/core")
+
+      if (!validateMediaTitle(input.title)) {
+        throw new Error("Invalid media title")
+      }
+
+      if (!validateMediaUrl(input.url)) {
+        throw new Error("Invalid media URL")
+      }
+
+      const now = new Date().toISOString()
+      const id = `media-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      const trimmedTitle = input.title.trim()
+      const trimmedAlt = input.alt?.trim()
+
+      const asset: MediaAsset = {
+        id,
+        tenantId: input.tenantId,
+        type: input.type,
+        title: trimmedTitle,
+        url: input.url.trim(),
+        alt: trimmedAlt && trimmedAlt.length > 0 ? trimmedAlt : undefined,
+        mimeType: input.mimeType,
+        size: input.size,
+        width: input.width,
+        height: input.height,
+        status: "draft",
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      store.mediaAssets.push(asset)
+      return asset
+    },
+  }
+
   return {
     tenants: tenantRepo,
     pages: pageRepo,
     blocks: blockRepo,
+    navigation: navigationRepo,
+    media: mediaRepo,
   }
 }
 

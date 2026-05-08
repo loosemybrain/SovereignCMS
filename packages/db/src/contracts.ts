@@ -1,4 +1,14 @@
-import type { CmsBlock, CmsPage, Locale, TransitionPageStatusInput, CreatePageInput } from "@sovereign-cms/core"
+import type {
+  CmsBlock,
+  CmsPage,
+  Locale,
+  TransitionPageStatusInput,
+  CreatePageInput,
+  NavigationItem,
+  CreateNavigationItemInput,
+  MediaAsset,
+  CreateMediaAssetInput,
+} from "@sovereign-cms/core"
 
 export type PageRecord = CmsPage
 
@@ -34,8 +44,20 @@ export interface BlockRepository {
   replacePageBlocks(input: ReplacePageBlocksInput): Promise<CmsBlock[]>
 }
 
+export interface NavigationRepository {
+  listByTenant(input: { tenantId: string; locale?: string }): Promise<NavigationItem[]>
+  create(input: CreateNavigationItemInput): Promise<NavigationItem>
+}
+
+export interface MediaRepository {
+  listByTenant(input: { tenantId: string }): Promise<MediaAsset[]>
+  create(input: CreateMediaAssetInput): Promise<MediaAsset>
+}
+
 export interface DatabaseAdapter {
   tenants: TenantRepository
   pages: PageRepository
   blocks: BlockRepository
+  navigation: NavigationRepository
+  media: MediaRepository
 }
