@@ -28,6 +28,9 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
     defaultProps: {
       headline: "New Headline",
       subline: "New Subline",
+      mediaAssetId: null,
+      mediaUrl: "",
+      mediaAlt: "",
     },
     inspectorFields: [
       {
@@ -41,6 +44,12 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         label: "Subline",
         type: "text",
         placeholder: "Enter subline",
+      },
+      {
+        key: "mediaAssetId",
+        label: "Hero Image",
+        type: "media",
+        mediaType: "image",
       },
     ],
     adminRenderer: HeroAdminRenderer,

@@ -6,6 +6,7 @@ import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
 import { renderAdminBlock } from "@/components/admin-block-renderer-registry"
+import { AdminButton, AdminCard } from "@/components/admin-ui"
 import { clientEditorPersistence } from "@/lib/client-editor-persistence"
 import { clientPageStatusPersistence } from "@/lib/client-page-status-persistence"
 import { mergeProps } from "@/lib/merge-props"
@@ -183,7 +184,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       {/* Blocks / Preview Area */}
       <div className="lg:col-span-2 space-y-6">
         {/* Save Controls */}
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
+        <AdminCard className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm space-y-1">
               {isSaving && <p className="text-blue-400 font-medium">Saving...</p>}
@@ -195,25 +196,21 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                     Last saved: {new Date(lastSavedAt).toLocaleTimeString()}
                   </p>
                   {lastSavedStatus && (
-                    <p className="text-zinc-400 text-xs">
+                    <p className="admin-text-muted text-xs">
                       Status: <span className="capitalize font-medium">{lastSavedStatus}</span>
                     </p>
                   )}
                 </div>
               )}
             </div>
-            <button
+            <AdminButton
               onClick={handleSave}
               disabled={isSaving || !isDirty}
-              className={cn(
-                "rounded px-4 py-2 text-sm font-medium transition-all duration-200",
-                isSaving || !isDirty
-                  ? "cursor-not-allowed bg-zinc-700 text-zinc-400"
-                  : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95",
-              )}
+              variant="primary"
+              className={cn(isSaving || !isDirty ? "admin-text-muted" : "")}
             >
               {isSaving ? "Saving..." : "Save"}
-            </button>
+            </AdminButton>
           </div>
 
           {/* Page Status Transitions */}
@@ -229,7 +226,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                 className={cn(
                   "rounded px-3 py-1 text-xs font-medium transition-all duration-200",
                   isTransitioningStatus
-                    ? "cursor-not-allowed bg-zinc-700 text-zinc-400"
+                    ? "cursor-not-allowed admin-surface-muted admin-text-muted"
                     : action === "publish"
                       ? "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
                       : action === "archive"
@@ -241,21 +238,21 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
               </button>
             ))}
           </div>
-        </div>
+        </AdminCard>
 
         {/* Block Palette */}
         <BlockPalette onAddBlock={addBlock} />
 
         {/* Blocks List */}
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-          <div className="border-b border-zinc-800 px-6 py-4 bg-zinc-900/50">
-            <h2 className="text-lg font-semibold text-zinc-100">
-              Blocks <span className="text-zinc-500 text-sm font-normal">({orderedBlocks.length})</span>
+        <AdminCard className="p-0 overflow-hidden">
+          <div className="border-b admin-border px-6 py-4 admin-surface-muted">
+            <h2 className="text-lg font-semibold admin-text">
+              Blocks <span className="admin-text-muted text-sm font-normal">({orderedBlocks.length})</span>
             </h2>
           </div>
           <div className="p-4 space-y-2">
             {orderedBlocks.length === 0 ? (
-              <p className="text-sm text-zinc-400 py-8 text-center">No blocks for this page</p>
+              <p className="text-sm admin-text-muted py-8 text-center">No blocks for this page</p>
             ) : (
               <div className="space-y-2">
                 {orderedBlocks.map((block, index) => {
@@ -273,14 +270,14 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                         "cursor-pointer rounded-lg border p-4 transition-all duration-200",
                         selectedBlockId === block.id
                           ? "border-blue-600 bg-blue-950/20 ring-1 ring-blue-600/30"
-                          : "border-zinc-800 hover:bg-zinc-900/40",
+                          : "admin-border hover:bg-zinc-900/40",
                       )}
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-mono text-xs text-zinc-500">Position: {block.sortOrder}</p>
-                            <p className="text-sm font-medium text-zinc-200 capitalize">{block.type}</p>
+                            <p className="font-mono text-xs admin-text-muted">Position: {block.sortOrder}</p>
+                            <p className="text-sm font-medium admin-text capitalize">{block.type}</p>
                           </div>
                           <div className="flex gap-1">
                             <button
@@ -292,8 +289,8 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                               className={cn(
                                 "p-1.5 rounded text-xs transition-colors",
                                 isFirst
-                                  ? "cursor-not-allowed text-zinc-700 bg-zinc-900/40"
-                                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800",
+                                  ? "cursor-not-allowed admin-text-muted admin-surface"
+                                  : "admin-text-muted hover:bg-zinc-800",
                               )}
                               title="Move up"
                             >
@@ -308,8 +305,8 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                               className={cn(
                                 "p-1.5 rounded text-xs transition-colors",
                                 isLast
-                                  ? "cursor-not-allowed text-zinc-700 bg-zinc-900/40"
-                                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800",
+                                  ? "cursor-not-allowed admin-text-muted admin-surface"
+                                  : "admin-text-muted hover:bg-zinc-800",
                               )}
                               title="Move down"
                             >
@@ -327,11 +324,11 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
                             </button>
                           </div>
                         </div>
-                        <div className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 w-fit">
+                        <div className="text-xs px-2 py-1 rounded admin-surface-muted admin-text-muted w-fit">
                           {block.visibility}
                         </div>
-                        <div className="pt-2 border-t border-zinc-800 mt-2">{renderAdminBlock(block)}</div>
-                        <p className="text-xs text-zinc-600 font-mono pt-1">{block.id}</p>
+                        <div className="pt-2 border-t admin-border mt-2">{renderAdminBlock(block)}</div>
+                        <p className="text-xs admin-text-muted font-mono pt-1">{block.id}</p>
                       </div>
                     </div>
                   )
@@ -339,31 +336,35 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
               </div>
             )}
           </div>
-        </div>
+        </AdminCard>
       </div>
 
       {/* Sticky Inspector */}
       <div className="lg:col-span-1">
         <div className="sticky top-8 space-y-4">
           {/* Inspector */}
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-            <div className="border-b border-zinc-800 px-6 py-4 bg-zinc-900/50">
-              <h2 className="text-lg font-semibold text-zinc-100">Inspector</h2>
+          <AdminCard className="p-0 overflow-hidden">
+            <div className="border-b admin-border px-6 py-4 admin-surface-muted">
+              <h2 className="text-lg font-semibold admin-text">Inspector</h2>
             </div>
             <div className="p-4">
-              <EditorInspector selectedBlock={selectedBlock} onUpdateProps={updateBlockProps} />
+              <EditorInspector
+                selectedBlock={selectedBlock}
+                onUpdateProps={updateBlockProps}
+                tenantId={tenant.tenantId}
+              />
             </div>
-          </div>
+          </AdminCard>
 
           {/* Info Card */}
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 text-xs space-y-2">
-            <p className="font-medium text-zinc-300">Meta</p>
-            <div className="space-y-1 text-zinc-400">
-              <p><span className="text-zinc-600">Tenant:</span> {tenant.tenantId}</p>
-              <p><span className="text-zinc-600">Source:</span> {tenant.source}</p>
-              <p><span className="text-zinc-600">DB:</span> {runtimeConfig.databaseAdapter}</p>
+          <AdminCard className="p-4 text-xs space-y-2">
+            <p className="font-medium admin-text">Meta</p>
+            <div className="space-y-1 admin-text-muted">
+              <p><span className="admin-text-muted">Tenant:</span> {tenant.tenantId}</p>
+              <p><span className="admin-text-muted">Source:</span> {tenant.source}</p>
+              <p><span className="admin-text-muted">DB:</span> {runtimeConfig.databaseAdapter}</p>
             </div>
-          </div>
+          </AdminCard>
         </div>
       </div>
     </div>
