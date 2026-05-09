@@ -1,27 +1,17 @@
-import type { BlockInstance } from "@sovereign-cms/core"
+import type { BlockInstance, NavigationItem } from "@sovereign-cms/core"
 import type { PageRecord } from "@sovereign-cms/db"
 import type { TenantContext } from "@sovereign-cms/tenancy"
-import { createRuntime } from "@sovereign-cms/runtime"
+import { createRuntime, mapSeoMetadataToPublicViewModel, type PublicSeoViewModel } from "@sovereign-cms/runtime"
 
 const runtime = createRuntime()
 
-function isPageRecord(v: unknown): v is PageRecord {
-  if (!v || typeof v !== "object") return false
-  const o = v as Record<string, unknown>
-  return (
-    typeof o.id === "string" &&
-    typeof o.tenantId === "string" &&
-    typeof o.slug === "string" &&
-    typeof o.locale === "string" &&
-    typeof o.title === "string" &&
-    typeof o.updatedAt === "string"
-  )
-}
-
 export type PublicPagePayload = {
   tenant: TenantContext
+  locale: string
   page: PageRecord
   blocks: BlockInstance[]
+  navigation: NavigationItem[]
+  seo: PublicSeoViewModel
 }
 
 export async function loadPublicPage(input: {
@@ -35,24 +25,38 @@ export async function loadPublicPage(input: {
     console.info("[sovereign:web] tenant resolved", tenant.id)
   }
 
-  const pageRaw = await runtime.db.pages.findBySlug({
+  // Resolve page using public resolution
+  const page = await runtime.publicPageResolution.resolvePage({
     tenantId: tenant.id,
     locale: input.locale,
     slug: input.slug,
   })
-  if (!isPageRecord(pageRaw)) return null
+  if (!page) return null
   if (process.env.NODE_ENV === "development") {
-    console.info("[sovereign:web] page found", pageRaw.slug, pageRaw.locale)
+    console.info("[sovereign:web] page found", page.slug, page.locale)
   }
 
+  // Load blocks
   const blocksRaw = await runtime.db.blocks.listByPage({
     tenantId: tenant.id,
-    pageId: pageRaw.id,
+    pageId: page.id,
   })
   const blocks = blocksRaw as BlockInstance[]
   if (process.env.NODE_ENV === "development") {
     console.info("[sovereign:web] blocks count", blocks.length)
   }
 
-  return { tenant, page: pageRaw, blocks }
+  // Load navigation
+  const navigation = await runtime.publicNavigationResolution.resolveNavigation({
+    tenantId: tenant.id,
+    locale: input.locale,
+  })
+  if (process.env.NODE_ENV === "development") {
+    console.info("[sovereign:web] navigation items count", navigation.length)
+  }
+
+  // Map SEO metadata
+  const seo = mapSeoMetadataToPublicViewModel(page.seo)
+
+  return { tenant, locale: input.locale, page, blocks, navigation, seo }
 }

@@ -16,6 +16,8 @@ import { createPageStatusPersistence } from "./page-status-persistence"
 import { createPageCreationPersistence } from "./page-creation-persistence"
 import { createNavigationPersistence } from "./navigation-persistence"
 import { createMediaPersistence } from "./media-persistence"
+import { createPublicPageResolution } from "./public-page-resolution"
+import { createPublicNavigationResolution } from "./public-navigation-resolution"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 
 export type SovereignRuntime = {
@@ -29,6 +31,8 @@ export type SovereignRuntime = {
   pageCreationPersistence: ReturnType<typeof createPageCreationPersistence>
   navigationPersistence: ReturnType<typeof createNavigationPersistence>
   mediaPersistence: ReturnType<typeof createMediaPersistence>
+  publicPageResolution: ReturnType<typeof createPublicPageResolution>
+  publicNavigationResolution: ReturnType<typeof createPublicNavigationResolution>
 }
 
 export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRuntime {
@@ -44,6 +48,8 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const pageCreationPersistence = createPageCreationPersistence({ db })
   const navigationPersistence = createNavigationPersistence({ db })
   const mediaPersistence = createMediaPersistence({ db })
+  const publicPageResolution = createPublicPageResolution({ db })
+  const publicNavigationResolution = createPublicNavigationResolution({ db })
 
   return {
     config: mergedConfig,
@@ -56,6 +62,8 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     pageCreationPersistence,
     navigationPersistence,
     mediaPersistence,
+    publicPageResolution,
+    publicNavigationResolution,
   }
 }
 
