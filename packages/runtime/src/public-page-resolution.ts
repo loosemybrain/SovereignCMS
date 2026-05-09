@@ -1,10 +1,11 @@
-import type { CmsPage } from "@sovereign-cms/core"
+import type { CmsPage, PreviewContext } from "@sovereign-cms/core"
 import type { DatabaseAdapter } from "@sovereign-cms/db"
 
 export type ResolvePublicPageInput = {
   tenantId: string
   locale: string
   slug: string
+  preview: PreviewContext
 }
 
 export function createPublicPageResolution(input: {
@@ -19,13 +20,26 @@ export function createPublicPageResolution(input: {
         locale: params.locale,
       })
 
-      return (
-        pages.find(
-          (page) =>
-            page.slug === params.slug &&
-            page.status !== "archived"
-        ) ?? null
+      const page = pages.find(
+        (page) =>
+          page.slug === params.slug &&
+          page.status !== "archived"
       )
+
+      if (!page) return null
+
+      // published: always visible
+      if (page.status === "published") {
+        return page
+      }
+
+      // draft: only visible in preview mode
+      if (page.status === "draft" && params.preview.mode === "enabled") {
+        return page
+      }
+
+      // all other cases: not visible
+      return null
     },
   }
 }

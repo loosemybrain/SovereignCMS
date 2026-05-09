@@ -1,11 +1,15 @@
 import type { PublicPagePayload } from "@/lib/load-public-page"
 import { PublicBlockRenderer } from "@/components/public/PublicBlockRenderer"
 import { PublicNavigation } from "@/components/public-navigation"
+import { PublicPreviewBadge } from "@/components/public-preview-badge"
 
-export function PublicPageView({ tenant, locale, page, blocks, navigation, seo }: PublicPagePayload) {
+export function PublicPageView({ tenant, locale, page, blocks, navigation, seo, previewContext }: PublicPagePayload) {
+  const previewEnabled = previewContext.mode === "enabled"
+
   return (
     <>
-      <PublicNavigation items={navigation} locale={locale} />
+      <PublicPreviewBadge previewEnabled={previewEnabled} />
+      <PublicNavigation items={navigation} locale={locale} previewEnabled={previewEnabled} />
       <article className="mx-auto flex max-w-2xl flex-col gap-6 p-10">
         <header className="text-sm text-gray-500">
           <span className="font-medium text-gray-800">{page.title}</span>
@@ -13,6 +17,11 @@ export function PublicPageView({ tenant, locale, page, blocks, navigation, seo }
           <span>
             {tenant.displayName} ({tenant.id}) · {page.locale}
           </span>
+          {page.status === "draft" && previewEnabled && (
+            <span className="ml-2 inline-block px-2 py-1 bg-amber-100 text-amber-900 text-xs rounded">
+              Draft
+            </span>
+          )}
         </header>
         {seo.description && (
           <p className="text-sm text-gray-600 italic">{seo.description}</p>

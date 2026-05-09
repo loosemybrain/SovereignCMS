@@ -34,9 +34,9 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
   }
 
   return (
-    <div className="flex min-h-screen admin-bg admin-text">
+    <div className="flex h-screen overflow-hidden admin-bg admin-text">
       {/* Sidebar */}
-      <aside className="w-60 border-r admin-border admin-surface flex flex-col">
+      <aside className="w-60 h-screen border-r admin-border admin-surface flex flex-col">
         {/* Logo Section */}
         <div className="p-6 border-b admin-border">
           <h1 className="text-sm font-bold admin-text tracking-tight">SOVEREIGNCMS</h1>
@@ -79,7 +79,7 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
       </aside>
 
       {/* Main Area */}
-      <main className="flex-1 flex flex-col admin-bg">
+      <main className="flex-1 min-h-0 flex flex-col admin-bg">
         {/* Header */}
         <header className="border-b admin-border admin-surface px-8 py-4 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -96,7 +96,7 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="mx-auto max-w-6xl p-8">{children}</div>
         </div>
       </main>
