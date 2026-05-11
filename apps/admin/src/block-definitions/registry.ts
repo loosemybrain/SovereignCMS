@@ -12,6 +12,7 @@ import type { AdminBlockDefinition, AdminBlockRegistry } from "./types"
 import { HeroAdminRenderer } from "@/components/block-renderers/hero-renderer"
 import { TextAdminRenderer } from "@/components/block-renderers/text-renderer"
 import { ContactFormAdminRenderer } from "@/components/block-renderers/contact-form-renderer"
+import { ExternalEmbedAdminRenderer } from "@/components/block-renderers/external-embed-renderer"
 
 /**
  * Centralized registry of all block type definitions.
@@ -190,6 +191,94 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
       },
     ],
     adminRenderer: ContactFormAdminRenderer,
+  },
+
+  "external-embed": {
+    type: "external-embed",
+    label: "External Embed",
+    category: "External Media",
+    fieldGroups: [
+      {
+        id: "content",
+        label: "Content",
+      },
+      {
+        id: "embed",
+        label: "Embed URL",
+      },
+      {
+        id: "consent",
+        label: "Consent Message",
+      },
+    ],
+    defaultProps: {
+      provider: "google-maps",
+      title: "Google Maps",
+      embedUrl: "",
+      consentText: "Zum Anzeigen dieser externen Karte ist Ihre Zustimmung erforderlich.",
+      buttonLabel: "Externe Karte laden",
+    },
+    inspectorFields: [
+      {
+        key: "provider",
+        label: "Provider",
+        type: "text",
+        groupId: "content",
+        description: "External media provider (google-maps or generic).",
+        placeholder: "google-maps",
+        validations: [
+          {
+            type: "required",
+            message: "Provider is required.",
+          },
+        ],
+      },
+      {
+        key: "title",
+        label: "Title",
+        type: "text",
+        groupId: "content",
+        description: "Display title for the embedded content.",
+        placeholder: "Google Maps",
+        validations: [
+          {
+            type: "required",
+            message: "Title is required.",
+          },
+        ],
+      },
+      {
+        key: "embedUrl",
+        label: "Embed URL",
+        type: "text",
+        groupId: "embed",
+        description: "Full HTTPS URL to the embedded content (e.g., Google Maps iframe src).",
+        placeholder: "https://www.google.com/maps/embed?pb=...",
+        validations: [
+          {
+            type: "required",
+            message: "Embed URL is required.",
+          },
+        ],
+      },
+      {
+        key: "consentText",
+        label: "Consent Message",
+        type: "textarea",
+        groupId: "consent",
+        description: "Text explaining why consent is needed.",
+        placeholder: "Zum Anzeigen dieser externen Karte ist Ihre Zustimmung erforderlich.",
+      },
+      {
+        key: "buttonLabel",
+        label: "Button Label",
+        type: "text",
+        groupId: "consent",
+        description: "Text displayed on the consent button.",
+        placeholder: "Externe Karte laden",
+      },
+    ],
+    adminRenderer: ExternalEmbedAdminRenderer,
   },
 }
 

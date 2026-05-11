@@ -1,5 +1,6 @@
-import type { BlockInstance, ContactFormBlockProps } from "@sovereign-cms/core"
+import type { BlockInstance, ContactFormBlockProps, ExternalEmbedBlockProps } from "@sovereign-cms/core"
 import { PublicContactForm } from "@/components/public-contact-form"
+import { PublicExternalEmbed } from "@/components/public-external-embed"
 
 type Props = {
   block: BlockInstance
@@ -72,6 +73,19 @@ export function PublicBlockRenderer({
           submitLabel={props.submitLabel}
           successMessage={props.successMessage}
           consentLabel={props.consentLabel}
+        />
+      )
+    }
+    case "external-embed": {
+      const props = (block.props ?? {}) as ExternalEmbedBlockProps
+
+      return (
+        <PublicExternalEmbed
+          provider={props.provider}
+          title={props.title}
+          embedUrl={props.embedUrl}
+          consentText={props.consentText}
+          buttonLabel={props.buttonLabel}
         />
       )
     }

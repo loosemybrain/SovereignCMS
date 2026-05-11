@@ -5,7 +5,7 @@ export type {
   CmsPage,
   CmsBlock,
 } from "./cms"
-export type { BlockType, BlockInstance, BlockDefinition, ContactFormBlockProps } from "./blocks"
+export type { BlockType, BlockInstance, BlockDefinition, ContactFormBlockProps, ExternalEmbedBlockProps } from "./blocks"
 export type { RenderContext, EditorContext, BlockRenderProps, BlockRenderer } from "./renderer"
 export type { SavePageDraftInput, SavePageDraftResult, SavePageDraftError } from "./editor"
 export type { EditorPersistence } from "./editor-persistence"
@@ -74,3 +74,13 @@ export {
   validateEmail,
   validateContactFormSubmission,
 } from "./contact-form"
+export type { ConsentCategory, ConsentState } from "./consent"
+export { createDefaultConsentState } from "./consent"
+export type {
+  ExternalEmbedProvider,
+  ExternalEmbedProps,
+} from "./external-embed"
+export {
+  validateGoogleMapsEmbedUrl,
+  validateExternalEmbedUrl,
+} from "./external-embed"

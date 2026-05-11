@@ -1,5 +1,6 @@
 import type { z } from "zod"
 import type { CmsBlock } from "./cms"
+import type { ExternalEmbedProps } from "./external-embed"
 
 /** Technischer Block-Typbezeichner (z. B. "hero", "richtext"). */
 export type BlockType = string
@@ -27,3 +28,6 @@ export type ContactFormBlockProps = {
   consentLabel?: string
   recipientEmail?: string
 }
+
+/** Props für External Embed Block */
+export type ExternalEmbedBlockProps = ExternalEmbedProps
