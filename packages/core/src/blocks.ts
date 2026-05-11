@@ -13,7 +13,17 @@ export type BlockInstance<TProps extends Record<string, unknown> = Record<string
 export type BlockDefinition<TProps extends Record<string, unknown> = Record<string, unknown>> = {
   type: BlockType
   label: string
-  /** Optionales Zod-Schema f�r Props-Validierung im Admin / bei Imports. */
+  /** Optionales Zod-Schema für Props-Validierung im Admin / bei Imports. */
   propsSchema?: z.ZodType<TProps>
   defaultProps: TProps
+}
+
+/** Props für Contact Form Block */
+export type ContactFormBlockProps = {
+  headline?: string
+  intro?: string
+  submitLabel?: string
+  successMessage?: string
+  consentLabel?: string
+  recipientEmail?: string
 }

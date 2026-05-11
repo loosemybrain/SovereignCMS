@@ -1,7 +1,16 @@
-import type { BlockInstance, NavigationItem, PreviewContext } from "@sovereign-cms/core"
+import type { BlockInstance, PreviewContext } from "@sovereign-cms/core"
 import type { PageRecord } from "@sovereign-cms/db"
 import type { TenantContext } from "@sovereign-cms/tenancy"
-import { createRuntime, mapSeoMetadataToPublicViewModel, type PublicSeoViewModel } from "@sovereign-cms/runtime"
+import {
+  createRuntime,
+  mapSeoMetadataToPublicViewModel,
+  mapSettingsToPublicFooterViewModel,
+  mapSettingsToPublicHeaderViewModel,
+  type PublicFooterViewModel,
+  type PublicHeaderViewModel,
+  type PublicNavigationItemViewModel,
+  type PublicSeoViewModel,
+} from "@sovereign-cms/runtime"
 import { createPreviewContext } from "@sovereign-cms/core"
 
 const runtime = createRuntime()
@@ -11,9 +20,12 @@ export type PublicPagePayload = {
   locale: string
   page: PageRecord
   blocks: BlockInstance[]
-  navigation: NavigationItem[]
+  navigation: PublicNavigationItemViewModel[]
   seo: PublicSeoViewModel
   previewContext: PreviewContext
+  footer: PublicFooterViewModel
+  header: PublicHeaderViewModel
+  contactEmail?: string
 }
 
 export async function loadPublicPage(input: {
@@ -50,23 +62,71 @@ export async function loadPublicPage(input: {
     tenantId: tenant.id,
     pageId: page.id,
   })
-  const blocks = blocksRaw as BlockInstance[]
+  const blocks = blocksRaw.filter((block) => block.visibility === "visible") as BlockInstance[]
   if (process.env.NODE_ENV === "development") {
     console.info("[sovereign:web] blocks count", blocks.length)
   }
 
-  // Load navigation with preview context
   const navigation = await runtime.publicNavigationResolution.resolveNavigation({
     tenantId: tenant.id,
     locale: input.locale,
     preview: previewContext,
+    scope: "main",
   })
   if (process.env.NODE_ENV === "development") {
-    console.info("[sovereign:web] navigation items count", navigation.length)
+    console.info("[sovereign:web] main navigation items count", navigation.length)
   }
+
+  const footerNavigation = await runtime.publicNavigationResolution.resolveNavigation({
+    tenantId: tenant.id,
+    locale: input.locale,
+    preview: previewContext,
+    scope: "footer",
+  })
+  if (process.env.NODE_ENV === "development") {
+    console.info("[sovereign:web] footer navigation items count", footerNavigation.length)
+  }
+
+  const settings = await runtime.settingsPersistence.getTenantSettings({
+    tenantId: tenant.id,
+  })
+
+  const footer = mapSettingsToPublicFooterViewModel({
+    settings,
+    navigationItems: footerNavigation.map((item) => ({
+      label: item.label,
+      href: item.href,
+    })),
+    locale: input.locale,
+  })
+
+  const slugParts = input.slug.split("/").filter((s) => s.length > 0)
+  const currentPath = `/${[input.locale, ...slugParts].join("/")}`
+
+  const header = mapSettingsToPublicHeaderViewModel({
+    settings,
+    navigationItems: navigation.map((item) => ({
+      label: item.label,
+      href: item.href,
+    })),
+    currentPath,
+    currentLocale: input.locale,
+    supportedLocales: runtime.config.supportedLocales,
+  })
 
   // Map SEO metadata
   const seo = mapSeoMetadataToPublicViewModel(page.seo)
 
-  return { tenant, locale: input.locale, page, blocks, navigation, seo, previewContext }
+  return {
+    tenant,
+    locale: input.locale,
+    page,
+    blocks,
+    navigation,
+    seo,
+    previewContext,
+    footer,
+    header,
+    contactEmail: settings.contact.email,
+  }
 }

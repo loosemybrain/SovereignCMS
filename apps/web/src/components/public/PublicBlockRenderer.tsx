@@ -1,6 +1,21 @@
-import type { BlockInstance } from "@sovereign-cms/core"
+import type { BlockInstance, ContactFormBlockProps } from "@sovereign-cms/core"
+import { PublicContactForm } from "@/components/public-contact-form"
 
-export function PublicBlockRenderer({ block }: { block: BlockInstance }) {
+type Props = {
+  block: BlockInstance
+  tenantId?: string
+  locale?: string
+  pageId?: string
+  settingsContactEmail?: string
+}
+
+export function PublicBlockRenderer({
+  block,
+  tenantId,
+  locale,
+  pageId,
+  settingsContactEmail,
+}: Props) {
   switch (block.type) {
     case "hero": {
       const headline = String(block.props.headline ?? "")
@@ -36,6 +51,29 @@ export function PublicBlockRenderer({ block }: { block: BlockInstance }) {
     case "text": {
       const body = String(block.props.body ?? "")
       return <p className="text-base leading-relaxed text-gray-700">{body}</p>
+    }
+    case "contact-form": {
+      if (!tenantId || !locale) {
+        return <p className="text-sm text-red-600">Contact form requires tenantId and locale</p>
+      }
+
+      const props = (block.props ?? {}) as ContactFormBlockProps
+      const recipientEmail = props.recipientEmail || settingsContactEmail
+
+      return (
+        <PublicContactForm
+          tenantId={tenantId}
+          locale={locale}
+          pageId={pageId}
+          blockId={block.id}
+          recipientEmail={recipientEmail}
+          headline={props.headline}
+          intro={props.intro}
+          submitLabel={props.submitLabel}
+          successMessage={props.successMessage}
+          consentLabel={props.consentLabel}
+        />
+      )
     }
     default:
       return null
