@@ -13,6 +13,9 @@ import { HeroAdminRenderer } from "@/components/block-renderers/hero-renderer"
 import { TextAdminRenderer } from "@/components/block-renderers/text-renderer"
 import { ContactFormAdminRenderer } from "@/components/block-renderers/contact-form-renderer"
 import { ExternalEmbedAdminRenderer } from "@/components/block-renderers/external-embed-renderer"
+import { CtaAdminRenderer } from "@/components/block-renderers/cta-renderer"
+import { FeatureGridAdminRenderer } from "@/components/block-renderers/feature-grid-renderer"
+import { ImageTextAdminRenderer } from "@/components/block-renderers/image-text-renderer"
 
 /**
  * Centralized registry of all block type definitions.
@@ -279,6 +282,264 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
       },
     ],
     adminRenderer: ExternalEmbedAdminRenderer,
+  },
+
+  cta: {
+    type: "cta",
+    label: "CTA",
+    category: "Content",
+    fieldGroups: [
+      {
+        id: "content",
+        label: "Content",
+      },
+      {
+        id: "buttons",
+        label: "Buttons",
+      },
+      {
+        id: "appearance",
+        label: "Appearance",
+      },
+    ],
+    defaultProps: {
+      eyebrow: "Next Step",
+      headline: "Ready to move forward?",
+      body: "Add a clear call to action for this section.",
+      primaryLabel: "Get started",
+      primaryHref: "#",
+      secondaryLabel: "",
+      secondaryHref: "",
+      align: "center",
+    },
+    inspectorFields: [
+      {
+        key: "eyebrow",
+        label: "Eyebrow",
+        type: "text",
+        groupId: "content",
+        description: "Small text above the headline.",
+        placeholder: "Next Step",
+      },
+      {
+        key: "headline",
+        label: "Headline",
+        type: "text",
+        groupId: "content",
+        description: "Main heading for the CTA section.",
+        placeholder: "Ready to move forward?",
+        validations: [
+          {
+            type: "required",
+            message: "Headline is required.",
+          },
+        ],
+      },
+      {
+        key: "body",
+        label: "Body",
+        type: "textarea",
+        groupId: "content",
+        description: "Supporting text for the CTA.",
+        placeholder: "Add a clear call to action for this section.",
+      },
+      {
+        key: "primaryLabel",
+        label: "Primary Button Label",
+        type: "text",
+        groupId: "buttons",
+        description: "Text for the primary action button.",
+        placeholder: "Get started",
+      },
+      {
+        key: "primaryHref",
+        label: "Primary Button URL",
+        type: "text",
+        groupId: "buttons",
+        description: "Link target for the primary button.",
+        placeholder: "#",
+      },
+      {
+        key: "secondaryLabel",
+        label: "Secondary Button Label",
+        type: "text",
+        groupId: "buttons",
+        description: "Text for the secondary action button (optional).",
+        placeholder: "",
+      },
+      {
+        key: "secondaryHref",
+        label: "Secondary Button URL",
+        type: "text",
+        groupId: "buttons",
+        description: "Link target for the secondary button.",
+        placeholder: "",
+      },
+      {
+        key: "align",
+        label: "Alignment",
+        type: "text",
+        groupId: "appearance",
+        description: "Horizontal alignment: 'left' or 'center'",
+        placeholder: "center",
+      },
+    ],
+    adminRenderer: CtaAdminRenderer,
+  },
+
+  "feature-grid": {
+    type: "feature-grid",
+    label: "Feature Grid",
+    category: "Content",
+    fieldGroups: [
+      {
+        id: "content",
+        label: "Content",
+      },
+      {
+        id: "layout",
+        label: "Layout",
+      },
+      {
+        id: "items",
+        label: "Items",
+        description: "Edit items as JSON in the textarea below.",
+      },
+    ],
+    defaultProps: {
+      headline: "Feature Grid",
+      intro: "Highlight important benefits or content areas.",
+      columns: 3,
+      items: [
+        { id: "feature-1", title: "Feature one", body: "Describe the first feature." },
+        { id: "feature-2", title: "Feature two", body: "Describe the second feature." },
+        { id: "feature-3", title: "Feature three", body: "Describe the third feature." },
+      ],
+    },
+    inspectorFields: [
+      {
+        key: "headline",
+        label: "Headline",
+        type: "text",
+        groupId: "content",
+        description: "Main heading for the grid.",
+        placeholder: "Feature Grid",
+      },
+      {
+        key: "intro",
+        label: "Intro Text",
+        type: "textarea",
+        groupId: "content",
+        description: "Introductory text above the features.",
+        placeholder: "Highlight important benefits or content areas.",
+      },
+      {
+        key: "columns",
+        label: "Number of Columns",
+        type: "text",
+        groupId: "layout",
+        description: "Number of columns: 2, 3, or 4",
+        placeholder: "3",
+      },
+      {
+        key: "itemsJson",
+        label: "Items (JSON)",
+        type: "textarea",
+        groupId: "items",
+        description: "Edit grid items as JSON array. Each item must have id and title.",
+        placeholder:
+          '[{"id":"feature-1","title":"Feature one","body":"Describe the first feature."}]',
+      },
+    ],
+    adminRenderer: FeatureGridAdminRenderer,
+  },
+
+  "image-text": {
+    type: "image-text",
+    label: "Image + Text",
+    category: "Content",
+    fieldGroups: [
+      {
+        id: "content",
+        label: "Content",
+      },
+      {
+        id: "media",
+        label: "Media",
+      },
+      {
+        id: "cta",
+        label: "Call to Action",
+      },
+    ],
+    defaultProps: {
+      headline: "Image and Text",
+      body: "Combine a visual with supporting content.",
+      imageUrl: "",
+      imageAlt: "",
+      imagePosition: "right",
+      ctaLabel: "",
+      ctaHref: "",
+    },
+    inspectorFields: [
+      {
+        key: "headline",
+        label: "Headline",
+        type: "text",
+        groupId: "content",
+        description: "Heading for the section.",
+        placeholder: "Image and Text",
+      },
+      {
+        key: "body",
+        label: "Body Text",
+        type: "textarea",
+        groupId: "content",
+        description: "Supporting text content.",
+        placeholder: "Combine a visual with supporting content.",
+      },
+      {
+        key: "imageUrl",
+        label: "Image URL",
+        type: "text",
+        groupId: "media",
+        description: "Full URL to the image.",
+        placeholder: "https://example.com/image.jpg",
+      },
+      {
+        key: "imageAlt",
+        label: "Image Alt Text",
+        type: "text",
+        groupId: "media",
+        description: "Accessibility text for the image.",
+        placeholder: "Descriptive alt text",
+      },
+      {
+        key: "imagePosition",
+        label: "Image Position",
+        type: "text",
+        groupId: "media",
+        description: "Image position: 'left' or 'right'",
+        placeholder: "right",
+      },
+      {
+        key: "ctaLabel",
+        label: "CTA Button Label",
+        type: "text",
+        groupId: "cta",
+        description: "Text for the call-to-action button (optional).",
+        placeholder: "",
+      },
+      {
+        key: "ctaHref",
+        label: "CTA Button URL",
+        type: "text",
+        groupId: "cta",
+        description: "Link target for the CTA button.",
+        placeholder: "",
+      },
+    ],
+    adminRenderer: ImageTextAdminRenderer,
   },
 }
 

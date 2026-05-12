@@ -1,4 +1,11 @@
-import type { BlockInstance, ContactFormBlockProps, ExternalEmbedBlockProps } from "@sovereign-cms/core"
+import type {
+  BlockInstance,
+  ContactFormBlockProps,
+  ExternalEmbedBlockProps,
+  CtaBlockProps,
+  FeatureGridBlockProps,
+  ImageTextBlockProps,
+} from "@sovereign-cms/core"
 import { PublicContactForm } from "@/components/public-contact-form"
 import { PublicExternalEmbed } from "@/components/public-external-embed"
 
@@ -87,6 +94,162 @@ export function PublicBlockRenderer({
           consentText={props.consentText}
           buttonLabel={props.buttonLabel}
         />
+      )
+    }
+    case "cta": {
+      const props = (block.props ?? {}) as CtaBlockProps
+      const eyebrow = String(props.eyebrow ?? "")
+      const headline = String(props.headline ?? "")
+      const body = String(props.body ?? "")
+      const primaryLabel = String(props.primaryLabel ?? "")
+      const primaryHref = String(props.primaryHref ?? "")
+      const secondaryLabel = String(props.secondaryLabel ?? "")
+      const secondaryHref = String(props.secondaryHref ?? "")
+      const align = props.align === "left" ? "left" : "center"
+
+      const alignClass = align === "center" ? "text-center" : "text-left"
+      const justifyClass = align === "center" ? "justify-center" : "justify-start"
+
+      return (
+        <section className={`py-12 px-6 rounded-lg bg-white border border-gray-200 shadow-sm ${alignClass}`}>
+          {eyebrow && (
+            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{eyebrow}</p>
+          )}
+          {headline && (
+            <h2 className="text-3xl font-semibold text-gray-900 mt-2">{headline}</h2>
+          )}
+          {body && (
+            <p className="text-lg text-gray-600 mt-4">{body}</p>
+          )}
+
+          {(primaryLabel || secondaryLabel) && (
+            <div className={`flex gap-4 mt-8 ${justifyClass}`}>
+              {primaryLabel && primaryHref && (
+                <a
+                  href={primaryHref}
+                  className="px-6 py-3 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  {primaryLabel}
+                </a>
+              )}
+              {secondaryLabel && secondaryHref && (
+                <a
+                  href={secondaryHref}
+                  className="px-6 py-3 bg-gray-200 text-gray-900 rounded font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  {secondaryLabel}
+                </a>
+              )}
+            </div>
+          )}
+        </section>
+      )
+    }
+    case "feature-grid": {
+      const props = (block.props ?? {}) as FeatureGridBlockProps
+      const headline = String(props.headline ?? "")
+      const intro = String(props.intro ?? "")
+      const columns = props.columns ?? 3
+      const items = Array.isArray(props.items) ? props.items : []
+
+      const gridColsClass = {
+        2: "md:grid-cols-2",
+        3: "md:grid-cols-3",
+        4: "md:grid-cols-4",
+      }[columns as 2 | 3 | 4] || "md:grid-cols-3"
+
+      return (
+        <section className="py-12 px-6 rounded-lg bg-white border border-gray-200 shadow-sm">
+          {headline && (
+            <h2 className="text-3xl font-semibold text-gray-900">{headline}</h2>
+          )}
+          {intro && (
+            <p className="text-lg text-gray-600 mt-2">{intro}</p>
+          )}
+
+          {items.length > 0 && (
+            <div className={`grid grid-cols-1 ${gridColsClass} gap-6 mt-8`}>
+              {items.map((item: unknown) => {
+                const itemRecord = item && typeof item === "object" ? (item as Record<string, unknown>) : {}
+                const itemId = String(itemRecord.id ?? "")
+                const itemTitle = String(itemRecord.title ?? "")
+                const itemBody = String(itemRecord.body ?? "")
+
+                return (
+                  <div
+                    key={itemId || itemTitle}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-6"
+                  >
+                    <h3 className="font-semibold text-gray-900">{itemTitle}</h3>
+                    {itemBody && (
+                      <p className="text-sm text-gray-600 mt-2">{itemBody}</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )
+    }
+    case "image-text": {
+      const props = (block.props ?? {}) as ImageTextBlockProps
+      const headline = String(props.headline ?? "")
+      const body = String(props.body ?? "")
+      const imageUrl = String(props.imageUrl ?? "")
+      const imageAlt = String(props.imageAlt ?? headline ?? "Image")
+      const imagePosition = props.imagePosition === "left" ? "left" : "right"
+      const ctaLabel = String(props.ctaLabel ?? "")
+      const ctaHref = String(props.ctaHref ?? "")
+
+      const contentElement = (
+        <div className="flex flex-col justify-center">
+          {headline && (
+            <h2 className="text-3xl font-semibold text-gray-900">{headline}</h2>
+          )}
+          {body && (
+            <p className="text-gray-600 mt-4">{body}</p>
+          )}
+          {ctaLabel && ctaHref && (
+            <div className="mt-6">
+              <a
+                href={ctaHref}
+                className="px-6 py-3 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors inline-block"
+              >
+                {ctaLabel}
+              </a>
+            </div>
+          )}
+        </div>
+      )
+
+      const imageElement = imageUrl ? (
+        <div className="relative h-80">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt={imageAlt}
+            className="w-full h-full object-cover rounded-lg"
+          />
+        </div>
+      ) : null
+
+      return (
+        <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            {imagePosition === "left" ? (
+              <>
+                {imageElement}
+                {contentElement}
+              </>
+            ) : (
+              <>
+                {contentElement}
+                {imageElement}
+              </>
+            )}
+          </div>
+        </section>
       )
     }
     default:

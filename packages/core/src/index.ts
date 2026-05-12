@@ -5,7 +5,17 @@ export type {
   CmsPage,
   CmsBlock,
 } from "./cms"
-export type { BlockType, BlockInstance, BlockDefinition, ContactFormBlockProps, ExternalEmbedBlockProps } from "./blocks"
+export type {
+  BlockType,
+  BlockInstance,
+  BlockDefinition,
+  ContactFormBlockProps,
+  ExternalEmbedBlockProps,
+  CtaBlockProps,
+  FeatureGridItem,
+  FeatureGridBlockProps,
+  ImageTextBlockProps,
+} from "./blocks"
 export type { RenderContext, EditorContext, BlockRenderProps, BlockRenderer } from "./renderer"
 export type { SavePageDraftInput, SavePageDraftResult, SavePageDraftError } from "./editor"
 export type { EditorPersistence } from "./editor-persistence"

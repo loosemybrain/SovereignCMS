@@ -31,3 +31,41 @@ export type ContactFormBlockProps = {
 
 /** Props für External Embed Block */
 export type ExternalEmbedBlockProps = ExternalEmbedProps
+
+/** Props für CTA Block */
+export type CtaBlockProps = {
+  eyebrow?: string
+  headline?: string
+  body?: string
+  primaryLabel?: string
+  primaryHref?: string
+  secondaryLabel?: string
+  secondaryHref?: string
+  align?: "left" | "center"
+}
+
+/** Item für Feature Grid Block */
+export type FeatureGridItem = {
+  id: string
+  title: string
+  body?: string
+}
+
+/** Props für Feature Grid Block */
+export type FeatureGridBlockProps = {
+  headline?: string
+  intro?: string
+  columns?: 2 | 3 | 4
+  items: FeatureGridItem[]
+}
+
+/** Props für Image Text Block */
+export type ImageTextBlockProps = {
+  headline?: string
+  body?: string
+  imageUrl?: string
+  imageAlt?: string
+  imagePosition?: "left" | "right"
+  ctaLabel?: string
+  ctaHref?: string
+}
