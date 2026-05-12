@@ -33,5 +33,9 @@ export type StructuredInspectorFieldDefinition = {
   description?: string
   placeholder?: string
   options?: SelectOption[]
+  /** For simple-list repeater: minimum number of items */
+  minItems?: number
+  /** For simple-list repeater: maximum number of items */
+  maxItems?: number
   validations?: ValidationRule[]
 }

@@ -152,13 +152,15 @@ export function PublicBlockRenderer({
       const headline = String(props.headline ?? "")
       const intro = String(props.intro ?? "")
 
-      // Try to parse itemsJson first, fallback to items
+      // Prefer items, fallback to itemsJson for old content only
       let items: unknown[] = Array.isArray(props.items) ? props.items : []
-      const itemsJson = typeof props.itemsJson === "string" ? props.itemsJson : null
-      if (itemsJson) {
-        const parsed = parseJsonSafe<unknown[]>(itemsJson)
-        if (parsed && Array.isArray(parsed)) {
-          items = parsed
+      if (items.length === 0) {
+        const itemsJson = typeof props.itemsJson === "string" ? props.itemsJson : null
+        if (itemsJson) {
+          const parsed = parseJsonSafe<unknown[]>(itemsJson)
+          if (parsed && Array.isArray(parsed)) {
+            items = parsed
+          }
         }
       }
 

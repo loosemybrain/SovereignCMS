@@ -5,6 +5,7 @@
 import type { InspectorFieldDefinition } from "./field-types"
 import type { MediaAsset } from "@sovereign-cms/core"
 import { MediaPicker } from "@/components/media-picker"
+import { SimpleListRenderer } from "./simple-list-renderer"
 import { AdminField } from "@/components/admin-ui"
 
 type Props = {
@@ -112,6 +113,20 @@ export function InspectorFieldRenderer({
           </select>
         )}
       </AdminField>
+    )
+  }
+
+  if (field.type === "simple-list") {
+    return (
+      <SimpleListRenderer
+        field={field}
+        value={value}
+        onChange={onChange}
+        id={id}
+        describedBy={describedBy}
+        invalid={invalid}
+        error={error}
+      />
     )
   }
 

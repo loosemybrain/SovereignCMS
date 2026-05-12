@@ -418,15 +418,6 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         { id: "feature-2", title: "Feature two", body: "Describe the second feature." },
         { id: "feature-3", title: "Feature three", body: "Describe the third feature." },
       ],
-      itemsJson: JSON.stringify(
-        [
-          { id: "feature-1", title: "Feature one", body: "Describe the first feature." },
-          { id: "feature-2", title: "Feature two", body: "Describe the second feature." },
-          { id: "feature-3", title: "Feature three", body: "Describe the third feature." },
-        ],
-        null,
-        2
-      ),
     },
     inspectorFields: [
       {
@@ -458,13 +449,13 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         ],
       },
       {
-        key: "itemsJson",
-        label: "Items (JSON)",
-        type: "textarea",
+        key: "items",
+        label: "Items",
+        type: "simple-list",
         groupId: "items",
-        description: "Edit grid items as JSON array. Each item must have id and title.",
-        placeholder:
-          '[{"id":"feature-1","title":"Feature one","body":"Describe the first feature."}]',
+        description: "Add, edit, or remove grid items.",
+        minItems: 0,
+        maxItems: 20,
       },
     ],
     adminRenderer: FeatureGridAdminRenderer,

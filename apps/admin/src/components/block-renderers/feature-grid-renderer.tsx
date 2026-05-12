@@ -23,22 +23,24 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
   const headline = asString(props.headline)
   const intro = asString(props.intro)
 
-  // Try to parse itemsJson first, fallback to items
+  // Prefer items, fallback to itemsJson for old content only
   let items = asArray(props.items)
-  const itemsJson = asString(props.itemsJson)
-  if (itemsJson) {
-    const parsed = parseJsonSafe<unknown[]>(itemsJson)
-    if (parsed && Array.isArray(parsed)) {
-      items = parsed
+  let usedFallback = false
+
+  if (items.length === 0) {
+    const itemsJson = asString(props.itemsJson)
+    if (itemsJson) {
+      const parsed = parseJsonSafe<unknown[]>(itemsJson)
+      if (parsed && Array.isArray(parsed)) {
+        items = parsed
+        usedFallback = true
+      }
     }
   }
 
   // Handle columns as string or number
   const columnsRaw = props.columns ?? "3"
   const columns = asNumber(columnsRaw, 3)
-
-  // Show warning if itemsJson is invalid
-  const hasInvalidJson = itemsJson && !items.length
 
   const gridColsClass = {
     2: "grid-cols-2",
@@ -48,10 +50,10 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
 
   return (
     <div className="space-y-4">
-      {hasInvalidJson && (
+      {usedFallback && (
         <div className="rounded border border-amber-600 bg-amber-50 p-2">
           <p className="text-xs text-amber-900 font-medium">
-            ⚠️ itemsJson has invalid JSON. Using fallback items.
+            ℹ️ Using legacy itemsJson format. Consider re-saving with the new items editor.
           </p>
         </div>
       )}

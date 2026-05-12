@@ -4,7 +4,7 @@ import type { StructuredInspectorFieldDefinition, ValidationRule } from "@sovere
  * Field type definitions for the block property inspector.
  * Defines which UI component renders for each field type.
  */
-export type InspectorFieldType = "text" | "textarea" | "media" | "select"
+export type InspectorFieldType = "text" | "textarea" | "media" | "select" | "simple-list"
 
 /**
  * Single option for a select field.
@@ -12,6 +12,16 @@ export type InspectorFieldType = "text" | "textarea" | "media" | "select"
 export type SelectOption = {
   label: string
   value: string
+}
+
+/**
+ * Simple list item shape for repeater fields.
+ * Used by simple-list repeater type.
+ */
+export type SimpleListItem = {
+  id: string
+  title: string
+  body?: string
 }
 
 /**
@@ -24,6 +34,10 @@ export type InspectorFieldDefinition = Omit<StructuredInspectorFieldDefinition, 
   mediaType?: "image" | "document" | "video" | "other"
   /** Optional: select field options */
   options?: SelectOption[]
+  /** Optional: min items for simple-list */
+  minItems?: number
+  /** Optional: max items for simple-list */
+  maxItems?: number
   /** Optional local validation rules */
   validations?: ValidationRule[]
 }

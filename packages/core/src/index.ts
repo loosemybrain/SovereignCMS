@@ -110,3 +110,5 @@ export {
   isPrivacyScanApprovalStatus,
   validatePrivacyScanTargetUrl,
 } from "./privacy-scan"
+export type { SimpleListItem } from "./block-utils"
+export { normalizeSimpleListItems } from "./block-utils"
