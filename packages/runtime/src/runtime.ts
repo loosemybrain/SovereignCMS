@@ -19,6 +19,7 @@ import { createMediaPersistence } from "./media-persistence"
 import { createPublicPageResolution } from "./public-page-resolution"
 import { createPublicNavigationResolution } from "./public-navigation-resolution"
 import { createSettingsPersistence } from "./settings-persistence"
+import { createPrivacyScannerPersistence } from "./privacy-scanner-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 
 export type SovereignRuntime = {
@@ -35,6 +36,7 @@ export type SovereignRuntime = {
   publicPageResolution: ReturnType<typeof createPublicPageResolution>
   publicNavigationResolution: ReturnType<typeof createPublicNavigationResolution>
   settingsPersistence: ReturnType<typeof createSettingsPersistence>
+  privacyScannerPersistence: ReturnType<typeof createPrivacyScannerPersistence>
 }
 
 export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRuntime {
@@ -53,6 +55,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const publicPageResolution = createPublicPageResolution({ db })
   const publicNavigationResolution = createPublicNavigationResolution({ db })
   const settingsPersistence = createSettingsPersistence({ db })
+  const privacyScannerPersistence = createPrivacyScannerPersistence({ db })
 
   return {
     config: mergedConfig,
@@ -68,6 +71,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     publicPageResolution,
     publicNavigationResolution,
     settingsPersistence,
+    privacyScannerPersistence,
   }
 }
 

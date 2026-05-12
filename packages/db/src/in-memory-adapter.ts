@@ -8,6 +8,7 @@ import type {
   NavigationRepository,
   MediaRepository,
   SettingsRepository,
+  PrivacyScanRepository,
 } from "./contracts"
 import type {
   CmsBlock,
@@ -16,8 +17,12 @@ import type {
   SeoMetadata,
   TenantSettings,
   UpdateTenantSettingsInput,
+  PrivacyScanJob,
+  CreatePrivacyScanInput,
+  UpdatePrivacyScanApprovalInput,
 } from "@sovereign-cms/core"
 import { createDefaultTenantSettings } from "@sovereign-cms/core"
+import { nanoid } from "nanoid"
 
 type TenantRow = {
   id: string
@@ -56,6 +61,7 @@ type MutableStore = {
   navigationItems: NavigationItem[]
   mediaAssets: MediaAsset[]
   tenantSettingsByTenantId: Map<string, TenantSettings>
+  privacyScanJobs: PrivacyScanJob[]
 }
 
 function cloneTenantSettings(settings: TenantSettings): TenantSettings {
@@ -335,12 +341,49 @@ function buildStores(): MutableStore {
   }
   tenantSettingsByTenantId.set("demo", demoSettings)
 
+  // Demo privacy scan (optional, shows the scanner in action)
+  const demoPrivacyScan: PrivacyScanJob = {
+    id: "scan-demo-1",
+    tenantId: "demo",
+    locale: "de",
+    targetUrl: "https://example.com",
+    status: "completed",
+    approvalStatus: "draft",
+    findings: [
+      {
+        id: "finding-1",
+        type: "external-request",
+        name: "Google Maps Embed",
+        provider: "google-maps",
+        category: "external-media",
+        sourceUrl: "https://www.google.com/maps/embed?pb=...",
+        description: "External iframe from Google Maps (properly gated by consent)",
+        detectedBeforeConsent: false,
+        createdAt: "2026-05-11T10:00:00.000Z",
+      },
+      {
+        id: "finding-2",
+        type: "iframe",
+        name: "External Embed",
+        provider: "google-maps",
+        category: "external-media",
+        description: "Embedded map content",
+        detectedBeforeConsent: false,
+        createdAt: "2026-05-11T10:00:00.000Z",
+      },
+    ],
+    createdAt: "2026-05-11T10:00:00.000Z",
+    updatedAt: "2026-05-11T10:00:00.000Z",
+    completedAt: "2026-05-11T10:05:00.000Z",
+  }
+
   return {
     pages: [pageDE, pageEN],
     blocksByPageId,
     navigationItems,
     mediaAssets: [demoMediaAsset],
     tenantSettingsByTenantId,
+    privacyScanJobs: [demoPrivacyScan],
   }
 }
 
@@ -693,6 +736,64 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
     },
   }
 
+  const privacyScanRepo: PrivacyScanRepository = {
+    async listByTenant(input) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("privacyScans.listByTenant: tenantId is required")
+      }
+      return store.privacyScanJobs
+        .filter((scan) => scan.tenantId === input.tenantId)
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    },
+
+    async create(input: CreatePrivacyScanInput) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("privacyScans.create: tenantId is required")
+      }
+      if (typeof input.targetUrl !== "string" || input.targetUrl.trim().length === 0) {
+        throw new Error("privacyScans.create: targetUrl is required")
+      }
+
+      const now = new Date().toISOString()
+      const scan: PrivacyScanJob = {
+        id: nanoid(),
+        tenantId: input.tenantId,
+        locale: input.locale,
+        targetUrl: input.targetUrl.trim(),
+        status: "queued",
+        approvalStatus: "draft",
+        findings: [],
+        createdAt: now,
+        updatedAt: now,
+      }
+
+      store.privacyScanJobs.push(scan)
+      return scan
+    },
+
+    async updateApproval(input: UpdatePrivacyScanApprovalInput) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("privacyScans.updateApproval: tenantId is required")
+      }
+      if (typeof input.scanId !== "string" || input.scanId.trim().length === 0) {
+        throw new Error("privacyScans.updateApproval: scanId is required")
+      }
+
+      const scan = store.privacyScanJobs.find(
+        (s) => s.id === input.scanId && s.tenantId === input.tenantId
+      )
+      if (!scan) {
+        throw new Error(
+          `privacyScans.updateApproval: scan not found (tenantId=${input.tenantId}, scanId=${input.scanId})`
+        )
+      }
+
+      scan.approvalStatus = input.approvalStatus
+      scan.updatedAt = new Date().toISOString()
+      return scan
+    },
+  }
+
   return {
     tenants: tenantRepo,
     pages: pageRepo,
@@ -700,6 +801,7 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
     navigation: navigationRepo,
     media: mediaRepo,
     settings: settingsRepo,
+    privacyScans: privacyScanRepo,
   }
 }
 

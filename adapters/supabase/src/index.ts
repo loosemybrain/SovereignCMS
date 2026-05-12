@@ -60,7 +60,18 @@ export function createSupabaseDatabaseAdapterPlaceholder(): DatabaseAdapter {
       throw new Error("Not implemented in placeholder")
     },
   }
-  return { tenants, pages, blocks, navigation, media, settings }
+  const privacyScans = {
+    async listByTenant() {
+      return []
+    },
+    async create() {
+      throw new Error("Not implemented in placeholder")
+    },
+    async updateApproval() {
+      throw new Error("Not implemented in placeholder")
+    },
+  }
+  return { tenants, pages, blocks, navigation, media, settings, privacyScans }
 }
 
 export function createSupabaseStorageAdapterPlaceholder(): StorageAdapter {

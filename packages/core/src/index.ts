@@ -84,3 +84,18 @@ export {
   validateGoogleMapsEmbedUrl,
   validateExternalEmbedUrl,
 } from "./external-embed"
+export type {
+  PrivacyScanStatus,
+  PrivacyScanApprovalStatus,
+  PrivacyScanFindingType,
+  PrivacyScanFinding,
+  PrivacyScanJob,
+  CreatePrivacyScanInput,
+  CreatePrivacyScanResult,
+  UpdatePrivacyScanApprovalInput,
+  UpdatePrivacyScanApprovalResult,
+} from "./privacy-scan"
+export {
+  isPrivacyScanApprovalStatus,
+  validatePrivacyScanTargetUrl,
+} from "./privacy-scan"

@@ -20,6 +20,7 @@ const navItems = [
   { href: "/footer-navigation", label: "Footer Navigation", icon: "📎" },
   { href: "/media", label: "Media", icon: "🖼️" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/privacy", label: "Privacy", icon: "🔒" },
 ]
 
 export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps) {

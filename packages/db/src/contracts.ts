@@ -11,6 +11,9 @@ import type {
   CreateMediaAssetInput,
   TenantSettings,
   UpdateTenantSettingsInput,
+  PrivacyScanJob,
+  CreatePrivacyScanInput,
+  UpdatePrivacyScanApprovalInput,
 } from "@sovereign-cms/core"
 
 export type PageRecord = CmsPage
@@ -66,6 +69,12 @@ export interface SettingsRepository {
   update(input: UpdateTenantSettingsInput): Promise<TenantSettings>
 }
 
+export interface PrivacyScanRepository {
+  listByTenant(input: { tenantId: string }): Promise<PrivacyScanJob[]>
+  create(input: CreatePrivacyScanInput): Promise<PrivacyScanJob>
+  updateApproval(input: UpdatePrivacyScanApprovalInput): Promise<PrivacyScanJob>
+}
+
 export interface DatabaseAdapter {
   tenants: TenantRepository
   pages: PageRepository
@@ -73,4 +82,5 @@ export interface DatabaseAdapter {
   navigation: NavigationRepository
   media: MediaRepository
   settings: SettingsRepository
+  privacyScans: PrivacyScanRepository
 }
