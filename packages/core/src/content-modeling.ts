@@ -20,6 +20,11 @@ export type ValidationRule =
       message?: string
     }
 
+export type SelectOption = {
+  label: string
+  value: string
+}
+
 export type StructuredInspectorFieldDefinition = {
   key: string
   label: string
@@ -27,5 +32,6 @@ export type StructuredInspectorFieldDefinition = {
   groupId?: string
   description?: string
   placeholder?: string
+  options?: SelectOption[]
   validations?: ValidationRule[]
 }

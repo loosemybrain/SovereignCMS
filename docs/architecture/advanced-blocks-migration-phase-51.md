@@ -1,8 +1,12 @@
 # Phase 51: Controlled Advanced Blocks Migration
 
+**Note**: Phase 51 was followed by Phase 51.1 (Stabilization), which fixed incomplete select field implementation and added URL validation.
+
 ## Overview
 
-Phase 51 introduces three new advanced content blocks to the SovereignCMS architecture: **CTA**, **Feature Grid**, and **Image + Text**. This migration is intentionally controlled and minimal, adding only essential functionality without importing legacy complexity or creating unnecessary abstraction layers.
+Phase 51 introduces three new advanced content blocks to the SovereignCMS architecture: **CTA**, **Feature Grid**, and **Image + Text**. Phase 51.1 stabilizes the implementation with proper select field support, itemsJson bridging, and safe URL/image handling.
+
+This migration is intentionally controlled and minimal, adding only essential functionality without importing legacy complexity or creating unnecessary abstraction layers.
 
 ## Philosophy
 

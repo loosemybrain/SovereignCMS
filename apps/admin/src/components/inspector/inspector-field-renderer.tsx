@@ -87,6 +87,34 @@ export function InspectorFieldRenderer({
     )
   }
 
+  if (field.type === "select") {
+    return (
+      <AdminField
+        id={fieldId}
+        label={field.label}
+        description={field.description}
+        error={error}
+      >
+        {(fieldProps) => (
+          <select
+            id={fieldProps.id}
+            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
+            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
+            value={stringValue}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text admin-focus-ring focus:outline-none"
+          >
+            {field.options?.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
+      </AdminField>
+    )
+  }
+
   if (field.type === "media") {
     // Media field requires tenantId
     if (!tenantId) {

@@ -60,6 +60,7 @@ export { createPreviewContext } from "./preview"
 export type {
   FieldGroupDefinition,
   ValidationRule,
+  SelectOption,
   StructuredInspectorFieldDefinition,
 } from "./content-modeling"
 export type { ContentTemplateDefinition } from "./content-templates"

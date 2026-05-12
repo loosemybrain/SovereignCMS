@@ -1,4 +1,5 @@
 import type { CmsBlock } from "@sovereign-cms/core"
+import { parseJsonSafe } from "@/lib/parse-json-safe"
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {}
@@ -9,7 +10,8 @@ function asString(value: unknown, fallback = ""): string {
 }
 
 function asNumber(value: unknown, fallback = 3): number {
-  return typeof value === "number" ? value : fallback
+  const num = typeof value === "number" ? value : (typeof value === "string" ? parseInt(value, 10) : NaN)
+  return isNaN(num) ? fallback : num
 }
 
 function asArray(value: unknown): unknown[] {
@@ -20,8 +22,23 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
   const props = asRecord(block.props)
   const headline = asString(props.headline)
   const intro = asString(props.intro)
-  const columns = asNumber(props.columns, 3)
-  const items = asArray(props.items)
+
+  // Try to parse itemsJson first, fallback to items
+  let items = asArray(props.items)
+  const itemsJson = asString(props.itemsJson)
+  if (itemsJson) {
+    const parsed = parseJsonSafe<unknown[]>(itemsJson)
+    if (parsed && Array.isArray(parsed)) {
+      items = parsed
+    }
+  }
+
+  // Handle columns as string or number
+  const columnsRaw = props.columns ?? "3"
+  const columns = asNumber(columnsRaw, 3)
+
+  // Show warning if itemsJson is invalid
+  const hasInvalidJson = itemsJson && !items.length
 
   const gridColsClass = {
     2: "grid-cols-2",
@@ -31,6 +48,14 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
 
   return (
     <div className="space-y-4">
+      {hasInvalidJson && (
+        <div className="rounded border border-amber-600 bg-amber-50 p-2">
+          <p className="text-xs text-amber-900 font-medium">
+            ⚠️ itemsJson has invalid JSON. Using fallback items.
+          </p>
+        </div>
+      )}
+
       {headline && (
         <p className="font-semibold text-gray-900">{headline}</p>
       )}

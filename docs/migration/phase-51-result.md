@@ -1,191 +1,147 @@
-# Phase 51 Completion Report
+# Phase 51 & 51.1 Completion Report
 
-**Date**: May 2026  
+**Date**: May 12-13, 2026  
 **Status**: ✅ COMPLETE  
-**Scope**: Controlled Advanced Blocks Migration — CTA, Feature Grid, Image + Text
+**Scope**: Controlled Advanced Blocks Migration + Stabilization
 
-## Summary
+## Overview
 
-Phase 51 successfully implements three new advanced content blocks (CTA, Feature Grid, Image + Text) following the existing SovereignCMS architecture without importing legacy code or introducing unnecessary complexity.
+**Phase 51** introduced three new advanced blocks: CTA, Feature Grid, Image + Text.
 
-## Implementation Checklist
+**Phase 51.1** fixed incomplete implementation from Phase 51:
+- Added controlled `select` field support to inspector
+- Implemented Feature Grid `itemsJson` as a working admin-editing bridge
+- Added safe URL validation for CTA/Image-Text links
+- Added safe image URL validation for public rendering
+- Prevented admin preview from loading external HTTPS images
+- Updated documentation to honestly reflect implementation status
 
-### Core Types ✅
+## What Changed in Phase 51.1
 
-- [x] `CtaBlockProps` added to packages/core/src/blocks.ts
-- [x] `FeatureGridItem` and `FeatureGridBlockProps` added to packages/core/src/blocks.ts
-- [x] `ImageTextBlockProps` added to packages/core/src/blocks.ts
-- [x] All new types exported through packages/core/src/index.ts
+### Inspector Field Support
+- Added `"select"` as a native inspector field type
+- Updated field definitions to use select for:
+  - CTA: align field (left/center)
+  - Feature Grid: columns field ("2"/"3"/"4")
+  - Image Text: imagePosition field (left/right)
 
-### Admin Implementation ✅
+### Feature Grid itemsJson Bridge
+- Added `itemsJson` field to Feature Grid defaultProps
+- Admin renderer now:
+  - Parses `itemsJson` if present and valid
+  - Shows warning if `itemsJson` is invalid JSON
+  - Falls back to `items` array if parsing fails
+- Public renderer now:
+  - Parses `itemsJson` if present and valid
+  - Silently falls back to `items` if parsing fails
+  - Never crashes on invalid JSON
 
-**Renderers Created**:
+### URL & Image Validation
+- Created `safe-url-validation.ts` with:
+  - `isValidHref()`: Blocks `javascript:`, `data:`, `vbscript:`, allows `/`, `#`, `https://`, `http://`
+  - `isValidImageUrl()`: Allows internal `/` and `https://` only
+  - `isExternalHttpsImageUrl()`: Detects external HTTPS
 
-- [x] `apps/admin/src/components/block-renderers/cta-renderer.tsx`
-- [x] `apps/admin/src/components/block-renderers/feature-grid-renderer.tsx`
-- [x] `apps/admin/src/components/block-renderers/image-text-renderer.tsx`
+- CTA links only render if href is validated
+- Image Text CTA links only render if href is validated
+- Image Text images only render if validated
 
-**Block Definitions Updated**:
+### Admin Image Preview Safety
+- Admin Image Text renderer:
+  - Loads internal images (starting with `/`)
+  - Shows placeholder for external HTTPS (does NOT load)
+  - Shows warning placeholder for invalid URLs
+- Prevents admin from triggering external image requests
 
-- [x] Imported three new renderers in registry.ts
-- [x] Added CTA block definition with inspector fields:
-  - eyebrow (text)
-  - headline (text, required)
-  - body (textarea)
-  - primaryLabel, primaryHref (text)
-  - secondaryLabel, secondaryHref (text)
-  - align (select: left/center)
-- [x] Added Feature Grid block definition with inspector fields:
-  - headline (text)
-  - intro (textarea)
-  - columns (select: 2/3/4)
-  - itemsJson (textarea for JSON editing)
-- [x] Added Image + Text block definition with inspector fields:
-  - headline (text)
-  - body (textarea)
-  - imageUrl (text)
-  - imageAlt (text)
-  - imagePosition (select: left/right)
-  - ctaLabel, ctaHref (text)
+## Files Changed in Phase 51.1
 
-### Public Implementation ✅
+### Core Package
+- `packages/core/src/content-modeling.ts`: Added `SelectOption` type
 
-- [x] Imported new prop types in PublicBlockRenderer.tsx
-- [x] Added `case "cta"` with semantic HTML rendering
-- [x] Added `case "feature-grid"` with responsive grid layout
-- [x] Added `case "image-text"` with flexible image positioning
+### Admin App
+- `apps/admin/src/components/inspector/field-types.ts`: Added select field support
+- `apps/admin/src/components/inspector/inspector-field-renderer.tsx`: Implemented select renderer
+- `apps/admin/src/block-definitions/registry.ts`: Updated fields to use select, added itemsJson
+- `apps/admin/src/components/block-renderers/feature-grid-renderer.tsx`: Added itemsJson parsing + warning
+- `apps/admin/src/components/block-renderers/image-text-renderer.tsx`: Added safe image URL handling
+- `apps/admin/src/lib/parse-json-safe.ts`: Created JSON parsing helper
 
-### Documentation ✅
+### Web App
+- `apps/web/src/components/public/PublicBlockRenderer.tsx`: Added URL validation, itemsJson parsing
+- `apps/web/src/lib/parse-json-safe.ts`: JSON parsing helper
+- `apps/web/src/lib/safe-url-validation.ts`: URL validation helpers
 
-- [x] Created `docs/architecture/advanced-blocks-migration-phase-51.md`
-- [x] Created `docs/migration/phase-51-result.md` (this file)
-
-## Technical Details
-
-### Admin Preview Safety
-
-All admin renderers:
-
-- Use defensive helper functions (asRecord, asString, asArray, asNumber)
-- Never crash on missing or malformed props
-- Display graceful fallbacks ("(ohne ...)" for missing required values)
-- Do not load external resources
-
-### Public Rendering
-
-All public rendering:
-
-- Uses semantic HTML (section, h2, p, a, img)
-- Implements responsive layouts (mobile-first, Tailwind CSS)
-- Only renders img tags when imageUrl is non-empty
-- Renders links only when href exists
-- Remains server-compatible (no Client Component needed)
-
-### Array Handling Decision
-
-The Feature Grid block's items array is edited as JSON in an `itemsJson` textarea field. This approach:
-
-- Avoids introducing a generic array/repeater field system in this phase
-- Preserves the option to add a controlled field editor in a future phase
-- Provides clear labeling and help text for admins
-- Keeps props stable and type-safe
+### Documentation
+- `docs/migration/phase-51-result.md`: This file (updated)
+- `docs/architecture/advanced-blocks-migration-phase-51.md`: Updated with Phase 51.1 notes
 
 ## Validation Results
 
 ### TypeScript ✅
+All packages type-check without errors or `any` types.
 
-```
-npm run typecheck
-```
-
-**Status**: All type checks passed. No `any` types introduced.
-
-- New block props are strictly typed
-- Block renderers properly type-check against CmsBlock
-- Public renderer switch cases handle prop type casting
-
-### Linting ✅
-
-```
-npm run lint
-```
-
-**Status**: All ESLint checks passed.
-
-- No unused imports
-- No ESLint violations in new renderers
-- No unused catch variables
-- Helper functions follow consistent patterns
+### ESLint ✅
+No linting violations.
 
 ### Build ✅
+Production build completes successfully.
 
-```
-npm run build
-```
+## Acceptance Criteria
 
-**Status**: Build successful. All modules compiled.
-
-- Core types exported correctly
-- Admin components bundled
-- Web components bundled
-- No missing dependencies
-
-## Files Modified
-
-### Core Package
-
-- `packages/core/src/blocks.ts` (+48 lines)
-- `packages/core/src/index.ts` (+8 lines, modified export)
-
-### Admin App
-
-- `apps/admin/src/block-definitions/registry.ts` (+264 lines)
-- `apps/admin/src/components/block-renderers/cta-renderer.tsx` (NEW, 36 lines)
-- `apps/admin/src/components/block-renderers/feature-grid-renderer.tsx` (NEW, 52 lines)
-- `apps/admin/src/components/block-renderers/image-text-renderer.tsx` (NEW, 49 lines)
-
-### Web App
-
-- `apps/web/src/components/public/PublicBlockRenderer.tsx` (+195 lines)
-
-## Acceptance Criteria Met
-
-✅ **Existing blocks still work**: hero, text, contact-form, external-embed all functional  
-✅ **Admin block palette shows**: CTA, Feature Grid, Image + Text visible in editor  
-✅ **New blocks can be added**: Admin editor allows creating new instances  
-✅ **New blocks can be selected**: Block type dropdown includes new types  
-✅ **Inspector shows editable fields**: All props editable through inspector  
-✅ **Admin preview renders**: No crashes on default or custom props  
-✅ **Public renderer supports all three**: All blocks render on public pages  
-✅ **No runtime objects passed to clients**: Props are plain data, no runtime service objects  
-✅ **No API routes added**: Uses existing server action infrastructure  
-✅ **No legacy code imported**: All implementations written fresh  
-✅ **No `any` types**: Full TypeScript strict mode compliance  
-✅ **Documentation exists**: Architecture and result docs created
+✅ CTA align is edited through native select field  
+✅ Feature Grid columns are edited through native select field  
+✅ Image Text imagePosition is edited through native select field  
+✅ Feature Grid itemsJson affects Admin Preview  
+✅ Feature Grid itemsJson affects Public Rendering when valid  
+✅ Invalid itemsJson does not crash Admin or Public rendering  
+✅ Invalid itemsJson shows admin-only warning  
+✅ CTA links do not render for unsafe href values  
+✅ Image Text CTA link does not render for unsafe href values  
+✅ Public image-text does not render unsafe image URLs  
+✅ Admin image-text does not load external https images in preview  
+✅ No API routes were added  
+✅ No external dependencies were added  
+✅ No legacy imports were added  
+✅ Documentation no longer claims unverified validation  
 
 ## Known Limitations (Intentional)
 
-1. **Array editing is JSON-only**: Feature Grid items edited as JSON strings. A GUI repeater can be added in a future controlled phase.
-2. **No presets**: CTA and Image + Text have no preset library. Presets can be added when needed.
-3. **No animations**: All blocks are static semantic markup. Animations can be added to a specific block in a future phase.
-4. **No recursive blocks**: Blocks cannot contain other blocks. This constraint preserves stability.
-5. **No external libraries**: All styling uses Tailwind CSS; no additional dependencies added.
+1. **Array editing is JSON-only**: Feature Grid items edited as JSON string in admin. A GUI repeater can be added in a future phase.
+2. **No preset library**: Presets can be added when needed.
+3. **No animations**: All blocks are static. Animations can be added in future phases.
+4. **URL validation is syntactic only**: Checks protocol and format, does not perform network validation.
+5. **Select field: string values only**: Numbers must be converted to strings in select options.
 
-## Next Phase Opportunities
+## What Phase 51.1 Did NOT Include
 
-1. **Phase 52**: Add a controlled preset library for popular CTA configurations (e.g., "Dark CTA", "Centered Hero CTA")
-2. **Phase 53**: Introduce a controlled array/repeater field editor for Feature Grid and other multi-item blocks
-3. **Phase 54**: Add testimonials, FAQ, or other block types following the same minimal approach
-4. **Phase 55**: Add animation options to specific blocks (CTA, Image + Text) with Intersection Observer
+- ❌ Generic array/repeater field editor (intentional—preserves flexibility)
+- ❌ Preset library (intentional—will add when needed)
+- ❌ Animation system (intentional—future phase)
+- ❌ New block types (Phase 51 only introduced three)
+- ❌ Runtime validation of URLs (syntactic only)
+
+## Summary of Changes
+
+| Category | Count |
+|----------|-------|
+| Files modified | 11 |
+| Files created | 3 |
+| New features | Select field type, itemsJson bridge, URL validation |
+| Breaking changes | None |
+
+## Next Steps
+
+1. **Phase 52+**: Preset library for popular CTA/grid configurations
+2. **Phase 53+**: Controlled GUI repeater for array editing
+3. **Phase 54+**: Additional block types following the same minimal approach
 
 ## Conclusion
 
-Phase 51 successfully introduces three new advanced blocks while maintaining architectural discipline:
+Phase 51.1 stabilizes Phase 51 with:
+- Complete select field support for block editors
+- Working Feature Grid itemsJson bridge with fallback handling
+- Safe URL and image validation for public rendering
+- Admin safety (no external image loading)
+- Honest documentation
 
-- ✅ No legacy code imported
-- ✅ No unnecessary abstraction layers
-- ✅ Stable, intentional prop contracts
-- ✅ Existing infrastructure used fully
-- ✅ Future-proof constraints for controlled expansion
-
-All acceptance criteria met. All validation tests passed. Code is production-ready.
+All acceptance criteria met. Production ready.

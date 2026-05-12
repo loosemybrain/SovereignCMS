@@ -378,10 +378,13 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
       {
         key: "align",
         label: "Alignment",
-        type: "text",
+        type: "select",
         groupId: "appearance",
-        description: "Horizontal alignment: 'left' or 'center'",
-        placeholder: "center",
+        description: "Horizontal alignment of content.",
+        options: [
+          { label: "Left", value: "left" },
+          { label: "Center", value: "center" },
+        ],
       },
     ],
     adminRenderer: CtaAdminRenderer,
@@ -409,12 +412,21 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
     defaultProps: {
       headline: "Feature Grid",
       intro: "Highlight important benefits or content areas.",
-      columns: 3,
+      columns: "3",
       items: [
         { id: "feature-1", title: "Feature one", body: "Describe the first feature." },
         { id: "feature-2", title: "Feature two", body: "Describe the second feature." },
         { id: "feature-3", title: "Feature three", body: "Describe the third feature." },
       ],
+      itemsJson: JSON.stringify(
+        [
+          { id: "feature-1", title: "Feature one", body: "Describe the first feature." },
+          { id: "feature-2", title: "Feature two", body: "Describe the second feature." },
+          { id: "feature-3", title: "Feature three", body: "Describe the third feature." },
+        ],
+        null,
+        2
+      ),
     },
     inspectorFields: [
       {
@@ -436,10 +448,14 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
       {
         key: "columns",
         label: "Number of Columns",
-        type: "text",
+        type: "select",
         groupId: "layout",
-        description: "Number of columns: 2, 3, or 4",
-        placeholder: "3",
+        description: "How many columns to display.",
+        options: [
+          { label: "2 Columns", value: "2" },
+          { label: "3 Columns", value: "3" },
+          { label: "4 Columns", value: "4" },
+        ],
       },
       {
         key: "itemsJson",
@@ -517,10 +533,13 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
       {
         key: "imagePosition",
         label: "Image Position",
-        type: "text",
+        type: "select",
         groupId: "media",
-        description: "Image position: 'left' or 'right'",
-        placeholder: "right",
+        description: "Where the image appears relative to text.",
+        options: [
+          { label: "Left", value: "left" },
+          { label: "Right", value: "right" },
+        ],
       },
       {
         key: "ctaLabel",

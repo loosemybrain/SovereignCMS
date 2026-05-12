@@ -8,6 +8,8 @@ import type {
 } from "@sovereign-cms/core"
 import { PublicContactForm } from "@/components/public-contact-form"
 import { PublicExternalEmbed } from "@/components/public-external-embed"
+import { parseJsonSafe } from "@/lib/parse-json-safe"
+import { isValidHref, isValidImageUrl } from "@/lib/safe-url-validation"
 
 type Props = {
   block: BlockInstance
@@ -124,7 +126,7 @@ export function PublicBlockRenderer({
 
           {(primaryLabel || secondaryLabel) && (
             <div className={`flex gap-4 mt-8 ${justifyClass}`}>
-              {primaryLabel && primaryHref && (
+              {primaryLabel && isValidHref(primaryHref) && (
                 <a
                   href={primaryHref}
                   className="px-6 py-3 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors"
@@ -132,7 +134,7 @@ export function PublicBlockRenderer({
                   {primaryLabel}
                 </a>
               )}
-              {secondaryLabel && secondaryHref && (
+              {secondaryLabel && isValidHref(secondaryHref) && (
                 <a
                   href={secondaryHref}
                   className="px-6 py-3 bg-gray-200 text-gray-900 rounded font-semibold hover:bg-gray-300 transition-colors"
@@ -146,11 +148,24 @@ export function PublicBlockRenderer({
       )
     }
     case "feature-grid": {
-      const props = (block.props ?? {}) as FeatureGridBlockProps
+      const props = (block.props ?? {}) as FeatureGridBlockProps & { itemsJson?: string }
       const headline = String(props.headline ?? "")
       const intro = String(props.intro ?? "")
-      const columns = props.columns ?? 3
-      const items = Array.isArray(props.items) ? props.items : []
+
+      // Try to parse itemsJson first, fallback to items
+      let items: unknown[] = Array.isArray(props.items) ? props.items : []
+      const itemsJson = typeof props.itemsJson === "string" ? props.itemsJson : null
+      if (itemsJson) {
+        const parsed = parseJsonSafe<unknown[]>(itemsJson)
+        if (parsed && Array.isArray(parsed)) {
+          items = parsed
+        }
+      }
+
+      // Handle columns as string or number
+      const columnsRaw = props.columns ?? "3"
+      const columnsNum = typeof columnsRaw === "string" ? parseInt(columnsRaw, 10) : columnsRaw
+      const columns = isNaN(columnsNum) ? 3 : columnsNum
 
       const gridColsClass = {
         2: "md:grid-cols-2",
@@ -210,7 +225,7 @@ export function PublicBlockRenderer({
           {body && (
             <p className="text-gray-600 mt-4">{body}</p>
           )}
-          {ctaLabel && ctaHref && (
+          {ctaLabel && isValidHref(ctaHref) && (
             <div className="mt-6">
               <a
                 href={ctaHref}
@@ -223,7 +238,7 @@ export function PublicBlockRenderer({
         </div>
       )
 
-      const imageElement = imageUrl ? (
+      const imageElement = isValidImageUrl(imageUrl) ? (
         <div className="relative h-80">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
