@@ -81,18 +81,25 @@ async resolveNavigation(params: {
 
 **Filter Logic**:
 ```typescript
-// Archived: never visible
-if (item.status === "archived") return false
+// Item visibility
+if (!isPubliclyVisible(item.status, preview)) return false
 
-// Published: always visible
-if (item.status === "published") return true
+if (item.type === "external") {
+  // External link must have href
+  return Boolean(item.href)
+}
 
-// Draft: visible only in preview mode
-if (item.status === "draft" && preview.mode === "enabled") return true
-
-// All other cases: not visible
-return false
+if (item.type === "page") {
+  // Referenced page must exist and also be publicly visible
+  return Boolean(page && isPubliclyVisible(page.status, preview))
+}
 ```
+
+**Alignment Rule**:
+- For `page` navigation entries, both layers must pass:
+  - Navigation item status visibility
+  - Referenced page status visibility
+- This prevents links to hidden draft pages when preview is disabled.
 
 ### Public Page Loader
 
@@ -172,15 +179,15 @@ export function PublicPreviewBadge({ previewEnabled }: Props) {
 **Updated Props**:
 ```typescript
 type Props = {
-  items: NavigationItem[]
-  locale: string
+  items: PublicNavigationItemViewModel[]
   previewEnabled?: boolean  // ← New
 }
 ```
 
 **Link Generation**:
-- Without preview: `/{locale}/{slug}`
-- With preview: `/{locale}/{slug}?preview=1`
+- Internal page links use slug-based href from runtime view model (`/{locale}/{page.slug}`)
+- With preview: `{href}?preview=1`
+- pageId is no longer rendered as a public URL
 
 External links unchanged (no query params).
 
@@ -208,14 +215,32 @@ type Props = {
 
 **Implementation**:
 1. Extract searchParams from request
-2. Pass to loadPublicPage as { searchParams }
+2. Read runtime config for `supportedLocales` and `defaultLocale`
+3. Parse locale + slug using `resolvePublicLocaleAndSlug()`
+4. Pass normalized values to `loadPublicPage({ host, locale, slug, searchParams })`
+
+### Public Blocks Visibility
+
+**Location**: `apps/web/src/lib/load-public-page.ts`
+
+Public rendering only returns blocks with `visibility === "visible"`.
+`scheduled` handling is intentionally not part of this phase.
+
+### Shared Visibility Helper
+
+**Location**: `packages/runtime/src/public-visibility.ts`
+
+`isPubliclyVisible(status, preview)` centralizes public status checks:
+- `published` => visible
+- `draft` => visible only in preview mode
+- `archived` => never visible
 
 ## Data Flow: Publish Visibility
 
 ```
 User requests: https://example.com/en/about
   ↓
-Page route extracts slug="about", locale="de"
+Page route extracts slug="about", locale="en"
 No searchParams (preview disabled)
   ↓
 loadPublicPage({ host, slug, locale, searchParams: {} })
@@ -240,7 +265,7 @@ If page → render with navigation
 
 User requests: https://example.com/en/about?preview=1
   ↓
-Page route extracts slug="about", locale="de"
+Page route extracts slug="about", locale="en"
 searchParams: { preview: "1" }
   ↓
 loadPublicPage({ host, slug, locale, searchParams: { preview: "1" } })

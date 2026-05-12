@@ -31,6 +31,7 @@ export default async function NavigationPage({ searchParams }: Props) {
     runtime.navigationPersistence.listNavigationItems({
       tenantId: tenant.tenantId,
       locale: activeLocale,
+      scope: "main",
     }),
     runtime.db.pages.listByTenant({
       tenantId: tenant.tenantId,
@@ -55,6 +56,7 @@ export default async function NavigationPage({ searchParams }: Props) {
       />
 
       <CreateNavigationItemForm
+        key={`navigation-create-${activeLocale}`}
         tenantId={tenant.tenantId}
         activeLocale={activeLocale}
         pages={pages}

@@ -3,6 +3,7 @@ import Link from "next/link"
 import { PageEditorClient } from "@/components/page-editor-client"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
+import { AdminBadge } from "@/components/admin-ui"
 import { loadAdminPageDetail } from "@/lib/load-admin-page-detail"
 
 type Props = {
@@ -62,26 +63,26 @@ export default async function AdminPageDetailRoute({ params, searchParams }: Pro
         <div className="flex items-center gap-4">
           <Link
             href={`/pages?locale=${activeLocale}`}
-            className="text-sm text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-sm admin-text-muted hover:admin-text transition-colors"
           >
             ← Back to Pages
           </Link>
         </div>
         <div>
-          <h1 className="text-4xl font-bold text-zinc-100">{page.title}</h1>
-          <p className="text-sm text-zinc-400 mt-1">Edit page content and blocks</p>
+          <h1 className="text-4xl font-bold admin-text">{page.title}</h1>
+          <p className="text-sm admin-text-muted mt-1">Edit page content and blocks</p>
         </div>
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300 text-xs">
+          <AdminBadge variant="muted" className="rounded px-2 py-1">
             <span className="font-mono">{page.slug}</span>
-          </div>
-          <div className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300 text-xs">
+          </AdminBadge>
+          <AdminBadge variant="muted" className="rounded px-2 py-1">
             Locale: <span className="font-medium">{activeLocale}</span>
-          </div>
+          </AdminBadge>
           <ContentStatusBadge status={page.status} />
-          <div className="px-2 py-1 rounded bg-zinc-900/40 border border-zinc-800 text-zinc-300 text-xs">
+          <AdminBadge variant="muted" className="rounded px-2 py-1">
             Tenant: <span className="font-medium">{tenant.tenantId}</span>
-          </div>
+          </AdminBadge>
         </div>
       </div>
 

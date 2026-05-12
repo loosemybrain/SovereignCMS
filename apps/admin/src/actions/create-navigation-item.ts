@@ -17,6 +17,10 @@ export async function createNavigationItemAction(
     throw new Error("Invalid createNavigationItem input")
   }
 
+  if (input.scope !== undefined && input.scope !== "main" && input.scope !== "footer") {
+    throw new Error("Invalid navigation scope")
+  }
+
   const runtime = createRuntime()
   return runtime.navigationPersistence.createNavigationItem(input)
 }

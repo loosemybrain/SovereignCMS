@@ -2,6 +2,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
+import { CompositionDebugPanel } from "@/components/composition-debug-panel"
 import { CreatePageForm } from "@/components/create-page-form"
 import { AdminCard, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
@@ -44,7 +45,17 @@ export default async function PagesListPage({ searchParams }: Props) {
         createHref={createHref}
       />
 
-      <CreatePageForm tenantId={tenant.tenantId} activeLocale={activeLocale} />
+      <CreatePageForm
+        tenantId={tenant.tenantId}
+        activeLocale={activeLocale}
+        runtimeSupportedLocales={localeContext.supportedLocales}
+        runtimeDefaultLocale={localeContext.defaultLocale}
+      />
+      <CompositionDebugPanel
+        tenantId={tenant.tenantId}
+        runtimeSupportedLocales={localeContext.supportedLocales}
+        runtimeDefaultLocale={localeContext.defaultLocale}
+      />
 
       {/* Page Counts Info */}
       <div className="flex flex-wrap gap-4 text-xs">

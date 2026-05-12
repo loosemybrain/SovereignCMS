@@ -6,8 +6,11 @@ import type {
   CreatePageInput,
   NavigationItem,
   CreateNavigationItemInput,
+  NavigationScope,
   MediaAsset,
   CreateMediaAssetInput,
+  TenantSettings,
+  UpdateTenantSettingsInput,
 } from "@sovereign-cms/core"
 
 export type PageRecord = CmsPage
@@ -45,7 +48,11 @@ export interface BlockRepository {
 }
 
 export interface NavigationRepository {
-  listByTenant(input: { tenantId: string; locale?: string }): Promise<NavigationItem[]>
+  listByTenant(input: {
+    tenantId: string
+    locale?: string
+    scope?: NavigationScope
+  }): Promise<NavigationItem[]>
   create(input: CreateNavigationItemInput): Promise<NavigationItem>
 }
 
@@ -54,10 +61,16 @@ export interface MediaRepository {
   create(input: CreateMediaAssetInput): Promise<MediaAsset>
 }
 
+export interface SettingsRepository {
+  getByTenant(input: { tenantId: string }): Promise<TenantSettings>
+  update(input: UpdateTenantSettingsInput): Promise<TenantSettings>
+}
+
 export interface DatabaseAdapter {
   tenants: TenantRepository
   pages: PageRepository
   blocks: BlockRepository
   navigation: NavigationRepository
   media: MediaRepository
+  settings: SettingsRepository
 }

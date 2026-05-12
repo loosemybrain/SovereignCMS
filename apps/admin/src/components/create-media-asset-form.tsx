@@ -7,6 +7,7 @@ import {
   AdminButton,
   AdminCard,
   AdminCardDescription,
+  AdminField,
   AdminCardHeader,
   AdminCardTitle,
   AdminInput,
@@ -69,75 +70,77 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
       </AdminCardHeader>
 
       {error && (
-        <div className="rounded bg-red-900/30 border border-red-800/50 p-3 text-red-300 text-sm">
+        <div
+          className="rounded bg-red-900/30 border border-red-800/50 p-3 text-red-300 text-sm"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
       {successMessage && (
-        <div className="rounded bg-emerald-900/30 border border-emerald-800/50 p-3 text-emerald-300 text-sm">
+        <div
+          className="rounded bg-emerald-900/30 border border-emerald-800/50 p-3 text-emerald-300 text-sm"
+          aria-live="polite"
+        >
           {successMessage}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1">
-          <label className="text-xs font-medium admin-text-muted" htmlFor="media-title">
-            Title
-          </label>
-          <AdminInput
-            id="media-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Asset title"
-            required
-            disabled={isCreating}
-          />
-        </div>
+        <AdminField id="media-title" label="Title" error={error}>
+          {(fieldProps) => (
+            <AdminInput
+              {...fieldProps}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Asset title"
+              required
+              disabled={isCreating}
+            />
+          )}
+        </AdminField>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium admin-text-muted" htmlFor="media-type">
-            Type
-          </label>
-          <AdminSelect
-            id="media-type"
-            value={type}
-            onChange={(e) => setType(e.target.value as MediaAssetType)}
-            disabled={isCreating}
-          >
-            <option value="image">image</option>
-            <option value="document">document</option>
-            <option value="video">video</option>
-            <option value="other">other</option>
-          </AdminSelect>
-        </div>
+        <AdminField id="media-type" label="Type" error={error}>
+          {(fieldProps) => (
+            <AdminSelect
+              {...fieldProps}
+              value={type}
+              onChange={(e) => setType(e.target.value as MediaAssetType)}
+              disabled={isCreating}
+            >
+              <option value="image">image</option>
+              <option value="document">document</option>
+              <option value="video">video</option>
+              <option value="other">other</option>
+            </AdminSelect>
+          )}
+        </AdminField>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium admin-text-muted" htmlFor="media-url">
-            URL
-          </label>
-          <AdminInput
-            id="media-url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://… or /path"
-            required
-            disabled={isCreating}
-          />
-        </div>
+        <AdminField id="media-url" label="URL" error={error}>
+          {(fieldProps) => (
+            <AdminInput
+              {...fieldProps}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://... or /path"
+              required
+              disabled={isCreating}
+            />
+          )}
+        </AdminField>
 
-        <div className="space-y-1">
-          <label className="text-xs font-medium admin-text-muted" htmlFor="media-alt">
-            Alt (optional)
-          </label>
-          <AdminInput
-            id="media-alt"
-            value={alt}
-            onChange={(e) => setAlt(e.target.value)}
-            placeholder="Alternative text"
-            disabled={isCreating}
-          />
-        </div>
+        <AdminField id="media-alt" label="Alt (optional)" error={error}>
+          {(fieldProps) => (
+            <AdminInput
+              {...fieldProps}
+              value={alt}
+              onChange={(e) => setAlt(e.target.value)}
+              placeholder="Alternative text"
+              disabled={isCreating}
+            />
+          )}
+        </AdminField>
 
         <AdminButton type="submit" disabled={isCreating}>
           {isCreating ? "Creating…" : "Create Media Asset"}

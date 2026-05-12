@@ -17,6 +17,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/pages", label: "Pages", icon: "📄" },
   { href: "/navigation", label: "Navigation", icon: "🧭" },
+  { href: "/footer-navigation", label: "Footer Navigation", icon: "📎" },
   { href: "/media", label: "Media", icon: "🖼️" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ]
@@ -44,15 +45,16 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1" aria-label="Admin navigation">
           {navItems.map((item) => {
             const isActive = isRouteActive(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded text-sm transition-all duration-200",
+                  "flex items-center gap-3 px-3 py-2 rounded text-sm transition-all duration-200 admin-focus-ring",
                   isActive
                     ? "admin-accent-bg admin-text border admin-border"
                     : "admin-text-muted hover:bg-zinc-800/30 admin-surface-muted",

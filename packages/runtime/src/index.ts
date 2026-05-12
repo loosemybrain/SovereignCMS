@@ -13,4 +13,15 @@ export { createNavigationPersistence } from "./navigation-persistence"
 export { createMediaPersistence } from "./media-persistence"
 export { createPublicPageResolution, type ResolvePublicPageInput } from "./public-page-resolution"
 export { createPublicNavigationResolution } from "./public-navigation-resolution"
+export { createSettingsPersistence } from "./settings-persistence"
+export type { PublicNavigationItemViewModel } from "./public-navigation-view-model"
+export type { PublicFooterLink, PublicFooterViewModel } from "./public-footer-view-model"
+export { mapSettingsToPublicFooterViewModel } from "./public-footer-mapping"
+export type {
+  PublicHeaderLocaleLink,
+  PublicHeaderNavigationLink,
+  PublicHeaderViewModel,
+} from "./public-header-view-model"
+export { mapSettingsToPublicHeaderViewModel } from "./public-header-mapping"
+export { isPubliclyVisible } from "./public-visibility"
 export { mapSeoMetadataToPublicViewModel, type PublicSeoViewModel } from "./public-seo-mapping"

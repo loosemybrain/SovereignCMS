@@ -52,7 +52,15 @@ export function createSupabaseDatabaseAdapterPlaceholder(): DatabaseAdapter {
       throw new Error("Not implemented in placeholder")
     },
   }
-  return { tenants, pages, blocks, navigation, media }
+  const settings = {
+    async getByTenant() {
+      throw new Error("Not implemented in placeholder")
+    },
+    async update() {
+      throw new Error("Not implemented in placeholder")
+    },
+  }
+  return { tenants, pages, blocks, navigation, media, settings }
 }
 
 export function createSupabaseStorageAdapterPlaceholder(): StorageAdapter {

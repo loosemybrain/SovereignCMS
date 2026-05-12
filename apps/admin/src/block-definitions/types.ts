@@ -5,6 +5,7 @@
 
 import type { InspectorFieldDefinition } from "@/components/inspector/field-types"
 import type { AdminBlockRenderer } from "@/components/block-renderers/types"
+import type { FieldGroupDefinition } from "@sovereign-cms/core"
 
 /**
  * Comprehensive definition for a block type.
@@ -25,6 +26,8 @@ export type AdminBlockDefinition = {
   category: string
   /** Default props for new instances of this block */
   defaultProps: Record<string, unknown>
+  /** Optional field groups for inspector structure */
+  fieldGroups?: FieldGroupDefinition[]
   /** Inspector fields for editing this block type */
   inspectorFields: InspectorFieldDefinition[]
   /** Function to render this block in admin preview */

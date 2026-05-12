@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import type { MediaAsset } from "@sovereign-cms/core"
 import { clientMediaPersistence } from "@/lib/client-media-persistence"
-import { AdminCard, AdminButton } from "@/components/admin-ui"
+import { AdminCard } from "@/components/admin-ui"
 
 type Props = {
   tenantId: string
@@ -61,19 +61,19 @@ export function MediaPicker({
         </div>
 
         {isLoading && (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-8" aria-live="polite">
             <p className="text-sm admin-text-muted">Loading media assets...</p>
           </div>
         )}
 
         {error && (
-          <div className="rounded-md bg-red-900/20 border border-red-700/50 p-4">
+          <div className="rounded-md bg-red-900/20 border border-red-700/50 p-4" role="alert">
             <p className="text-sm text-red-300">{error}</p>
           </div>
         )}
 
         {!isLoading && !error && assets.length === 0 && (
-          <div className="rounded-md bg-zinc-900/40 border border-zinc-700/50 p-6">
+          <div className="rounded-md bg-zinc-900/40 border border-zinc-700/50 p-6" aria-live="polite">
             <p className="text-sm admin-text-muted text-center">
               No media assets found for this tenant
             </p>
@@ -81,17 +81,20 @@ export function MediaPicker({
         )}
 
         {!isLoading && !error && assets.length > 0 && (
-          <div className="grid grid-cols-2 gap-4">
+          <section aria-label="Available media assets">
+            <h4 className="admin-sr-only">Available media assets</h4>
+            <ul className="grid grid-cols-2 gap-4" role="list">
             {assets.map((asset) => (
-              <div
-                key={asset.id}
-                className={`rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                  selectedId === asset.id
-                    ? "border-blue-500 bg-blue-900/20"
-                    : "border-zinc-700 hover:border-zinc-600"
-                }`}
-                onClick={() => handleSelectAsset(asset)}
-              >
+              <li key={asset.id}>
+                <div
+                  role="option"
+                  aria-selected={selectedId === asset.id}
+                  className={`w-full text-left rounded-lg border-2 p-4 transition-all admin-focus-ring ${
+                    selectedId === asset.id
+                      ? "border-blue-500 bg-blue-900/20"
+                      : "border-zinc-700 hover:border-zinc-600"
+                  }`}
+                >
                 {/* Image Preview for image type */}
                 {asset.type === "image" && (
                   <div className="mb-3 bg-zinc-900 rounded h-24 flex items-center justify-center overflow-hidden">
@@ -117,6 +120,9 @@ export function MediaPicker({
                 <div className="space-y-1">
                   <p className="text-sm font-medium admin-text truncate">
                     {asset.title}
+                    {selectedId === asset.id ? (
+                      <span className="ml-2 text-xs font-normal text-blue-300">(Selected)</span>
+                    ) : null}
                   </p>
                   <p className="text-xs admin-text-muted">{asset.type}</p>
                   {asset.alt && (
@@ -127,20 +133,20 @@ export function MediaPicker({
                 </div>
 
                 {/* Select Button */}
-                {selectedId === asset.id && (
-                  <div className="mt-3">
-                    <AdminButton
-                      variant="primary"
-                      className="w-full text-xs py-1.5"
-                      disabled
-                    >
-                      Selected
-                    </AdminButton>
-                  </div>
-                )}
-              </div>
+                <button
+                  type="button"
+                  aria-pressed={selectedId === asset.id}
+                  aria-label={`Select media asset ${asset.title}`}
+                  className="mt-3 w-full rounded border admin-border admin-surface-muted text-center text-xs py-1.5 admin-text admin-focus-ring"
+                  onClick={() => handleSelectAsset(asset)}
+                >
+                  {selectedId === asset.id ? "Selected" : "Select asset"}
+                </button>
+                </div>
+              </li>
             ))}
-          </div>
+            </ul>
+          </section>
         )}
       </div>
     </AdminCard>

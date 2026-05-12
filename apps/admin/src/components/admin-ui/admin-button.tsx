@@ -25,10 +25,11 @@ export function AdminButton({
 }: AdminButtonProps) {
   return (
     <button
+      type={props.type ?? "button"}
       disabled={disabled}
       className={cn(
         "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
+        "admin-focus-ring focus-visible:outline-none",
         disabled && "cursor-not-allowed opacity-50",
         variantClasses[variant],
         className,

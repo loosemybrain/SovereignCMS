@@ -5,12 +5,17 @@
 import type { InspectorFieldDefinition } from "./field-types"
 import type { MediaAsset } from "@sovereign-cms/core"
 import { MediaPicker } from "@/components/media-picker"
+import { AdminField } from "@/components/admin-ui"
 
 type Props = {
   field: InspectorFieldDefinition
   value: unknown
   onChange: (value: unknown) => void
   tenantId?: string
+  id?: string
+  describedBy?: string
+  invalid?: boolean
+  error?: string | null
 }
 
 /**
@@ -21,36 +26,64 @@ function getStringValue(value: unknown): string {
   return ""
 }
 
-export function InspectorFieldRenderer({ field, value, onChange, tenantId }: Props) {
+export function InspectorFieldRenderer({
+  field,
+  value,
+  onChange,
+  tenantId,
+  id,
+  describedBy,
+  invalid,
+  error,
+}: Props) {
   const stringValue = getStringValue(value)
+  const fieldId = id ?? `inspector-field-${field.key}`
 
   if (field.type === "text") {
     return (
-      <div>
-        <label className="block text-xs font-medium text-zinc-300">{field.label}</label>
-        <input
-          type="text"
-          value={stringValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
-        />
-      </div>
+      <AdminField
+        id={fieldId}
+        label={field.label}
+        description={field.description}
+        error={error}
+      >
+        {(fieldProps) => (
+          <input
+            id={fieldProps.id}
+            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
+            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
+            type="text"
+            value={stringValue}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
+          />
+        )}
+      </AdminField>
     )
   }
 
   if (field.type === "textarea") {
     return (
-      <div>
-        <label className="block text-xs font-medium text-zinc-300">{field.label}</label>
-        <textarea
-          value={stringValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.placeholder}
-          rows={4}
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
-        />
-      </div>
+      <AdminField
+        id={fieldId}
+        label={field.label}
+        description={field.description}
+        error={error}
+      >
+        {(fieldProps) => (
+          <textarea
+            id={fieldProps.id}
+            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
+            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
+            value={stringValue}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            rows={4}
+            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
+          />
+        )}
+      </AdminField>
     )
   }
 
@@ -58,7 +91,7 @@ export function InspectorFieldRenderer({ field, value, onChange, tenantId }: Pro
     // Media field requires tenantId
     if (!tenantId) {
       return (
-        <div className="rounded bg-red-900/20 border border-red-700/50 p-2">
+        <div className="rounded bg-red-900/20 border border-red-700/50 p-2" role="alert">
           <p className="text-xs text-red-300">Error: tenantId not available for media field</p>
         </div>
       )
@@ -68,26 +101,32 @@ export function InspectorFieldRenderer({ field, value, onChange, tenantId }: Pro
     const selectedAssetId = typeof value === "string" ? value : null
 
     return (
-      <div>
-        <label className="block text-xs font-medium text-zinc-300">{field.label}</label>
-        <div className="mt-2">
-          <MediaPicker
-            tenantId={tenantId}
-            selectedAssetId={selectedAssetId}
-            onSelect={(asset: MediaAsset) => {
-              // Return object patch for media props
-              onChange({
-                mediaAssetId: asset.id,
-                mediaUrl: asset.url,
-                mediaAlt: asset.alt ?? asset.title,
-              })
-            }}
-          />
-        </div>
-      </div>
+      <AdminField
+        id={fieldId}
+        label={field.label}
+        description={field.description}
+        error={error}
+      >
+        {() => (
+          <div className="mt-2">
+            <MediaPicker
+              tenantId={tenantId}
+              selectedAssetId={selectedAssetId}
+              onSelect={(asset: MediaAsset) => {
+                // Return object patch for media props
+                onChange({
+                  mediaAssetId: asset.id,
+                  mediaUrl: asset.url,
+                  mediaAlt: asset.alt ?? asset.title,
+                })
+              }}
+            />
+          </div>
+        )}
+      </AdminField>
     )
   }
 
   // Fallback for unknown field types
-  return <p className="text-xs text-zinc-400">Unknown field type: {field.type}</p>
+  return <p className="text-xs admin-text-muted">Unknown field type: {field.type}</p>
 }

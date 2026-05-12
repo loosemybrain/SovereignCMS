@@ -10,11 +10,11 @@ type AdminBadgeProps = {
 }
 
 const badgeVariantClasses: Record<AdminBadgeVariant, string> = {
-  default: "admin-accent-bg admin-text border admin-border",
-  success: "bg-emerald-900/30 text-emerald-300 border-emerald-700/50",
-  warning: "bg-amber-900/30 text-amber-300 border-amber-700/50",
-  danger: "bg-red-900/30 text-red-300 border-red-700/50",
-  muted: "admin-surface-muted admin-text-muted border admin-border",
+  default: "admin-badge-default",
+  success: "admin-badge-success",
+  warning: "admin-badge-warning",
+  danger: "admin-badge-danger",
+  muted: "admin-badge-muted",
 }
 
 export function AdminBadge({ children, variant = "default", className }: AdminBadgeProps) {

@@ -7,5 +7,6 @@ export type {
   BlockRepository,
   NavigationRepository,
   MediaRepository,
+  SettingsRepository,
 } from "./contracts"
 export { createInMemoryAdapter } from "./in-memory-adapter"

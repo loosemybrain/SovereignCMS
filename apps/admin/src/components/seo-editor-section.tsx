@@ -48,47 +48,55 @@ export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-zinc-300">SEO Title</label>
+        <label className="block text-xs font-medium admin-text">SEO Title</label>
         <input
+          id="seo-title"
           type="text"
+          aria-describedby="seo-title-help"
           value={seoTitle}
           onChange={(e) => handleSeoTitleChange(e.target.value)}
           placeholder="Page title for search results"
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
+          className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
-        <p className="mt-1 text-xs text-zinc-500">
+        <p id="seo-title-help" className="mt-1 text-xs admin-text-muted">
           {seoTitle.length}/60 (recommended: 30-60)
         </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-300">SEO Description</label>
+        <label className="block text-xs font-medium admin-text">SEO Description</label>
         <textarea
+          id="seo-description"
+          aria-describedby="seo-description-help"
           value={seoDescription}
           onChange={(e) => handleSeoDescriptionChange(e.target.value)}
           placeholder="Page description for search results"
           rows={3}
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
+          className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
-        <p className="mt-1 text-xs text-zinc-500">
+        <p id="seo-description-help" className="mt-1 text-xs admin-text-muted">
           {seoDescription.length}/160 (recommended: 100-160)
         </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-300">Canonical URL</label>
+        <label className="block text-xs font-medium admin-text">Canonical URL</label>
         <input
+          id="canonical-url"
+          aria-describedby="canonical-url-help"
           type="text"
           value={canonicalUrl}
           onChange={(e) => handleCanonicalUrlChange(e.target.value)}
           placeholder="https://example.com/page or /relative/path"
-          className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:border-zinc-500 focus:outline-none"
+          className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
-        <p className="mt-1 text-xs text-zinc-500">Optional: Preferred URL for this page</p>
+        <p id="canonical-url-help" className="mt-1 text-xs admin-text-muted">
+          Optional: Preferred URL for this page
+        </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-300 mb-2">SEO Image</label>
+        <label className="block text-xs font-medium admin-text mb-2">SEO Image</label>
         {tenantId ? (
           <MediaPicker
             tenantId={tenantId}
@@ -96,24 +104,26 @@ export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
             onSelect={handleSeoImageSelect}
           />
         ) : (
-          <div className="rounded bg-red-900/20 border border-red-700/50 p-2">
-            <p className="text-xs text-red-300">Error: tenantId not available</p>
+          <div className="rounded bg-red-900/20 border border-red-700/50 p-2" role="alert">
+            <p className="text-xs text-red-200">Error: tenantId not available</p>
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={handleRobotsIndexToggle}
+          aria-pressed={robotsIndex}
           className={`rounded px-3 py-1 text-xs font-medium border transition-colors ${
             robotsIndex
-              ? "bg-emerald-900/30 text-emerald-300 border-emerald-700/50 hover:bg-emerald-900/50"
-              : "bg-zinc-800/30 text-zinc-300 border-zinc-700/50 hover:bg-zinc-800/50"
-          }`}
+              ? "bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
+              : "admin-surface-muted admin-text border admin-border hover:opacity-90"
+          } admin-focus-ring`}
         >
           {robotsIndex ? "✓ Index" : "✗ No Index"}
         </button>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs admin-text-muted">
           {robotsIndex ? "Search engines can index this page" : "Search engines should not index"}
         </p>
       </div>

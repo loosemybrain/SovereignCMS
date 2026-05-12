@@ -2,10 +2,13 @@ import type { ContentStatus } from "./content-status"
 
 export type NavigationItemType = "page" | "external"
 
+export type NavigationScope = "main" | "footer"
+
 export type NavigationItem = {
   id: string
   tenantId: string
   locale: string
+  scope: NavigationScope
   label: string
   type: NavigationItemType
   pageId?: string
@@ -23,6 +26,7 @@ export type CreateNavigationItemInput = {
   type: NavigationItemType
   pageId?: string
   href?: string
+  scope?: NavigationScope
 }
 
 export type CreateNavigationItemResult = {

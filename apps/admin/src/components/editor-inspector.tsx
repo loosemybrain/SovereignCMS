@@ -1,11 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import type { CmsBlock } from "@sovereign-cms/core"
 import { InspectorFieldRenderer } from "./inspector/inspector-field-renderer"
-import { getInspectorFieldsForBlock } from "./inspector/block-field-registry"
 import { SeoEditorSection } from "@/components/seo-editor-section"
-
 import type { SeoMetadata } from "@sovereign-cms/core"
+import { getAdminBlockDefinition } from "@/block-definitions/registry"
+import { validateFieldValue } from "@/lib/field-validation"
+import {
+  EditorHint,
+  EditorValidationSummary,
+  FieldGroupPanel,
+  InspectorSection,
+} from "@/components/editor/patterns"
 
 type EditorInspectorProps = {
   selectedBlock: CmsBlock | null
@@ -55,6 +62,10 @@ function buildFieldPatch(fieldKey: string, value: unknown): Record<string, unkno
   }
 }
 
+function toSafeDomId(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9_-]/g, "-")
+}
+
 function PropsEditing({
   block,
   onUpdate,
@@ -72,8 +83,10 @@ function PropsEditing({
       ? (block.props as Record<string, unknown>)
       : {}
 
-  // Get field definitions from registry
-  const fields = getInspectorFieldsForBlock(block.type)
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+  const definition = getAdminBlockDefinition(block.type)
+  const fields = definition?.inspectorFields ?? []
+  const fieldGroups = definition?.fieldGroups ?? []
 
   // No fields registered for this block type
   if (fields.length === 0) {
@@ -84,20 +97,76 @@ function PropsEditing({
     )
   }
 
-  // Render fields using registry
+  const groupedFields = fieldGroups.map((group) => ({
+    ...group,
+    fields: fields.filter((field) => field.groupId === group.id),
+  }))
+  const ungroupedFields = fields.filter(
+    (field) => field.groupId === undefined || !fieldGroups.some((group) => group.id === field.groupId),
+  )
+
+  const getFieldError = (fieldKey: string, value: unknown, fieldValidations: typeof fields[number]["validations"]) => {
+    if (!touchedFields[fieldKey]) {
+      return null
+    }
+    const result = validateFieldValue(value, fieldValidations)
+    return result.valid ? null : result.errors[0] ?? "Invalid value."
+  }
+
+  const renderField = (field: (typeof fields)[number]) => {
+    const error = getFieldError(field.key, props[field.key], field.validations)
+    const fieldId = `block-${toSafeDomId(block.id)}-field-${toSafeDomId(field.key)}`
+    return (
+      <InspectorFieldRenderer
+        key={field.key}
+        id={fieldId}
+        field={field}
+        value={props[field.key]}
+        tenantId={tenantId}
+        invalid={Boolean(error)}
+        error={error}
+        onChange={(value) => {
+          setTouchedFields((prev) => ({ ...prev, [field.key]: true }))
+          onUpdate(buildFieldPatch(field.key, value))
+        }}
+      />
+    )
+  }
+
+  const validationSummary = fields
+    .map((field) => {
+      const result = validateFieldValue(props[field.key], field.validations)
+      if (result.valid) {
+        return null
+      }
+      return {
+        fieldLabel: field.label,
+        fieldId: `block-${toSafeDomId(block.id)}-field-${toSafeDomId(field.key)}`,
+        messages: result.errors,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+
   return (
     <div className="space-y-2">
-      {fields.map((field) => (
-        <InspectorFieldRenderer
-          key={field.key}
-          field={field}
-          value={props[field.key]}
-          tenantId={tenantId}
-          onChange={(value) => {
-            onUpdate(buildFieldPatch(field.key, value))
-          }}
-        />
-      ))}
+      <EditorValidationSummary errors={validationSummary} />
+      {groupedFields.map((group) =>
+        group.fields.length > 0 ? (
+          <FieldGroupPanel
+            key={group.id}
+            title={group.label}
+            description={group.description}
+          >
+            <div className="space-y-2">{group.fields.map(renderField)}</div>
+          </FieldGroupPanel>
+        ) : null,
+      )}
+
+      {ungroupedFields.length > 0 ? (
+        <FieldGroupPanel title="Other Fields">
+          <div className="space-y-2">{ungroupedFields.map(renderField)}</div>
+        </FieldGroupPanel>
+      ) : null}
     </div>
   )
 }
@@ -112,23 +181,30 @@ export function EditorInspector({
   // If no block is selected, show page SEO editor
   if (selectedBlock === null) {
     return (
-      <div className="space-y-4 text-sm">
-        <section>
-          <h3 className="mb-2 font-medium admin-text">Page SEO Metadata</h3>
+      <div className="space-y-4 text-sm" aria-label="Inspector panel">
+        <InspectorSection title="No block selected">
+          <EditorHint tone="info">
+            Select a block from the list to edit its properties. You can still edit page SEO below.
+          </EditorHint>
+        </InspectorSection>
+        <InspectorSection title="SEO Metadata">
           {onUpdatePageSeo ? (
             <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
           ) : (
-            <p className="text-xs admin-text-muted">No block selected. Select a block or configure page SEO above.</p>
+            <p className="text-xs admin-text-muted">SEO editing is not available in this view.</p>
           )}
-        </section>
+        </InspectorSection>
 
         {pageSeo && (
-          <section className="border-t admin-border pt-4">
-            <h3 className="mb-2 font-medium admin-text">Raw SEO Preview</h3>
+          <InspectorSection
+            title="Debug Preview: Raw SEO"
+            description="Debug preview for current SEO metadata."
+            raw
+          >
             <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
               {JSON.stringify(pageSeo, null, 2)}
             </pre>
-          </section>
+          </InspectorSection>
         )}
       </div>
     )
@@ -136,14 +212,12 @@ export function EditorInspector({
 
   // Block is selected: show block properties
   return (
-    <div className="space-y-4 text-sm">
-      <section>
-        <h3 className="mb-2 font-medium admin-text">Block Info</h3>
+    <div className="space-y-4 text-sm" aria-label="Inspector panel">
+      <InspectorSection title="Block Info">
         <BlockInfo block={selectedBlock} />
-      </section>
+      </InspectorSection>
 
-      <section>
-        <h3 className="mb-2 font-medium admin-text">Props</h3>
+      <InspectorSection title="Content Fields / Field Groups">
         <PropsEditing
           block={selectedBlock}
           tenantId={tenantId}
@@ -153,14 +227,40 @@ export function EditorInspector({
             }
           }}
         />
-      </section>
+      </InspectorSection>
 
-      <section className="border-t admin-border pt-4">
-        <h3 className="mb-2 font-medium admin-text">Raw Props Preview</h3>
+      <InspectorSection
+        title="SEO Metadata"
+        description="Page-level SEO metadata can be edited independently of the selected block."
+      >
+        {onUpdatePageSeo ? (
+          <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
+        ) : (
+          <EditorHint tone="info">SEO editing is not available in this view.</EditorHint>
+        )}
+      </InspectorSection>
+
+      <InspectorSection
+        title="Debug Preview: Raw Props"
+        description="Debug preview for current block props."
+        raw
+      >
         <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
           {JSON.stringify(selectedBlock.props, null, 2)}
         </pre>
-      </section>
+      </InspectorSection>
+
+      {pageSeo ? (
+        <InspectorSection
+          title="Debug Preview: Raw SEO"
+          description="Debug preview for current SEO metadata."
+          raw
+        >
+          <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
+            {JSON.stringify(pageSeo, null, 2)}
+          </pre>
+        </InspectorSection>
+      ) : null}
     </div>
   )
 }

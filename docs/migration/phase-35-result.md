@@ -240,3 +240,15 @@ Phase 35 etabliert:
 **Visibility-Matrix**: Klare Status-basierte Regeln
 
 **Nächste Phase**: Auth Preview, Preview Tokens, Sessions, Audit Logs.
+
+## Phase 35.1 Hardening Addendum
+
+- Public Route parst `locale` jetzt aus URL-Segmenten statt hart `"de"`:
+  - `/de/home` → locale `de`, slug `home`
+  - `/en/home` → locale `en`, slug `home`
+  - `/home` → defaultLocale + slug `home`
+- Neuer Helper: `apps/web/src/lib/public-route-locale.ts` (`resolvePublicLocaleAndSlug`)
+- Public Navigation nutzt ViewModel mit slug-basierten `href` statt `pageId`
+- Interne Navigation behält `?preview=1` bei aktivem Preview bei
+- Externe Links bleiben unverändert
+- Public Loader filtert Blocks auf `visibility === "visible"`

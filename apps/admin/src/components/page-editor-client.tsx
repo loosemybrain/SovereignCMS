@@ -7,16 +7,21 @@ import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
 import { renderAdminBlock } from "@/components/admin-block-renderer-registry"
-import { AdminButton, AdminCard } from "@/components/admin-ui"
+import { AdminCard, AdminEmptyState } from "@/components/admin-ui"
 import { clientEditorPersistence } from "@/lib/client-editor-persistence"
 import { clientPageStatusPersistence } from "@/lib/client-page-status-persistence"
 import { mergeProps } from "@/lib/merge-props"
 import { useEditorState } from "@/lib/editor-state"
-import { BlockPalette } from "@/components/block-palette"
+import { BlockPalette } from "@/components/editor/block-palette"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
 import { moveBlockUp, moveBlockDown, cloneDefaultProps, normalizeBlockOrder, deleteBlock } from "@/lib/reorder-blocks"
 import { getAvailableActionsForStatus, getTransitionActionLabel } from "@sovereign-cms/core"
 import { cn } from "@sovereign-cms/ui"
+import { useEditorAnnouncements } from "@/lib/use-editor-announcements"
+import { EditorLiveRegion } from "@/components/editor-live-region"
+import { EditorToolbar } from "@/components/editor/editor-toolbar"
+import { EditorBlockCard } from "@/components/editor/editor-block-card"
+import { EditorHint, EditorSection } from "@/components/editor/patterns"
 
 type PageEditorClientProps = {
   page: CmsPage
@@ -26,6 +31,7 @@ type PageEditorClientProps = {
 }
 
 export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEditorClientProps) {
+  const { message, announce } = useEditorAnnouncements()
   const {
     selectedBlockId,
     setSelectedBlockId,
@@ -50,6 +56,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
 
   // Page SEO metadata state (separate from block state)
   const [pageSeo, setPageSeo] = useState<SeoMetadata>(page.seo || createDefaultSeoMetadata())
+  const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null)
 
   const selectedBlock = draftBlocks.find((b) => b.id === selectedBlockId) ?? null
 
@@ -104,11 +111,25 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       updatedAt: new Date().toISOString(),
     }
 
-    // Add to draft blocks
-    setDraftBlocks([...draftBlocks, newBlock])
+    const insertionIndex =
+      insertAfterBlockId !== null ? draftBlocks.findIndex((block) => block.id === insertAfterBlockId) : -1
+
+    const nextBlocks =
+      insertionIndex >= 0
+        ? [
+            ...draftBlocks.slice(0, insertionIndex + 1),
+            newBlock,
+            ...draftBlocks.slice(insertionIndex + 1),
+          ]
+        : [...draftBlocks, newBlock]
+
+    setDraftBlocks(normalizeBlockOrder(nextBlocks))
 
     // Select new block for immediate editing
     setSelectedBlockId(newBlock.id)
+    setInsertAfterBlockId(null)
+    announce(`Block added: ${definition.label}`)
+    announce(`Block selected: ${newBlock.type}`)
 
     // Mark as dirty
     setIsDirty(true)
@@ -118,12 +139,14 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     setDraftBlocks(moveBlockUp(draftBlocks, blockId))
     setSelectedBlockId(blockId)
     setIsDirty(true)
+    announce("Block moved up")
   }
 
   const handleMoveBlockDown = (blockId: string) => {
     setDraftBlocks(moveBlockDown(draftBlocks, blockId))
     setSelectedBlockId(blockId)
     setIsDirty(true)
+    announce("Block moved down")
   }
 
   const handleDeleteBlock = (blockId: string) => {
@@ -134,8 +157,12 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     if (selectedBlockId === blockId) {
       setSelectedBlockId(null)
     }
+    if (insertAfterBlockId === blockId) {
+      setInsertAfterBlockId(null)
+    }
 
     setIsDirty(true)
+    announce("Block deleted")
   }
 
   const handleTransitionPageStatus = async (action: ContentTransitionAction) => {
@@ -183,10 +210,12 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
         setIsDirty(false)
         setLastSavedAt(result.savedAt)
         setLastSavedStatus(result.status)
+        announce("Changes saved")
       }
     } catch (error) {
       console.error("[editor] failed to save draft", error)
       setSaveError("Save failed")
+      announce("Save failed")
     } finally {
       setIsSaving(false)
     }
@@ -194,166 +223,98 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <EditorLiveRegion message={message} />
       {/* Blocks / Preview Area */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Save Controls */}
-        <AdminCard className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm space-y-1">
-              {isSaving && <p className="text-blue-400 font-medium">Saving...</p>}
-              {saveError && <p className="text-red-400 font-medium">{saveError}</p>}
-              {isDirty && !isSaving && <p className="text-amber-400 font-medium">Unsaved changes</p>}
-              {lastSavedAt && !isDirty && (
-                <div className="space-y-1">
-                  <p className="text-emerald-400 text-xs">
-                    Last saved: {new Date(lastSavedAt).toLocaleTimeString()}
-                  </p>
-                  {lastSavedStatus && (
-                    <p className="admin-text-muted text-xs">
-                      Status: <span className="capitalize font-medium">{lastSavedStatus}</span>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <AdminButton
-              onClick={handleSave}
-              disabled={isSaving || !isDirty}
-              variant="primary"
-              className={cn(isSaving || !isDirty ? "admin-text-muted" : "")}
-            >
-              {isSaving ? "Saving..." : "Save"}
-            </AdminButton>
-          </div>
+      <div className="lg:col-span-2 space-y-6" role="region" aria-label="Page blocks preview">
+        <EditorToolbar
+          isDirty={isDirty}
+          isSaving={isSaving}
+          saveError={saveError}
+          lastSavedAt={lastSavedAt}
+          lastSavedStatus={lastSavedStatus}
+          currentPageStatus={currentPageStatus}
+          onSave={handleSave}
+          canSave={!isSaving && isDirty}
+        />
 
-          {/* Page Status Transitions */}
-          {statusTransitionError && (
-            <p className="text-red-400 text-xs">{statusTransitionError}</p>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {getAvailableActionsForStatus(currentPageStatus).map((action) => (
-              <button
-                key={action}
-                onClick={() => handleTransitionPageStatus(action)}
-                disabled={isTransitioningStatus}
-                className={cn(
-                  "rounded px-3 py-1 text-xs font-medium transition-all duration-200",
-                  isTransitioningStatus
-                    ? "cursor-not-allowed admin-surface-muted admin-text-muted"
-                    : action === "publish"
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95"
-                      : action === "archive"
-                        ? "bg-orange-600 text-white hover:bg-orange-700 active:scale-95"
-                        : "bg-amber-600 text-white hover:bg-amber-700 active:scale-95",
-                )}
-              >
-                {isTransitioningStatus ? "..." : getTransitionActionLabel(action)}
-              </button>
-            ))}
-          </div>
-        </AdminCard>
+        <EditorSection title="Page Status Actions">
+          <AdminCard className="p-4 space-y-3">
+            {statusTransitionError ? (
+              <EditorHint tone="danger">Status transition error: {statusTransitionError}</EditorHint>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {getAvailableActionsForStatus(currentPageStatus).map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  onClick={() => handleTransitionPageStatus(action)}
+                  disabled={isTransitioningStatus}
+                  className={cn(
+                    "rounded px-3 py-1 text-xs font-medium transition-all duration-200 admin-focus-ring",
+                    isTransitioningStatus
+                      ? "cursor-not-allowed admin-surface-muted admin-text-muted"
+                      : action === "publish"
+                        ? "bg-emerald-700 text-white hover:bg-emerald-800 active:scale-95"
+                        : action === "archive"
+                          ? "bg-orange-700 text-white hover:bg-orange-800 active:scale-95"
+                          : "bg-amber-700 text-white hover:bg-amber-800 active:scale-95",
+                  )}
+                >
+                  {isTransitioningStatus ? "..." : getTransitionActionLabel(action)}
+                </button>
+              ))}
+            </div>
+          </AdminCard>
+        </EditorSection>
 
         {/* Block Palette */}
-        <BlockPalette onAddBlock={addBlock} />
+        <BlockPalette
+          onAddBlock={addBlock}
+          insertAfterBlockId={insertAfterBlockId}
+          onClearInsertPosition={() => setInsertAfterBlockId(null)}
+        />
 
-        {/* Blocks List */}
-        <AdminCard className="p-0 overflow-hidden">
-          <div className="border-b admin-border px-6 py-4 admin-surface-muted">
-            <h2 className="text-lg font-semibold admin-text">
-              Blocks <span className="admin-text-muted text-sm font-normal">({orderedBlocks.length})</span>
-            </h2>
-          </div>
-          <div className="p-4 space-y-2">
+        <EditorSection title={`Blocks (${orderedBlocks.length})`}>
+          <AdminCard className="p-4 space-y-2">
             {orderedBlocks.length === 0 ? (
-              <p className="text-sm admin-text-muted py-8 text-center">No blocks for this page</p>
+              <AdminEmptyState
+                title="No blocks yet"
+                description="Add your first block from the block palette."
+              />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2" role="list">
                 {orderedBlocks.map((block, index) => {
                   const isFirst = index === 0
                   const isLast = index === orderedBlocks.length - 1
 
                   return (
-                    <div
+                    <EditorBlockCard
                       key={block.id}
-                      onClick={(event) => {
-                        event.stopPropagation()
+                      block={block}
+                      isSelected={selectedBlockId === block.id}
+                      isFirst={isFirst}
+                      isLast={isLast}
+                      onSelect={() => {
                         setSelectedBlockId(block.id)
+                        announce(`Block selected: ${block.type}`)
                       }}
-                      className={cn(
-                        "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-                        selectedBlockId === block.id
-                          ? "border-blue-600 bg-blue-950/20 ring-1 ring-blue-600/30"
-                          : "admin-border hover:bg-zinc-900/40",
-                      )}
+                      onMoveUp={() => !isFirst && handleMoveBlockUp(block.id)}
+                      onMoveDown={() => !isLast && handleMoveBlockDown(block.id)}
+                      onDelete={() => handleDeleteBlock(block.id)}
+                      onInsertAfter={() => setInsertAfterBlockId(block.id)}
                     >
-                      <div className="space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-mono text-xs admin-text-muted">Position: {block.sortOrder}</p>
-                            <p className="text-sm font-medium admin-text capitalize">{block.type}</p>
-                          </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!isFirst) handleMoveBlockUp(block.id)
-                              }}
-                              disabled={isFirst}
-                              className={cn(
-                                "p-1.5 rounded text-xs transition-colors",
-                                isFirst
-                                  ? "cursor-not-allowed admin-text-muted admin-surface"
-                                  : "admin-text-muted hover:bg-zinc-800",
-                              )}
-                              title="Move up"
-                            >
-                              ↑
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!isLast) handleMoveBlockDown(block.id)
-                              }}
-                              disabled={isLast}
-                              className={cn(
-                                "p-1.5 rounded text-xs transition-colors",
-                                isLast
-                                  ? "cursor-not-allowed admin-text-muted admin-surface"
-                                  : "admin-text-muted hover:bg-zinc-800",
-                              )}
-                              title="Move down"
-                            >
-                              ↓
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteBlock(block.id)
-                              }}
-                              className="p-1.5 rounded text-xs transition-colors text-red-400 hover:text-red-300 hover:bg-red-950/30"
-                              title="Delete block"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                        <div className="text-xs px-2 py-1 rounded admin-surface-muted admin-text-muted w-fit">
-                          {block.visibility}
-                        </div>
-                        <div className="pt-2 border-t admin-border mt-2">{renderAdminBlock(block)}</div>
-                        <p className="text-xs admin-text-muted font-mono pt-1">{block.id}</p>
-                      </div>
-                    </div>
+                      {renderAdminBlock(block)}
+                    </EditorBlockCard>
                   )
                 })}
               </div>
             )}
-          </div>
-        </AdminCard>
+          </AdminCard>
+        </EditorSection>
       </div>
 
       {/* Sticky Inspector */}
-      <div className="lg:col-span-1">
+      <div className="lg:col-span-1" role="region" aria-label="Inspector">
         <div className="sticky top-8 space-y-4">
           {/* Inspector */}
           <AdminCard className="p-0 overflow-hidden">

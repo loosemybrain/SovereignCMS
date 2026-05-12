@@ -7,8 +7,17 @@ import type {
   ReplacePageBlocksInput,
   NavigationRepository,
   MediaRepository,
+  SettingsRepository,
 } from "./contracts"
-import type { CmsBlock, MediaAsset, NavigationItem, SeoMetadata } from "@sovereign-cms/core"
+import type {
+  CmsBlock,
+  MediaAsset,
+  NavigationItem,
+  SeoMetadata,
+  TenantSettings,
+  UpdateTenantSettingsInput,
+} from "@sovereign-cms/core"
+import { createDefaultTenantSettings } from "@sovereign-cms/core"
 
 type TenantRow = {
   id: string
@@ -46,6 +55,39 @@ type MutableStore = {
   blocksByPageId: Map<string, BlockRow[]>
   navigationItems: NavigationItem[]
   mediaAssets: MediaAsset[]
+  tenantSettingsByTenantId: Map<string, TenantSettings>
+}
+
+function cloneTenantSettings(settings: TenantSettings): TenantSettings {
+  return {
+    ...settings,
+    siteIdentity: { ...settings.siteIdentity },
+    contact: { ...settings.contact },
+    business: { ...settings.business },
+    legal: { ...settings.legal },
+    socialLinks: settings.socialLinks.map((link) => ({ ...link })),
+  }
+}
+
+function mergeTenantSettingsPatch(
+  base: TenantSettings,
+  patch: UpdateTenantSettingsInput["settings"],
+): TenantSettings {
+  const now = new Date().toISOString()
+  return {
+    tenantId: base.tenantId,
+    siteIdentity: patch.siteIdentity
+      ? { ...base.siteIdentity, ...patch.siteIdentity }
+      : { ...base.siteIdentity },
+    contact: patch.contact ? { ...base.contact, ...patch.contact } : { ...base.contact },
+    business: patch.business ? { ...base.business, ...patch.business } : { ...base.business },
+    legal: patch.legal ? { ...base.legal, ...patch.legal } : { ...base.legal },
+    socialLinks:
+      patch.socialLinks !== undefined
+        ? patch.socialLinks.map((link) => ({ ...link }))
+        : base.socialLinks.map((link) => ({ ...link })),
+    updatedAt: now,
+  }
 }
 
 function normalizeHost(hostHeader: string): string {
@@ -167,6 +209,7 @@ function buildStores(): MutableStore {
       id: "nav-demo-de-home",
       tenantId: "demo",
       locale: "de",
+      scope: "main",
       label: "Startseite",
       type: "page",
       pageId: pageDE.id,
@@ -179,11 +222,77 @@ function buildStores(): MutableStore {
       id: "nav-demo-en-home",
       tenantId: "demo",
       locale: "en",
+      scope: "main",
       label: "Home",
       type: "page",
       pageId: pageEN.id,
       sortOrder: 1,
       status: "draft",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-footer-de-privacy",
+      tenantId: "demo",
+      locale: "de",
+      scope: "footer",
+      label: "Datenschutz",
+      type: "external",
+      href: "/de/datenschutz",
+      sortOrder: 1,
+      status: "published",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-footer-de-imprint",
+      tenantId: "demo",
+      locale: "de",
+      scope: "footer",
+      label: "Impressum",
+      type: "external",
+      href: "/de/impressum",
+      sortOrder: 2,
+      status: "published",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-footer-de-cookies",
+      tenantId: "demo",
+      locale: "de",
+      scope: "footer",
+      label: "Cookies",
+      type: "external",
+      href: "/de/cookies",
+      sortOrder: 3,
+      status: "published",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-footer-en-privacy",
+      tenantId: "demo",
+      locale: "en",
+      scope: "footer",
+      label: "Privacy",
+      type: "external",
+      href: "/en/datenschutz",
+      sortOrder: 1,
+      status: "published",
+      createdAt: "2026-05-03T00:00:00.000Z",
+      updatedAt: "2026-05-04T00:00:00.000Z",
+    },
+    {
+      id: "nav-demo-footer-en-cookies",
+      tenantId: "demo",
+      locale: "en",
+      scope: "footer",
+      label: "Cookies",
+      type: "external",
+      href: "/en/cookies",
+      sortOrder: 2,
+      status: "published",
       createdAt: "2026-05-03T00:00:00.000Z",
       updatedAt: "2026-05-04T00:00:00.000Z",
     },
@@ -201,11 +310,37 @@ function buildStores(): MutableStore {
     updatedAt: "2026-05-04T00:00:00.000Z",
   }
 
+  const tenantSettingsByTenantId = new Map<string, TenantSettings>()
+  const demoSettings: TenantSettings = {
+    tenantId: "demo",
+    siteIdentity: {
+      siteName: "SovereignCMS Demo",
+      tagline: "Modular CMS Foundation",
+      logoUrl: "",
+    },
+    contact: {
+      email: "info@example.com",
+      phone: "",
+      city: "Templin",
+      country: "Deutschland",
+    },
+    business: {},
+    socialLinks: [],
+    legal: {
+      imprintSlug: "impressum",
+      privacySlug: "datenschutz",
+      cookieSlug: "cookies",
+    },
+    updatedAt: new Date().toISOString(),
+  }
+  tenantSettingsByTenantId.set("demo", demoSettings)
+
   return {
     pages: [pageDE, pageEN],
     blocksByPageId,
     navigationItems,
     mediaAssets: [demoMediaAsset],
+    tenantSettingsByTenantId,
   }
 }
 
@@ -417,6 +552,9 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
       if (input.locale !== undefined) {
         list = list.filter((item) => item.locale === input.locale)
       }
+      if (input.scope !== undefined) {
+        list = list.filter((item) => item.scope === input.scope)
+      }
       return list.sort((a, b) => a.sortOrder - b.sortOrder)
     },
 
@@ -438,18 +576,22 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
         }
       }
 
+      const scope = input.scope ?? "main"
+
       const hasDuplicateLabel = store.navigationItems.some(
         (item) =>
           item.tenantId === input.tenantId &&
           item.locale === input.locale &&
+          item.scope === scope &&
           item.label.toLowerCase() === label.toLowerCase(),
       )
       if (hasDuplicateLabel) {
-        throw new Error("Navigation item label already exists for tenant and locale")
+        throw new Error("Navigation item label already exists for tenant, locale, and scope")
       }
 
       const existingForScope = store.navigationItems.filter(
-        (item) => item.tenantId === input.tenantId && item.locale === input.locale,
+        (item) =>
+          item.tenantId === input.tenantId && item.locale === input.locale && item.scope === scope,
       )
       const maxSortOrder = existingForScope.length
         ? Math.max(...existingForScope.map((item) => item.sortOrder))
@@ -460,6 +602,7 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
         id: `nav-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         tenantId: input.tenantId,
         locale: input.locale,
+        scope,
         label,
         type: input.type,
         pageId: input.type === "page" ? input.pageId : undefined,
@@ -523,12 +666,40 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
     },
   }
 
+  const settingsRepo: SettingsRepository = {
+    async getByTenant(input) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("settings.getByTenant: tenantId is required")
+      }
+      const existing = store.tenantSettingsByTenantId.get(input.tenantId)
+      if (existing) {
+        return cloneTenantSettings(existing)
+      }
+      const created = createDefaultTenantSettings(input.tenantId)
+      store.tenantSettingsByTenantId.set(input.tenantId, created)
+      return cloneTenantSettings(created)
+    },
+
+    async update(input) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("settings.update: tenantId is required")
+      }
+      const current =
+        store.tenantSettingsByTenantId.get(input.tenantId) ??
+        createDefaultTenantSettings(input.tenantId)
+      const merged = mergeTenantSettingsPatch(current, input.settings)
+      store.tenantSettingsByTenantId.set(input.tenantId, merged)
+      return cloneTenantSettings(merged)
+    },
+  }
+
   return {
     tenants: tenantRepo,
     pages: pageRepo,
     blocks: blockRepo,
     navigation: navigationRepo,
     media: mediaRepo,
+    settings: settingsRepo,
   }
 }
 
