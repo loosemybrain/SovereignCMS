@@ -7,6 +7,7 @@ import { SeoEditorSection } from "@/components/seo-editor-section"
 import type { SeoMetadata } from "@sovereign-cms/core"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
 import { validateFieldValue } from "@/lib/field-validation"
+import { getBlockGovernanceWarnings } from "@/lib/content-governance"
 import {
   EditorHint,
   EditorValidationSummary,
@@ -147,9 +148,30 @@ function PropsEditing({
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
 
+  const governanceWarnings = getBlockGovernanceWarnings(block)
+
   return (
     <div className="space-y-2">
       <EditorValidationSummary errors={validationSummary} />
+
+      {governanceWarnings.length > 0 && (
+        <InspectorSection title="Content Hinweise" description="Helpful hints about block content" raw>
+          <div className="space-y-1">
+            {governanceWarnings.map((warning) => (
+              <div
+                key={warning.id}
+                className={`rounded border-l-4 p-2 text-xs ${
+                  warning.severity === "warning"
+                    ? "border-l-amber-500 bg-amber-50 text-amber-900"
+                    : "border-l-blue-500 bg-blue-50 text-blue-900"
+                }`}
+              >
+                <p>{warning.message}</p>
+              </div>
+            ))}
+          </div>
+        </InspectorSection>
+      )}
       {groupedFields.map((group) =>
         group.fields.length > 0 ? (
           <FieldGroupPanel

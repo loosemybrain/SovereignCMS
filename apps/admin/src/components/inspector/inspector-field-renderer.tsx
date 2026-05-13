@@ -1,12 +1,14 @@
 /**
  * Renders a single inspector field based on field definition and type.
+ * Delegates to specific field component based on field type.
  */
 
 import type { InspectorFieldDefinition } from "./field-types"
-import type { MediaAsset } from "@sovereign-cms/core"
-import { MediaPicker } from "@/components/media-picker"
-import { SimpleListRenderer } from "./simple-list-renderer"
-import { AdminField } from "@/components/admin-ui"
+import { TextField } from "./fields/text-field"
+import { TextareaField } from "./fields/textarea-field"
+import { SelectField } from "./fields/select-field"
+import { MediaField } from "./fields/media-field"
+import { SimpleListField } from "./fields/simple-list-field"
 
 type Props = {
   field: InspectorFieldDefinition
@@ -37,139 +39,85 @@ export function InspectorFieldRenderer({
   invalid,
   error,
 }: Props) {
-  const stringValue = getStringValue(value)
   const fieldId = id ?? `inspector-field-${field.key}`
+  const stringValue = getStringValue(value)
 
-  if (field.type === "text") {
-    return (
-      <AdminField
-        id={fieldId}
-        label={field.label}
-        description={field.description}
-        error={error}
-      >
-        {(fieldProps) => (
-          <input
-            id={fieldProps.id}
-            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
-            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
-            type="text"
-            value={stringValue}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
-            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
-          />
-        )}
-      </AdminField>
-    )
-  }
-
-  if (field.type === "textarea") {
-    return (
-      <AdminField
-        id={fieldId}
-        label={field.label}
-        description={field.description}
-        error={error}
-      >
-        {(fieldProps) => (
-          <textarea
-            id={fieldProps.id}
-            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
-            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
-            value={stringValue}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
-            rows={4}
-            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
-          />
-        )}
-      </AdminField>
-    )
-  }
-
-  if (field.type === "select") {
-    return (
-      <AdminField
-        id={fieldId}
-        label={field.label}
-        description={field.description}
-        error={error}
-      >
-        {(fieldProps) => (
-          <select
-            id={fieldProps.id}
-            aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
-            aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
-            value={stringValue}
-            onChange={(e) => onChange(e.target.value)}
-            className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text admin-focus-ring focus:outline-none"
-          >
-            {field.options?.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        )}
-      </AdminField>
-    )
-  }
-
-  if (field.type === "simple-list") {
-    return (
-      <SimpleListRenderer
-        field={field}
-        value={value}
-        onChange={onChange}
-        id={id}
-        describedBy={describedBy}
-        invalid={invalid}
-        error={error}
-      />
-    )
-  }
-
-  if (field.type === "media") {
-    // Media field requires tenantId
-    if (!tenantId) {
+  switch (field.type) {
+    case "text":
       return (
-        <div className="rounded bg-red-900/20 border border-red-700/50 p-2" role="alert">
-          <p className="text-xs text-red-300">Error: tenantId not available for media field</p>
-        </div>
+        <TextField
+          field={field}
+          value={stringValue}
+          onChange={onChange}
+          fieldId={fieldId}
+          describedBy={describedBy}
+          invalid={invalid}
+          error={error}
+        />
       )
-    }
 
-    // Extract selected asset ID from value (could be string or null)
-    const selectedAssetId = typeof value === "string" ? value : null
+    case "textarea":
+      return (
+        <TextareaField
+          field={field}
+          value={stringValue}
+          onChange={onChange}
+          fieldId={fieldId}
+          describedBy={describedBy}
+          invalid={invalid}
+          error={error}
+        />
+      )
 
-    return (
-      <AdminField
-        id={fieldId}
-        label={field.label}
-        description={field.description}
-        error={error}
-      >
-        {() => (
-          <div className="mt-2">
-            <MediaPicker
-              tenantId={tenantId}
-              selectedAssetId={selectedAssetId}
-              onSelect={(asset: MediaAsset) => {
-                // Return object patch for media props
-                onChange({
-                  mediaAssetId: asset.id,
-                  mediaUrl: asset.url,
-                  mediaAlt: asset.alt ?? asset.title,
-                })
-              }}
-            />
+    case "select":
+      return (
+        <SelectField
+          field={field}
+          value={stringValue}
+          onChange={onChange}
+          fieldId={fieldId}
+          describedBy={describedBy}
+          invalid={invalid}
+          error={error}
+        />
+      )
+
+    case "simple-list":
+      return (
+        <SimpleListField
+          field={field}
+          value={value}
+          onChange={onChange}
+          fieldId={fieldId}
+          describedBy={describedBy}
+          invalid={invalid}
+          error={error}
+        />
+      )
+
+    case "media":
+      if (!tenantId) {
+        return (
+          <div className="rounded bg-red-900/20 border border-red-700/50 p-2" role="alert">
+            <p className="text-xs text-red-300">Error: tenantId not available for media field</p>
           </div>
-        )}
-      </AdminField>
-    )
-  }
+        )
+      }
 
-  // Fallback for unknown field types
-  return <p className="text-xs admin-text-muted">Unknown field type: {field.type}</p>
+      return (
+        <MediaField
+          field={field}
+          value={value}
+          onChange={onChange}
+          tenantId={tenantId}
+          fieldId={fieldId}
+          describedBy={describedBy}
+          invalid={invalid}
+          error={error}
+        />
+      )
+
+    default:
+      return <p className="text-xs admin-text-muted">Unknown field type: {field.type}</p>
+  }
 }
