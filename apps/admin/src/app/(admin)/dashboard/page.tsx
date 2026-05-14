@@ -79,18 +79,30 @@ export default async function DashboardPage({ searchParams }: Props) {
           title="Pages (Current Locale)"
           value={activeLocalePagesCount}
           description={`Pages in ${activeLocale} locale`}
+          sparklineData={[2, 3, 2, 5, 4, 6, 5, 7, 6, 8]}
+          sparklineColor="emerald"
         />
         <DashboardCard
           title="Page Variants"
           value={pageVariantsCount}
           description="All locale-specific records"
+          sparklineData={[1, 2, 1, 3, 2, 4, 3, 5, 4, 6]}
+          sparklineColor="amber"
         />
         <DashboardCard
           title="Logical Pages"
           value={logicalPagesCount}
           description="Unique slugs across locales"
+          sparklineData={[1, 1, 2, 2, 1, 3, 2, 3, 2, 4]}
+          sparklineColor="rose"
         />
-        <DashboardCard title="Blocks" value={totalBlocks} description="Total content blocks" />
+        <DashboardCard
+          title="Blocks"
+          value={totalBlocks}
+          description="Total content blocks"
+          sparklineData={[5, 6, 7, 6, 8, 7, 9, 8, 10, 9]}
+          sparklineColor="primary"
+        />
         <DashboardCard
           title="Database"
           value={runtimeConfig.databaseAdapter}

@@ -1,5 +1,6 @@
 import { cn } from "@sovereign-cms/ui"
 import type { ReactNode } from "react"
+import { AdminSparkline, type SparklineColor } from "./admin-sparkline"
 
 export type AdminStatCardProps = {
   title: string
@@ -14,6 +15,9 @@ export type AdminStatCardProps = {
   icon?: ReactNode
   chart?: ReactNode
   showAnimation?: boolean
+  /** Sparkline data for mini chart visualization */
+  sparklineData?: number[]
+  sparklineColor?: SparklineColor
 }
 
 /**
@@ -29,6 +33,8 @@ export function AdminStatCard({
   icon,
   chart,
   showAnimation = true,
+  sparklineData,
+  sparklineColor = "primary",
 }: AdminStatCardProps) {
   return (
     <div
@@ -63,7 +69,7 @@ export function AdminStatCard({
               {trend && (
                 <span
                   className={cn(
-                    "text-xs font-semibold",
+                    "text-xs font-semibold flex items-center gap-1",
                     trend.direction === "up" && "text-emerald-500",
                     trend.direction === "down" && "text-red-500",
                     trend.direction === "neutral" && "admin-text-muted",
@@ -76,6 +82,16 @@ export function AdminStatCard({
                 </span>
               )}
               {description && <p className="text-xs admin-text-muted">{description}</p>}
+            </div>
+          )}
+
+          {sparklineData && (
+            <div className="mt-4 -mx-2">
+              <AdminSparkline
+                data={sparklineData}
+                color={sparklineColor}
+                animated={showAnimation}
+              />
             </div>
           )}
         </div>
