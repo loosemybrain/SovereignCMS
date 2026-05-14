@@ -165,7 +165,7 @@ export function SimpleListRenderer({
                   <div className="flex justify-end">
                     <AdminButton
                       type="button"
-                      variant="danger"
+                      variant="destructive"
                       onClick={() => handleRemoveItem(index)}
                       disabled={!canRemoveItem}
                       aria-label={`Remove item ${index + 1}`}

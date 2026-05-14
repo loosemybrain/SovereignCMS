@@ -53,7 +53,7 @@ export function BlockToolbar({
         </AdminButton>
         <AdminButton
           type="button"
-          variant="danger"
+          variant="destructive"
           onClick={onDelete}
           className="px-2 py-1 text-xs"
           aria-label={`Delete block ${blockType}`}
