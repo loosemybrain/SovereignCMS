@@ -69,3 +69,17 @@ export type ImageTextBlockProps = {
   ctaLabel?: string
   ctaHref?: string
 }
+
+/** Props für Hero Block */
+export type HeroBlockProps = {
+  headline?: string
+  subline?: string
+  mediaAssetId?: string | null
+  mediaUrl?: string
+  mediaAlt?: string
+}
+
+/** Props für Text Block */
+export type TextBlockProps = {
+  body?: string
+}

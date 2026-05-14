@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type { CmsBlock, CmsPage, ContentTransitionAction, SeoMetadata } from "@sovereign-cms/core"
-import { createDefaultSeoMetadata } from "@sovereign-cms/core"
+import { createDefaultSeoMetadata, getPresetById } from "@sovereign-cms/core"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
@@ -86,7 +86,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     setIsDirty(true)
   }
 
-  const addBlock = (blockType: string) => {
+  const addBlock = (blockType: string, presetId?: string) => {
     const definition = getAdminBlockDefinition(blockType)
 
     if (!definition) {
@@ -94,18 +94,27 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       return
     }
 
+    // Determine props: use preset if provided, otherwise use definition defaults
+    let blockProps = definition.defaultProps
+    if (presetId) {
+      const preset = getPresetById(presetId)
+      if (preset) {
+        blockProps = preset.props
+      }
+    }
+
     // Calculate next sort order based on max existing
     const maxSortOrder = draftBlocks.length > 0 ? Math.max(...draftBlocks.map((b) => b.sortOrder)) : 0
     const nextSortOrder = maxSortOrder + 1
 
-    // Create new block with definition defaults (cloned safely)
+    // Create new block with definition defaults or preset props (cloned safely)
     const newBlock: CmsBlock = {
       id: `local-${crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')}`,
       tenantId: page.tenantId,
       pageId: page.id,
       type: definition.type,
       sortOrder: nextSortOrder,
-      props: cloneDefaultProps(definition.defaultProps),
+      props: cloneDefaultProps(blockProps),
       visibility: "visible",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

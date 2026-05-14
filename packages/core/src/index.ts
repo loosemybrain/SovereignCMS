@@ -15,6 +15,8 @@ export type {
   FeatureGridItem,
   FeatureGridBlockProps,
   ImageTextBlockProps,
+  HeroBlockProps,
+  TextBlockProps,
 } from "./blocks"
 export type { RenderContext, EditorContext, BlockRenderProps, BlockRenderer } from "./renderer"
 export type { SavePageDraftInput, SavePageDraftResult, SavePageDraftError } from "./editor"
@@ -112,3 +114,5 @@ export {
 } from "./privacy-scan"
 export type { SimpleListItem } from "./block-utils"
 export { normalizeSimpleListItems } from "./block-utils"
+export type { BlockPreset } from "./block-presets"
+export { BLOCK_PRESETS, getPresetsForBlockType, getPresetById } from "./block-presets"
