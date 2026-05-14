@@ -4,13 +4,12 @@ import { useState } from "react"
 import type { TenantSettings } from "@sovereign-cms/core"
 import { validateExternalHref } from "@sovereign-cms/core"
 import {
+  AdminAlert,
   AdminButton,
-  AdminCard,
-  AdminCardDescription,
-  AdminCardHeader,
-  AdminCardTitle,
+  AdminConfigGrid,
   AdminField,
   AdminInput,
+  AdminSectionCard,
   AdminTextarea,
 } from "@/components/admin-ui"
 import { clientSettingsPersistence } from "@/lib/client-settings-persistence"
@@ -81,23 +80,20 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
   return (
     <div className="space-y-6">
       {error ? (
-        <div className="rounded border border-red-800/50 bg-red-900/20 p-3 text-sm text-red-300" role="alert">
+        <AdminAlert variant="destructive" title="Speichern nicht möglich">
           {error}
-        </div>
+        </AdminAlert>
       ) : null}
 
       {successMessage ? (
-        <div className="rounded border border-emerald-800/50 bg-emerald-900/20 p-3 text-sm text-emerald-300" aria-live="polite">
-          {successMessage}
-        </div>
+        <AdminAlert variant="success">{successMessage}</AdminAlert>
       ) : null}
 
-      <AdminCard className="space-y-4">
-        <AdminCardHeader>
-          <AdminCardTitle>Site identity</AdminCardTitle>
-          <AdminCardDescription>Public-facing name and branding hints.</AdminCardDescription>
-        </AdminCardHeader>
-        <div className="space-y-3 px-6 pb-6">
+      <AdminSectionCard
+        title="Site identity"
+        description="Public-facing name and branding hints."
+      >
+        <div className="space-y-3">
           <AdminField id="settings-site-name" label="Site name">
             {(fp) => (
               <AdminInput
@@ -145,14 +141,13 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             )}
           </AdminField>
         </div>
-      </AdminCard>
+      </AdminSectionCard>
 
-      <AdminCard className="space-y-4">
-        <AdminCardHeader>
-          <AdminCardTitle>Contact</AdminCardTitle>
-          <AdminCardDescription>How visitors can reach this tenant.</AdminCardDescription>
-        </AdminCardHeader>
-        <div className="grid gap-3 px-6 pb-6 md:grid-cols-2">
+      <AdminSectionCard
+        title="Contact"
+        description="How visitors can reach this tenant."
+      >
+        <div className="grid gap-3 md:grid-cols-2">
           <AdminField id="settings-email" label="Email">
             {(fp) => (
               <AdminInput
@@ -264,14 +259,13 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             )}
           </AdminField>
         </div>
-      </AdminCard>
+      </AdminSectionCard>
 
-      <AdminCard className="space-y-4">
-        <AdminCardHeader>
-          <AdminCardTitle>Business</AdminCardTitle>
-          <AdminCardDescription>Optional notes for visitors.</AdminCardDescription>
-        </AdminCardHeader>
-        <div className="space-y-3 px-6 pb-6">
+      <AdminSectionCard
+        title="Business"
+        description="Optional notes for visitors."
+      >
+        <div className="space-y-3">
           <AdminField id="settings-opening-hours" label="Opening hours note">
             {(fp) => (
               <AdminTextarea
@@ -305,14 +299,13 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             )}
           </AdminField>
         </div>
-      </AdminCard>
+      </AdminSectionCard>
 
-      <AdminCard className="space-y-4">
-        <AdminCardHeader>
-          <AdminCardTitle>Legal</AdminCardTitle>
-          <AdminCardDescription>References to legal pages by slug.</AdminCardDescription>
-        </AdminCardHeader>
-        <div className="grid gap-3 px-6 pb-6 md:grid-cols-2">
+      <AdminSectionCard
+        title="Legal"
+        description="References to legal pages by slug."
+      >
+        <AdminConfigGrid columns={2}>
           <AdminField id="settings-responsible" label="Responsible name">
             {(fp) => (
               <AdminInput
@@ -381,17 +374,14 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-        </div>
-      </AdminCard>
+        </AdminConfigGrid>
+      </AdminSectionCard>
 
-      <AdminCard className="space-y-4">
-        <AdminCardHeader>
-          <AdminCardTitle>Social links</AdminCardTitle>
-          <AdminCardDescription>
-            Werden im öffentlichen Footer als Textlinks angezeigt (Reihenfolge = Liste).
-          </AdminCardDescription>
-        </AdminCardHeader>
-        <div className="space-y-4 px-6 pb-6">
+      <AdminSectionCard
+        title="Social links"
+        description="Werden im öffentlichen Footer als Textlinks angezeigt (Reihenfolge = Liste)."
+      >
+        <div className="space-y-4">
           {settings.socialLinks.length === 0 ? (
             <p className="text-sm admin-text-muted">Keine Social Links — „Social Link hinzufügen“ nutzen.</p>
           ) : (
@@ -399,7 +389,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               {settings.socialLinks.map((link) => (
                 <li
                   key={link.id}
-                  className="rounded-md border admin-border admin-surface-muted p-4 space-y-3"
+                  className="space-y-3 rounded-lg border admin-border admin-surface-muted p-4 shadow-sm"
                 >
                   <div className="flex justify-end">
                     <AdminButton
@@ -473,7 +463,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             Social Link hinzufügen
           </AdminButton>
         </div>
-      </AdminCard>
+      </AdminSectionCard>
 
       <div className="flex justify-end">
         <AdminButton

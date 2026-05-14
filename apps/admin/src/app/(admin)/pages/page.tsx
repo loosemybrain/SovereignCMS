@@ -4,7 +4,7 @@ import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CompositionDebugPanel } from "@/components/composition-debug-panel"
 import { CreatePageForm } from "@/components/create-page-form"
-import { AdminCard, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
+import { AdminDataTable, AdminDataTableHeadRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 type Props = {
@@ -71,51 +71,46 @@ export default async function PagesListPage({ searchParams }: Props) {
       </div>
 
       {error === true ? (
-        <AdminCard className="border-red-800/50 bg-red-900/20 text-red-300">
+        <div className="rounded-xl border admin-border admin-callout-error p-4 text-sm">
           Failed to load pages. Please try again.
-        </AdminCard>
+        </div>
       ) : pages.length === 0 ? (
         <AdminEmptyState
           title={`No pages for locale ${activeLocale}`}
           description="Other locale variants may exist. Use locale switcher above to view them."
         />
       ) : (
-        <AdminCard className="p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b admin-border admin-surface-muted">
-                <th className="px-6 py-3 text-left font-medium admin-text-muted">Title</th>
-                <th className="px-6 py-3 text-left font-medium admin-text-muted">Slug</th>
-                <th className="px-6 py-3 text-left font-medium admin-text-muted">Locale</th>
-                <th className="px-6 py-3 text-left font-medium admin-text-muted">Status</th>
-                <th className="px-6 py-3 text-left font-medium admin-text-muted">Updated</th>
+        <AdminDataTable>
+          <AdminDataTableHeadRow>
+            <AdminDataTableTh>Title</AdminDataTableTh>
+            <AdminDataTableTh>Slug</AdminDataTableTh>
+            <AdminDataTableTh>Locale</AdminDataTableTh>
+            <AdminDataTableTh>Status</AdminDataTableTh>
+            <AdminDataTableTh>Updated</AdminDataTableTh>
+          </AdminDataTableHeadRow>
+          <tbody className="divide-y admin-border">
+            {pages.map((page) => (
+              <tr key={page.id} className="admin-row-hover">
+                <td className="px-4 py-3 admin-text">
+                  <Link
+                    href={`/pages/${page.slug}?locale=${activeLocale}`}
+                    className="font-medium admin-accent underline-offset-2 hover:underline rounded-sm admin-focus-ring"
+                  >
+                    {page.title}
+                  </Link>
+                </td>
+                <td className="px-4 py-3 font-mono text-xs admin-text-muted">{page.slug}</td>
+                <td className="px-4 py-3 admin-text-muted">{page.locale}</td>
+                <td className="px-4 py-3">
+                  <ContentStatusBadge status={page.status} />
+                </td>
+                <td className="px-4 py-3 text-xs admin-text-muted">
+                  {new Date(page.updatedAt).toLocaleDateString()}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y admin-border">
-              {pages.map((page) => (
-                <tr
-                  key={page.id}
-                  className="hover:bg-zinc-900/40 transition-colors duration-200 cursor-pointer"
-                >
-                  <td className="px-6 py-4 admin-text">
-                    <Link
-                      href={`/pages/${page.slug}?locale=${activeLocale}`}
-                      className="hover:underline font-medium"
-                    >
-                      {page.title}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 admin-text-muted font-mono text-xs">{page.slug}</td>
-                  <td className="px-6 py-4 admin-text-muted">{page.locale}</td>
-                  <td className="px-6 py-4">
-                    <ContentStatusBadge status={page.status} />
-                  </td>
-                  <td className="px-6 py-4 admin-text-muted text-xs">{new Date(page.updatedAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </AdminCard>
+            ))}
+          </tbody>
+        </AdminDataTable>
       )}
     </div>
   )

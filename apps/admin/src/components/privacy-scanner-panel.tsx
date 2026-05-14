@@ -6,6 +6,16 @@ import type {
   PrivacyScanApprovalStatus,
 } from "@sovereign-cms/core"
 import { clientPrivacyScannerPersistence } from "@/lib/client-privacy-scanner-persistence"
+import {
+  AdminAlert,
+  AdminButton,
+  AdminCard,
+  AdminCardContent,
+  AdminCardHeader,
+  AdminCardTitle,
+  AdminInput,
+  AdminSelect,
+} from "@/components/admin-ui"
 
 type Props = {
   tenantId: string
@@ -41,7 +51,7 @@ export function PrivacyScannerPanel({ tenantId, initialScans }: Props) {
         setScans((prev) => [result.scan, ...prev])
         setTargetUrl("")
         setSuccessMessage(
-          "Scan was queued in mock mode. No real browser scan is executed yet."
+          "Scan was queued in mock mode. No real browser scan is executed yet.",
         )
 
         setTimeout(() => setSuccessMessage(""), 5000)
@@ -68,7 +78,7 @@ export function PrivacyScannerPanel({ tenantId, initialScans }: Props) {
 
       if (result.success) {
         setScans((prev) =>
-          prev.map((s) => (s.id === scanId ? { ...s, approvalStatus: status } : s))
+          prev.map((s) => (s.id === scanId ? { ...s, approvalStatus: status } : s)),
         )
         setSuccessMessage("Approval status updated")
         setTimeout(() => setSuccessMessage(""), 3000)
@@ -82,138 +92,138 @@ export function PrivacyScannerPanel({ tenantId, initialScans }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Create Scan Form */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">Create New Scan</h3>
+      <AdminCard>
+        <AdminCardHeader>
+          <AdminCardTitle>Create New Scan</AdminCardTitle>
+        </AdminCardHeader>
+        <AdminCardContent>
+          {error ? (
+            <AdminAlert variant="destructive" title="Something went wrong" className="mb-4">
+              {error}
+            </AdminAlert>
+          ) : null}
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">{error}</p>
-          </div>
-        )}
+          {successMessage ? (
+            <AdminAlert variant="success" className="mb-4">
+              {successMessage}
+            </AdminAlert>
+          ) : null}
 
-        {successMessage && (
-          <div className="mb-4 rounded-lg bg-green-50 p-4">
-            <p className="text-sm font-medium text-green-800">{successMessage}</p>
-          </div>
-        )}
+          <form onSubmit={handleCreateScan} className="space-y-4">
+            <div>
+              <label htmlFor="targetUrl" className="block text-sm font-medium admin-text">
+                Target URL
+              </label>
+              <AdminInput
+                id="targetUrl"
+                type="url"
+                value={targetUrl}
+                onChange={(e) => setTargetUrl(e.target.value)}
+                placeholder="https://example.com"
+                disabled={isCreating}
+                className="mt-1"
+              />
+            </div>
 
-        <form onSubmit={handleCreateScan} className="space-y-4">
-          <div>
-            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700">
-              Target URL
-            </label>
-            <input
-              id="targetUrl"
-              type="url"
-              value={targetUrl}
-              onChange={(e) => setTargetUrl(e.target.value)}
-              placeholder="https://example.com"
-              disabled={isCreating}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-            />
-          </div>
+            <AdminButton type="submit" disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create Scan"}
+            </AdminButton>
+          </form>
+        </AdminCardContent>
+      </AdminCard>
 
-          <button
-            type="submit"
-            disabled={isCreating}
-            className="inline-block rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
-          >
-            {isCreating ? "Creating..." : "Create Scan"}
-          </button>
-        </form>
-      </div>
-
-      {/* Scans List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Privacy Scans</h3>
+        <h3 className="text-lg font-semibold admin-text">Privacy Scans</h3>
 
         {scans.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-            <p className="text-sm text-gray-600">No privacy scans yet</p>
+          <div className="rounded-xl border admin-border admin-surface-muted p-6 text-center">
+            <p className="text-sm admin-text-muted">No privacy scans yet</p>
           </div>
         ) : (
           scans.map((scan) => (
-            <div key={scan.id} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-4 grid grid-cols-3 gap-4">
+            <AdminCard key={scan.id}>
+              <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase">URL</p>
-                  <p className="mt-1 break-all font-mono text-sm text-gray-900">{scan.targetUrl}</p>
+                  <p className="text-xs font-medium uppercase admin-text-muted">URL</p>
+                  <p className="mt-1 break-all font-mono text-sm admin-text">{scan.targetUrl}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase">Status</p>
-                  <p className="mt-1 text-sm text-gray-900 capitalize">{scan.status}</p>
+                  <p className="text-xs font-medium uppercase admin-text-muted">Status</p>
+                  <p className="mt-1 text-sm capitalize admin-text">{scan.status}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase">Findings</p>
-                  <p className="mt-1 text-sm text-gray-900">{scan.findings.length} finding(s)</p>
+                  <p className="text-xs font-medium uppercase admin-text-muted">Findings</p>
+                  <p className="mt-1 text-sm admin-text">{scan.findings.length} finding(s)</p>
                 </div>
               </div>
 
-              {/* Approval Status Selector */}
               <div className="mb-4">
-                <label htmlFor={`approval-${scan.id}`} className="block text-sm font-medium text-gray-700">
+                <label htmlFor={`approval-${scan.id}`} className="block text-sm font-medium admin-text">
                   Approval Status
                 </label>
-                <select
+                <AdminSelect
                   id={`approval-${scan.id}`}
                   value={scan.approvalStatus}
                   onChange={(e) =>
-                    handleUpdateApproval(
-                      scan.id,
-                      e.target.value as PrivacyScanApprovalStatus
-                    )
+                    handleUpdateApproval(scan.id, e.target.value as PrivacyScanApprovalStatus)
                   }
-                  className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 max-w-md"
                 >
                   <option value="draft">Draft</option>
                   <option value="reviewed">Reviewed</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
-                </select>
+                </AdminSelect>
               </div>
 
-              {/* Findings */}
               {scan.findings.length > 0 ? (
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Findings:</p>
+                  <p className="text-sm font-medium admin-text">Findings:</p>
                   <ul className="mt-2 space-y-2">
                     {scan.findings.map((finding) => (
-                      <li key={finding.id} className="rounded bg-gray-50 p-3 text-sm text-gray-700">
+                      <li
+                        key={finding.id}
+                        className="rounded-lg border admin-border admin-surface-muted p-3 text-sm admin-text"
+                      >
                         <div className="font-medium">{finding.name}</div>
-                        {finding.provider && (
-                          <div className="text-xs text-gray-600">Provider: {finding.provider}</div>
-                        )}
-                        {finding.category && (
-                          <div className="text-xs text-gray-600">Category: {finding.category}</div>
-                        )}
-                        {finding.description && (
-                          <div className="mt-1 text-xs text-gray-600">{finding.description}</div>
-                        )}
+                        {finding.provider ? (
+                          <div className="text-xs admin-text-muted">Provider: {finding.provider}</div>
+                        ) : null}
+                        {finding.category ? (
+                          <div className="text-xs admin-text-muted">Category: {finding.category}</div>
+                        ) : null}
+                        {finding.description ? (
+                          <div className="mt-1 text-xs admin-text-muted">{finding.description}</div>
+                        ) : null}
                       </li>
                     ))}
                   </ul>
                 </div>
               ) : (
-                <p className="text-sm text-gray-600">No findings yet.</p>
+                <p className="text-sm admin-text-muted">No findings yet.</p>
               )}
 
-              <div className="mt-4 text-xs text-gray-500">
+              <div className="mt-4 text-xs admin-text-muted">
                 Created: {new Date(scan.createdAt).toLocaleString()}
               </div>
-            </div>
+            </AdminCard>
           ))
         )}
       </div>
 
-      {/* Disclaimer */}
-      <div className="rounded-lg bg-amber-50 p-4">
-        <p className="text-sm text-amber-900">
-          <span className="font-semibold">⚠️ Note:</span> This is a scanner foundation. It does not
-          perform real browser scans yet. Manual review is required. Approval does not guarantee
-          legal compliance.
-        </p>
-      </div>
+      <AdminAlert
+        variant="warning"
+        title="Hinweis"
+        className="rounded-xl"
+        icon={
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18.1c-.4.7.1 1.6.9 1.6h16.8c.8 0 1.3-.9.9-1.6L13.7 3.9c-.4-.7-1.4-.7-1.8 0z" />
+          </svg>
+        }
+      >
+        Dies ist eine Scanner-Basis. Es werden noch keine echten Browser-Scans ausgeführt. Manuelle Prüfung
+        erforderlich; Freigaben ersetzen keine Rechtsberatung.
+      </AdminAlert>
     </div>
   )
 }

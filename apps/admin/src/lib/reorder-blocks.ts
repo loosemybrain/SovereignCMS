@@ -62,19 +62,6 @@ export function moveBlockDown(blocks: CmsBlock[], blockId: string): CmsBlock[] {
 }
 
 /**
- * Deep clone default props safely.
- * Handles cases where structuredClone is not available.
- */
-export function cloneDefaultProps(props: Record<string, unknown>): Record<string, unknown> {
-  if (typeof structuredClone === "function") {
-    return structuredClone(props)
-  }
-
-  // Fallback for older environments
-  return JSON.parse(JSON.stringify(props)) as Record<string, unknown>
-}
-
-/**
  * Delete a block and normalize remaining blocks' sortOrder.
  * Returns array with block removed and sortOrder recalculated.
  */

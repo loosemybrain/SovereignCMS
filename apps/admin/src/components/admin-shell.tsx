@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AdminAppearanceToggle } from "@/components/admin-appearance-toggle"
+import { AdminTopbar } from "@/components/admin-ui"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { cn } from "@sovereign-cms/ui"
@@ -38,15 +39,17 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
   return (
     <div className="flex h-screen overflow-hidden admin-bg admin-text">
       {/* Sidebar */}
-      <aside className="w-60 h-screen border-r admin-border admin-surface flex flex-col">
+      <aside className="flex h-screen w-62 shrink-0 flex-col border-r admin-border admin-surface">
         {/* Logo Section */}
-        <div className="p-6 border-b admin-border">
-          <h1 className="text-sm font-bold admin-text tracking-tight">SOVEREIGNCMS</h1>
-          <p className="text-xs admin-text-muted mt-2 truncate">Tenant: {tenant.tenantId}</p>
+        <div className="border-b admin-border px-5 py-5">
+          <h1 className="text-xs font-bold uppercase tracking-[0.12em] admin-text">SovereignCMS</h1>
+          <p className="mt-2 truncate text-xs admin-text-muted" title={tenant.tenantId}>
+            Tenant · <span className="font-mono admin-text">{tenant.tenantId}</span>
+          </p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1" aria-label="Admin navigation">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4" aria-label="Admin navigation">
           {navItems.map((item) => {
             const isActive = isRouteActive(item.href)
             return (
@@ -55,51 +58,64 @@ export function AdminShell({ children, tenant, runtimeConfig }: AdminShellProps)
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded text-sm transition-all duration-200 admin-focus-ring",
+                  "admin-focus-ring flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-sm transition-colors duration-200 motion-reduce:transition-none",
                   isActive
-                    ? "admin-accent-bg admin-text border admin-border"
-                    : "admin-text-muted hover:bg-zinc-800/30 admin-surface-muted",
+                    ? "admin-accent-bg admin-text border-(--admin-border) shadow-sm ring-1 ring-[color-mix(in_oklab,var(--admin-accent)_28%,transparent)]"
+                    : "admin-text-muted hover:admin-text admin-row-hover",
                 )}
               >
-                <span className="text-base">{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="text-base opacity-90" aria-hidden>
+                  {item.icon}
+                </span>
+                <span className={cn("font-medium", isActive && "admin-text")}>{item.label}</span>
+                {isActive ? (
+                  <span
+                    className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-(--admin-accent)"
+                    aria-hidden
+                  />
+                ) : null}
               </Link>
             )
           })}
         </nav>
 
         {/* Footer Config */}
-        <div className="border-t admin-border p-4 space-y-2 text-xs">
-          <div className="space-y-1">
-            <p className="admin-text-muted font-medium">Runtime Config</p>
-            <div className="space-y-1 admin-text-muted">
-              <p className="truncate"><span className="admin-text-muted">DB:</span> {runtimeConfig.databaseAdapter}</p>
-              <p className="truncate"><span className="admin-text-muted">Storage:</span> {runtimeConfig.storageAdapter}</p>
-              <p className="truncate"><span className="admin-text-muted">Auth:</span> {runtimeConfig.authAdapter}</p>
+        <div className="space-y-2 border-t admin-border p-4 text-xs">
+          <p className="font-semibold uppercase tracking-wide admin-text-muted">Runtime</p>
+          <dl className="space-y-1.5 admin-text-muted">
+            <div className="flex justify-between gap-2">
+              <dt className="shrink-0 opacity-80">DB</dt>
+              <dd className="truncate font-mono text-[11px] admin-text">{runtimeConfig.databaseAdapter}</dd>
             </div>
-          </div>
+            <div className="flex justify-between gap-2">
+              <dt className="shrink-0 opacity-80">Storage</dt>
+              <dd className="truncate font-mono text-[11px] admin-text">{runtimeConfig.storageAdapter}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="shrink-0 opacity-80">Auth</dt>
+              <dd className="truncate font-mono text-[11px] admin-text">{runtimeConfig.authAdapter}</dd>
+            </div>
+          </dl>
         </div>
       </aside>
 
       {/* Main Area */}
-      <main className="flex-1 min-h-0 flex flex-col admin-bg">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden admin-bg">
         {/* Header */}
-        <header className="border-b admin-border admin-surface px-8 py-4 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold admin-text">
-              {navItems.find((item) => isRouteActive(item.href))?.label || "Admin"}
-            </h2>
-            <div className="flex items-center gap-2">
+        <AdminTopbar
+          title={navItems.find((item) => isRouteActive(item.href))?.label || "Admin"}
+          actions={
+            <>
               <AdminAppearanceToggle />
-              <div className="text-xs admin-text-muted px-2 py-1 rounded admin-surface-muted border admin-border">
+              <div className="rounded-md border admin-border admin-surface-muted px-2.5 py-1 text-xs font-medium admin-text-muted">
                 {tenant.source}
               </div>
-            </div>
-          </div>
-        </header>
+            </>
+          }
+        />
 
-        {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Content: single vertical scroll for all admin pages */}
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain">
           <div className="mx-auto max-w-6xl p-8">{children}</div>
         </div>
       </main>

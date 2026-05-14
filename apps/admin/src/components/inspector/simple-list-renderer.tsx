@@ -2,7 +2,7 @@
 
 import { useCallback } from "react"
 import type { InspectorFieldDefinition, SimpleListItem } from "@/components/inspector/field-types"
-import { AdminField } from "@/components/admin-ui"
+import { AdminButton, AdminField, AdminInput, AdminTextarea } from "@/components/admin-ui"
 
 type Props = {
   field: InspectorFieldDefinition
@@ -118,17 +118,15 @@ export function SimpleListRenderer({
           className="mt-2 space-y-3"
         >
           {items.length === 0 ? (
-            <p className="text-xs admin-text-muted italic">No items yet</p>
+            <p className="text-xs italic admin-text-muted">No items yet</p>
           ) : (
             <div className="space-y-2">
               {items.map((item, index) => (
                 <fieldset
                   key={item.id}
-                  className="rounded border admin-border admin-surface p-3 space-y-2"
+                  className="space-y-2 rounded-lg border admin-border admin-surface-muted p-3 shadow-sm"
                 >
-                  <legend className="text-xs font-medium admin-text">
-                    Item {index + 1}
-                  </legend>
+                  <legend className="text-xs font-semibold admin-text">Item {index + 1}</legend>
 
                   <div>
                     <label
@@ -137,13 +135,13 @@ export function SimpleListRenderer({
                     >
                       Title
                     </label>
-                    <input
+                    <AdminInput
                       id={`${fieldId}-item-${index}-title`}
                       type="text"
                       value={item.title}
                       onChange={(e) => handleUpdateItem(index, { title: e.target.value })}
                       placeholder="Item title"
-                      className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
+                      className="mt-1 text-xs"
                     />
                   </div>
 
@@ -154,50 +152,50 @@ export function SimpleListRenderer({
                     >
                       Description (optional)
                     </label>
-                    <textarea
+                    <AdminTextarea
                       id={`${fieldId}-item-${index}-body`}
                       value={item.body ?? ""}
                       onChange={(e) => handleUpdateItem(index, { body: e.target.value })}
                       placeholder="Item description"
                       rows={2}
-                      className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
+                      className="mt-1 text-xs"
                     />
                   </div>
 
                   <div className="flex justify-end">
-                    <button
+                    <AdminButton
                       type="button"
+                      variant="danger"
                       onClick={() => handleRemoveItem(index)}
                       disabled={!canRemoveItem}
                       aria-label={`Remove item ${index + 1}`}
-                      className="text-xs font-medium text-red-600 hover:text-red-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      className="px-2 py-1 text-xs"
                     >
                       Remove
-                    </button>
+                    </AdminButton>
                   </div>
                 </fieldset>
               ))}
             </div>
           )}
 
-          <button
+          <AdminButton
             type="button"
+            variant="secondary"
             onClick={handleAddItem}
             disabled={!canAddItem}
             aria-label="Add new item"
-            className="text-xs font-medium text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed"
+            className="text-xs"
           >
             + Add Item
-          </button>
+          </AdminButton>
 
           {minItems > 0 && items.length < minItems && (
-            <p className="text-xs text-amber-600">
-              At least {minItems} item{minItems !== 1 ? "s" : ""} required.
-            </p>
+            <p className="text-xs admin-warning">At least {minItems} item{minItems !== 1 ? "s" : ""} required.</p>
           )}
 
           {maxItems !== Infinity && items.length >= maxItems && (
-            <p className="text-xs text-amber-600">
+            <p className="text-xs admin-warning">
               Maximum {maxItems} item{maxItems !== 1 ? "s" : ""} allowed.
             </p>
           )}

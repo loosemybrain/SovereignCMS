@@ -2,8 +2,8 @@
  * Curated block presets for content creation.
  * Static TypeScript definitions of pre-configured block props.
  *
- * Presets are cloned on apply—props are never mutated.
- * Feature Grid presets use the `items` array with generated UUIDs.
+ * Presets are resolved only in the admin block-creation flow; public rendering
+ * does not resolve presets. Applied props are cloned — preset constants are never mutated.
  */
 
 import type {
@@ -14,29 +14,28 @@ import type {
   ImageTextBlockProps,
 } from "./blocks"
 
-/**
- * A curated preset for a block type.
- * Contains pre-configured props that editors can apply to new blocks.
- */
-export type BlockPreset<T extends Record<string, unknown>> = {
-  /** Unique identifier for the preset */
+/** Block types that ship with static presets in `BLOCK_PRESETS`. */
+export type SupportedPresetBlockType =
+  | "hero"
+  | "text"
+  | "cta"
+  | "feature-grid"
+  | "image-text"
+
+export type BlockPreset<TProps extends object = Record<string, unknown>> = {
   id: string
-  /** Human-readable name */
-  name: string
-  /** Description of the preset's purpose */
-  description: string
-  /** Pre-configured props for this block type */
-  props: T
+  blockType: SupportedPresetBlockType
+  label: string
+  description?: string
+  props: TProps
 }
 
-/**
- * All available block presets, organized by block type.
- */
-export const BLOCK_PRESETS = {
+export const BLOCK_PRESETS: Record<SupportedPresetBlockType, BlockPreset[]> = {
   hero: [
     {
       id: "hero-simple",
-      name: "Simple Headline",
+      blockType: "hero",
+      label: "Simple Headline",
       description: "Minimal hero with headline and subline, no background image.",
       props: {
         headline: "Welcome to our site",
@@ -44,11 +43,12 @@ export const BLOCK_PRESETS = {
         mediaAssetId: null,
         mediaUrl: "",
         mediaAlt: "",
-      } as HeroBlockProps,
+      } satisfies HeroBlockProps,
     },
     {
       id: "hero-with-image",
-      name: "Hero with Background",
+      blockType: "hero",
+      label: "Hero with Background",
       description: "Hero section with background image, headline, and subline.",
       props: {
         headline: "Amazing experiences await",
@@ -56,11 +56,12 @@ export const BLOCK_PRESETS = {
         mediaAssetId: null,
         mediaUrl: "",
         mediaAlt: "Hero background image",
-      } as HeroBlockProps,
+      } satisfies HeroBlockProps,
     },
     {
       id: "hero-minimal",
-      name: "Minimal Headline",
+      blockType: "hero",
+      label: "Minimal Headline",
       description: "Small, focused hero with short headline only.",
       props: {
         headline: "Hello",
@@ -68,41 +69,45 @@ export const BLOCK_PRESETS = {
         mediaAssetId: null,
         mediaUrl: "",
         mediaAlt: "",
-      } as HeroBlockProps,
+      } satisfies HeroBlockProps,
     },
-  ] as BlockPreset<HeroBlockProps>[],
+  ],
 
   text: [
     {
       id: "text-paragraph",
-      name: "Single Paragraph",
+      blockType: "text",
+      label: "Single Paragraph",
       description: "Single paragraph of text content.",
       props: {
         body: "This is a paragraph of text content. Add your text here to share information with your audience.",
-      } as TextBlockProps,
+      } satisfies TextBlockProps,
     },
     {
       id: "text-multiline",
-      name: "Multiple Paragraphs",
+      blockType: "text",
+      label: "Multiple Paragraphs",
       description: "Multiple paragraphs with formatting support.",
       props: {
         body: "This is the first paragraph. Add rich content here.\n\nThis is the second paragraph. You can continue with more text.",
-      } as TextBlockProps,
+      } satisfies TextBlockProps,
     },
     {
       id: "text-snippet",
-      name: "Text Snippet",
+      blockType: "text",
+      label: "Text Snippet",
       description: "Brief text snippet for quick messaging.",
       props: {
         body: "Quick message or callout text goes here.",
-      } as TextBlockProps,
+      } satisfies TextBlockProps,
     },
-  ] as BlockPreset<TextBlockProps>[],
+  ],
 
   cta: [
     {
       id: "cta-single-button",
-      name: "Single Button",
+      blockType: "cta",
+      label: "Single Button",
       description: "Call-to-action with one primary button.",
       props: {
         eyebrow: "Next Step",
@@ -113,11 +118,12 @@ export const BLOCK_PRESETS = {
         secondaryLabel: "",
         secondaryHref: "",
         align: "center",
-      } as CtaBlockProps,
+      } satisfies CtaBlockProps,
     },
     {
       id: "cta-dual-buttons",
-      name: "Dual Buttons",
+      blockType: "cta",
+      label: "Dual Buttons",
       description: "Call-to-action with primary and secondary buttons.",
       props: {
         eyebrow: "Take Action",
@@ -128,11 +134,12 @@ export const BLOCK_PRESETS = {
         secondaryLabel: "Learn More",
         secondaryHref: "/learn",
         align: "center",
-      } as CtaBlockProps,
+      } satisfies CtaBlockProps,
     },
     {
       id: "cta-left-aligned",
-      name: "Left-Aligned CTA",
+      blockType: "cta",
+      label: "Left-Aligned CTA",
       description: "Left-aligned call-to-action section.",
       props: {
         eyebrow: "Important",
@@ -143,14 +150,15 @@ export const BLOCK_PRESETS = {
         secondaryLabel: "",
         secondaryHref: "",
         align: "left",
-      } as CtaBlockProps,
+      } satisfies CtaBlockProps,
     },
-  ] as BlockPreset<CtaBlockProps>[],
+  ],
 
   "feature-grid": [
     {
       id: "grid-2col-4items",
-      name: "2-Column Grid (4 Items)",
+      blockType: "feature-grid",
+      label: "2-Column Grid (4 Items)",
       description: "Two-column grid with 4 features.",
       props: {
         headline: "Our Features",
@@ -178,11 +186,12 @@ export const BLOCK_PRESETS = {
             body: "Description of the fourth feature goes here.",
           },
         ],
-      } as FeatureGridBlockProps,
+      } satisfies FeatureGridBlockProps,
     },
     {
       id: "grid-3col-6items",
-      name: "3-Column Grid (6 Items)",
+      blockType: "feature-grid",
+      label: "3-Column Grid (6 Items)",
       description: "Three-column grid with 6 features.",
       props: {
         headline: "Key Benefits",
@@ -220,11 +229,12 @@ export const BLOCK_PRESETS = {
             body: "Explanation of the sixth benefit.",
           },
         ],
-      } as FeatureGridBlockProps,
+      } satisfies FeatureGridBlockProps,
     },
     {
       id: "grid-4col-8items",
-      name: "4-Column Grid (8 Items)",
+      blockType: "feature-grid",
+      label: "4-Column Grid (8 Items)",
       description: "Four-column grid with 8 features.",
       props: {
         headline: "Highlights",
@@ -272,75 +282,112 @@ export const BLOCK_PRESETS = {
             body: "Detail about item eight.",
           },
         ],
-      } as FeatureGridBlockProps,
+      } satisfies FeatureGridBlockProps,
     },
-  ] as BlockPreset<FeatureGridBlockProps>[],
+  ],
 
   "image-text": [
     {
       id: "imgtext-image-left",
-      name: "Image Left",
+      blockType: "image-text",
+      label: "Image Left",
       description: "Image positioned on the left with text on the right.",
       props: {
         headline: "See the Difference",
         body: "Place your descriptive text here. Explain the benefits and features of your offering.",
         imageUrl: "",
-        imageAlt: "Descriptive text for the image",
+        imageAlt: "",
         imagePosition: "left",
         ctaLabel: "Learn More",
         ctaHref: "/learn",
-      } as ImageTextBlockProps,
+      } satisfies ImageTextBlockProps,
     },
     {
       id: "imgtext-image-right",
-      name: "Image Right",
+      blockType: "image-text",
+      label: "Image Right",
       description: "Image positioned on the right with text on the left.",
       props: {
         headline: "Transform Your Experience",
         body: "Share your story and vision. Connect with your audience through compelling visuals and text.",
         imageUrl: "",
-        imageAlt: "Descriptive text for the image",
+        imageAlt: "",
         imagePosition: "right",
         ctaLabel: "Discover More",
         ctaHref: "/discover",
-      } as ImageTextBlockProps,
+      } satisfies ImageTextBlockProps,
     },
     {
       id: "imgtext-minimal",
-      name: "Minimal Image Text",
+      blockType: "image-text",
+      label: "Minimal Image Text",
       description: "Simple image and text combination without call-to-action.",
       props: {
         headline: "About Us",
         body: "Tell your story in a compelling way.",
         imageUrl: "",
-        imageAlt: "About image",
+        imageAlt: "",
         imagePosition: "right",
         ctaLabel: "",
         ctaHref: "",
-      } as ImageTextBlockProps,
+      } satisfies ImageTextBlockProps,
     },
-  ] as BlockPreset<ImageTextBlockProps>[],
+  ],
+}
+
+const PRESET_BLOCK_TYPE_KEYS = new Set<string>([
+  "hero",
+  "text",
+  "cta",
+  "feature-grid",
+  "image-text",
+])
+
+export function isSupportedPresetBlockType(
+  blockType: string,
+): blockType is SupportedPresetBlockType {
+  return PRESET_BLOCK_TYPE_KEYS.has(blockType)
 }
 
 /**
- * Get presets for a specific block type.
- * Returns empty array if no presets found for the type.
+ * Returns presets for a block type that participates in `BLOCK_PRESETS`.
+ * Other block types get an empty list.
  */
-export function getPresetsForBlockType(blockType: string): BlockPreset<Record<string, unknown>>[] {
-  const presets = BLOCK_PRESETS[blockType as keyof typeof BLOCK_PRESETS]
-  return presets ?? []
-}
-
-/**
- * Get a single preset by ID.
- * Returns null if preset not found.
- */
-export function getPresetById(presetId: string): BlockPreset<Record<string, unknown>> | null {
-  for (const presetList of Object.values(BLOCK_PRESETS)) {
-    const preset = presetList.find((p) => p.id === presetId)
-    if (preset) {
-      return preset as BlockPreset<Record<string, unknown>>
-    }
+export function getPresetsForBlockType(blockType: string): BlockPreset[] {
+  if (!isSupportedPresetBlockType(blockType)) {
+    return []
   }
-  return null
+  return BLOCK_PRESETS[blockType]
+}
+
+/**
+ * Looks up a preset by id within a single block type only (no cross-type matching).
+ */
+export function getPresetForBlockType(
+  blockType: SupportedPresetBlockType,
+  presetId: string,
+): BlockPreset | undefined {
+  return BLOCK_PRESETS[blockType].find((p) => p.id === presetId)
+}
+
+/**
+ * Clone props for a new editor block without mutating shared template objects.
+ * Shallow-clones top-level props; clones `feature-grid` `items` with per-item spreads.
+ */
+export function cloneBlockPropsForNewBlock(
+  blockType: string,
+  props: Record<string, unknown>,
+): Record<string, unknown> {
+  if (blockType === "feature-grid") {
+    const rawItems = props["items"]
+    const clonedItems = Array.isArray(rawItems)
+      ? rawItems.map((item) =>
+          item !== null && typeof item === "object"
+            ? { ...(item as Record<string, unknown>) }
+            : item,
+        )
+      : rawItems
+    return { ...props, items: clonedItems }
+  }
+  return { ...props }
 }

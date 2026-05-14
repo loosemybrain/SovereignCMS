@@ -26,7 +26,7 @@ export function AdminAppearanceProvider({ children }: { children: React.ReactNod
 
   return (
     <AdminAppearanceContext.Provider value={value}>
-      <div data-theme={appearance} className="admin-theme-root min-h-screen">
+      <div data-theme={appearance} className="admin-theme-root h-screen overflow-hidden">
         {children}
       </div>
     </AdminAppearanceContext.Provider>

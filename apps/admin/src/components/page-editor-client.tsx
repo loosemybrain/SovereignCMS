@@ -2,7 +2,14 @@
 
 import { useState } from "react"
 import type { CmsBlock, CmsPage, ContentTransitionAction, SeoMetadata } from "@sovereign-cms/core"
-import { createDefaultSeoMetadata, getPresetById } from "@sovereign-cms/core"
+import {
+  cloneBlockPropsForNewBlock,
+  createDefaultSeoMetadata,
+  getAvailableActionsForStatus,
+  getPresetForBlockType,
+  getTransitionActionLabel,
+  isSupportedPresetBlockType,
+} from "@sovereign-cms/core"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
@@ -14,8 +21,7 @@ import { mergeProps } from "@/lib/merge-props"
 import { useEditorState } from "@/lib/editor-state"
 import { BlockPalette } from "@/components/editor/block-palette"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
-import { moveBlockUp, moveBlockDown, cloneDefaultProps, normalizeBlockOrder, deleteBlock } from "@/lib/reorder-blocks"
-import { getAvailableActionsForStatus, getTransitionActionLabel } from "@sovereign-cms/core"
+import { moveBlockUp, moveBlockDown, normalizeBlockOrder, deleteBlock } from "@/lib/reorder-blocks"
 import { cn } from "@sovereign-cms/ui"
 import { useEditorAnnouncements } from "@/lib/use-editor-announcements"
 import { EditorLiveRegion } from "@/components/editor-live-region"
@@ -96,10 +102,10 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
 
     // Determine props: use preset if provided, otherwise use definition defaults
     let blockProps = definition.defaultProps
-    if (presetId) {
-      const preset = getPresetById(presetId)
+    if (presetId && isSupportedPresetBlockType(blockType)) {
+      const preset = getPresetForBlockType(blockType, presetId)
       if (preset) {
-        blockProps = preset.props
+        blockProps = preset.props as Record<string, unknown>
       }
     }
 
@@ -114,7 +120,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       pageId: page.id,
       type: definition.type,
       sortOrder: nextSortOrder,
-      props: cloneDefaultProps(blockProps),
+      props: cloneBlockPropsForNewBlock(definition.type, blockProps),
       visibility: "visible",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

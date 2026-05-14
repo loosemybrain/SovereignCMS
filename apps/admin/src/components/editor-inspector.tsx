@@ -11,9 +11,14 @@ import { getBlockGovernanceWarnings } from "@/lib/content-governance"
 import {
   EditorHint,
   EditorValidationSummary,
-  FieldGroupPanel,
   InspectorSection,
 } from "@/components/editor/patterns"
+import { AdminAlert, AdminSectionCard } from "@/components/admin-ui"
+import {
+  INSPECTOR_SECTION_LABELS,
+  INSPECTOR_SECTION_ORDER,
+  bucketInspectorFieldsBySection,
+} from "@/components/inspector/inspector-sections"
 
 type EditorInspectorProps = {
   selectedBlock: CmsBlock | null
@@ -63,10 +68,25 @@ function buildFieldPatch(fieldKey: string, value: unknown): Record<string, unkno
   }
 }
 
+function GovernanceIcon({ severity }: { severity: "info" | "warning" }) {
+  if (severity === "warning") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18.1c-.4.7.1 1.6.9 1.6h16.8c.8 0 1.3-.9.9-1.6L13.7 3.9c-.4-.7-1.4-.7-1.8 0z" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 16v-4M12 8h.01" />
+    </svg>
+  )
+}
+
 function toSafeDomId(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9_-]/g, "-")
 }
-
 function PropsEditing({
   block,
   onUpdate,
@@ -87,7 +107,6 @@ function PropsEditing({
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
   const definition = getAdminBlockDefinition(block.type)
   const fields = definition?.inspectorFields ?? []
-  const fieldGroups = definition?.fieldGroups ?? []
 
   // No fields registered for this block type
   if (fields.length === 0) {
@@ -98,13 +117,7 @@ function PropsEditing({
     )
   }
 
-  const groupedFields = fieldGroups.map((group) => ({
-    ...group,
-    fields: fields.filter((field) => field.groupId === group.id),
-  }))
-  const ungroupedFields = fields.filter(
-    (field) => field.groupId === undefined || !fieldGroups.some((group) => group.id === field.groupId),
-  )
+  const sectionBuckets = bucketInspectorFieldsBySection(fields)
 
   const getFieldError = (fieldKey: string, value: unknown, fieldValidations: typeof fields[number]["validations"]) => {
     if (!touchedFields[fieldKey]) {
@@ -150,45 +163,41 @@ function PropsEditing({
 
   const governanceWarnings = getBlockGovernanceWarnings(block)
 
+  const nonEmptySectionKeys = INSPECTOR_SECTION_ORDER.filter(
+    (sectionKey) => sectionBuckets[sectionKey].length > 0,
+  )
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <EditorValidationSummary errors={validationSummary} />
 
       {governanceWarnings.length > 0 && (
-        <InspectorSection title="Content Hinweise" description="Helpful hints about block content" raw>
-          <div className="space-y-1">
+        <InspectorSection title="Content Hinweise" description="Hinweise zum Block-Inhalt (nicht blockierend)" raw>
+          <div className="space-y-2">
             {governanceWarnings.map((warning) => (
-              <div
+              <AdminAlert
                 key={warning.id}
-                className={`rounded border-l-4 p-2 text-xs ${
-                  warning.severity === "warning"
-                    ? "border-l-amber-500 bg-amber-50 text-amber-900"
-                    : "border-l-blue-500 bg-blue-50 text-blue-900"
-                }`}
+                variant={warning.severity === "warning" ? "warning" : "info"}
+                icon={<GovernanceIcon severity={warning.severity} />}
               >
-                <p>{warning.message}</p>
-              </div>
+                {warning.message}
+              </AdminAlert>
             ))}
           </div>
         </InspectorSection>
       )}
-      {groupedFields.map((group) =>
-        group.fields.length > 0 ? (
-          <FieldGroupPanel
-            key={group.id}
-            title={group.label}
-            description={group.description}
+      {nonEmptySectionKeys.map((sectionKey) => {
+        const sectionFields = sectionBuckets[sectionKey]
+        return (
+          <AdminSectionCard
+            key={sectionKey}
+            title={INSPECTOR_SECTION_LABELS[sectionKey]}
+            dense
           >
-            <div className="space-y-2">{group.fields.map(renderField)}</div>
-          </FieldGroupPanel>
-        ) : null,
-      )}
-
-      {ungroupedFields.length > 0 ? (
-        <FieldGroupPanel title="Other Fields">
-          <div className="space-y-2">{ungroupedFields.map(renderField)}</div>
-        </FieldGroupPanel>
-      ) : null}
+            <div className="space-y-2">{sectionFields.map(renderField)}</div>
+          </AdminSectionCard>
+        )
+      })}
     </div>
   )
 }
@@ -203,7 +212,7 @@ export function EditorInspector({
   // If no block is selected, show page SEO editor
   if (selectedBlock === null) {
     return (
-      <div className="space-y-4 text-sm" aria-label="Inspector panel">
+      <div className="space-y-5 text-sm" aria-label="Inspector panel">
         <InspectorSection title="No block selected">
           <EditorHint tone="info">
             Select a block from the list to edit its properties. You can still edit page SEO below.
@@ -234,12 +243,12 @@ export function EditorInspector({
 
   // Block is selected: show block properties
   return (
-    <div className="space-y-4 text-sm" aria-label="Inspector panel">
+    <div className="space-y-5 text-sm" aria-label="Inspector panel">
       <InspectorSection title="Block Info">
         <BlockInfo block={selectedBlock} />
       </InspectorSection>
 
-      <InspectorSection title="Content Fields / Field Groups">
+      <InspectorSection title="Block-Eigenschaften">
         <PropsEditing
           block={selectedBlock}
           tenantId={tenantId}

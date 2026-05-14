@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { DashboardCard } from "@/components/dashboard-card"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
-import { AdminCard, AdminPageHeader } from "@/components/admin-ui"
+import { AdminConfigGrid, AdminPageHeader, AdminSectionCard } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
@@ -62,8 +62,8 @@ export default async function DashboardPage({ searchParams }: Props) {
           localeContext={localeContext}
           createHref={createHref}
         />
-        <div className="text-xs text-zinc-500">
-          Tenant: <span className="text-zinc-300 font-mono">{tenant.tenantId}</span>
+        <div className="text-xs admin-text-muted">
+          Tenant: <span className="font-mono admin-text">{tenant.tenantId}</span>
         </div>
       </div>
 
@@ -98,40 +98,36 @@ export default async function DashboardPage({ searchParams }: Props) {
         />
       </div>
 
-      {/* Runtime Configuration */}
-      <AdminCard className="p-0 overflow-hidden">
-        <div className="border-b admin-border px-6 py-4 admin-surface-muted">
-          <h2 className="text-lg font-semibold admin-text">Runtime Configuration</h2>
-        </div>
-        <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+      <AdminSectionCard title="Runtime Configuration">
+        <AdminConfigGrid columns={2}>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">DB Adapter</p>
-            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.databaseAdapter}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">DB Adapter</p>
+            <p className="mt-2 font-mono text-lg admin-text">{runtimeConfig.databaseAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Storage</p>
-            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.storageAdapter}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Storage</p>
+            <p className="mt-2 font-mono text-lg admin-text">{runtimeConfig.storageAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Auth</p>
-            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.authAdapter}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Auth</p>
+            <p className="mt-2 font-mono text-lg admin-text">{runtimeConfig.authAdapter}</p>
           </div>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Environment</p>
-            <p className="text-lg font-mono admin-text mt-2">{runtimeConfig.appEnv}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Environment</p>
+            <p className="mt-2 font-mono text-lg admin-text">{runtimeConfig.appEnv}</p>
           </div>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Default Locale</p>
-            <p className="text-lg font-mono admin-text mt-2">{localeContext.defaultLocale}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Default Locale</p>
+            <p className="mt-2 font-mono text-lg admin-text">{localeContext.defaultLocale}</p>
           </div>
           <div>
-            <p className="text-xs font-medium admin-text-muted uppercase tracking-wide">Supported Locales</p>
-            <p className="text-lg font-mono admin-text mt-2">
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Supported Locales</p>
+            <p className="mt-2 font-mono text-lg admin-text">
               {localeContext.supportedLocales.map((l) => l.code).join(", ")}
             </p>
           </div>
-        </div>
-      </AdminCard>
+        </AdminConfigGrid>
+      </AdminSectionCard>
     </div>
   )
 }

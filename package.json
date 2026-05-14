@@ -16,7 +16,8 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "phase:zip": "node scripts/phase-artifacts.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.4"

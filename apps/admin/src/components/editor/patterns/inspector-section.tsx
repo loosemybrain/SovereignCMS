@@ -1,6 +1,6 @@
-import { useId, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { cn } from "@sovereign-cms/ui"
-import { EditorPanel } from "./editor-panel"
+import { AdminSectionCard } from "@/components/admin-ui"
 
 type InspectorSectionProps = {
   title: string
@@ -17,17 +17,16 @@ export function InspectorSection({
   raw = false,
   className,
 }: InspectorSectionProps) {
-  const headingId = useId()
-
   return (
-    <section aria-labelledby={headingId} className={cn("space-y-2", className)}>
-      <EditorPanel variant={raw ? "muted" : "default"}>
-        <h3 id={headingId} className="text-sm font-semibold admin-text">
-          {title}
-        </h3>
-        {description ? <p className="text-xs admin-text-muted mt-1">{description}</p> : null}
-      </EditorPanel>
-      <div>{children}</div>
-    </section>
+    <div className={cn("space-y-0", className)}>
+      <AdminSectionCard
+        title={title}
+        description={description}
+        dense={!raw}
+        className={cn(raw && "border-dashed opacity-95 shadow-none hover:shadow-none")}
+      >
+        {children}
+      </AdminSectionCard>
+    </div>
   )
 }

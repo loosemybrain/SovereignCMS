@@ -61,6 +61,7 @@ export type { PreviewMode, PreviewContext } from "./preview"
 export { createPreviewContext } from "./preview"
 export type {
   FieldGroupDefinition,
+  InspectorSectionKey,
   ValidationRule,
   SelectOption,
   StructuredInspectorFieldDefinition,
@@ -114,5 +115,11 @@ export {
 } from "./privacy-scan"
 export type { SimpleListItem } from "./block-utils"
 export { normalizeSimpleListItems } from "./block-utils"
-export type { BlockPreset } from "./block-presets"
-export { BLOCK_PRESETS, getPresetsForBlockType, getPresetById } from "./block-presets"
+export type { BlockPreset, SupportedPresetBlockType } from "./block-presets"
+export {
+  BLOCK_PRESETS,
+  cloneBlockPropsForNewBlock,
+  getPresetForBlockType,
+  getPresetsForBlockType,
+  isSupportedPresetBlockType,
+} from "./block-presets"

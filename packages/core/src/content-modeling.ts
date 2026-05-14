@@ -4,6 +4,14 @@ export type FieldGroupDefinition = {
   description?: string
 }
 
+/** Static inspector section keys (admin block inspector grouping only). */
+export type InspectorSectionKey =
+  | "content"
+  | "media"
+  | "actions"
+  | "layout"
+  | "advanced"
+
 export type ValidationRule =
   | {
       type: "required"
@@ -30,6 +38,8 @@ export type StructuredInspectorFieldDefinition = {
   label: string
   type: string
   groupId?: string
+  /** Inspector section; omitted defaults to "content" in admin UI. */
+  section?: InspectorSectionKey
   description?: string
   placeholder?: string
   options?: SelectOption[]

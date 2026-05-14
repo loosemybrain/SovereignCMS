@@ -3,7 +3,7 @@
 import { listAdminBlockDefinitions } from "@/block-definitions/registry"
 import { getPresetsForBlockType } from "@sovereign-cms/core"
 import { cn } from "@sovereign-cms/ui"
-import { AdminButton } from "@/components/admin-ui"
+import { AdminButton, AdminSectionCard, adminFeatureCardClassNames } from "@/components/admin-ui"
 import { EditorHint } from "@/components/editor/patterns"
 
 type BlockPaletteProps = {
@@ -31,58 +31,61 @@ export function BlockPalette({
   )
 
   return (
-    <div className="rounded-lg border admin-border admin-surface overflow-hidden">
-      <div className="border-b admin-border px-6 py-4 admin-surface-muted space-y-2">
-        <h2 className="text-lg font-semibold admin-text">Block hinzufügen</h2>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <EditorHint tone="info">
-            {insertAfterBlockId
-              ? "Der neue Block wird nach der ausgewählten Position eingefügt."
-              : "Der neue Block wird am Ende hinzugefügt."}
-            </EditorHint>
-          </div>
-          {insertAfterBlockId && onClearInsertPosition ? (
-            <AdminButton
-              type="button"
-              variant="ghost"
-              className="px-2 py-1 text-xs"
-              onClick={onClearInsertPosition}
-            >
-              Position zurücksetzen
-            </AdminButton>
-          ) : null}
-        </div>
+    <AdminSectionCard
+      title="Block hinzufügen"
+      description="Presets oder leeren Block wählen — Logik unverändert."
+      className="overflow-hidden shadow-sm"
+      headerAction={
+        insertAfterBlockId && onClearInsertPosition ? (
+          <AdminButton
+            type="button"
+            variant="ghost"
+            className="px-2 py-1 text-xs"
+            onClick={onClearInsertPosition}
+          >
+            Position zurücksetzen
+          </AdminButton>
+        ) : null
+      }
+    >
+      <div className="space-y-2 border-b admin-border pb-4">
+        <EditorHint tone="info">
+          {insertAfterBlockId
+            ? "Der neue Block wird nach der ausgewählten Position eingefügt."
+            : "Der neue Block wird am Ende hinzugefügt."}
+        </EditorHint>
       </div>
 
-      <div className="p-4">
+      <div className="pt-4">
         {Object.entries(byCategory).map(([category, blocks]) => (
-          <div key={category} className="mb-6 last:mb-0">
-            <h3 className="text-xs font-medium admin-text-muted uppercase tracking-wide mb-3">
+          <div key={category} className="mb-8 last:mb-0">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide admin-text-muted">
               {category}
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {blocks.map((definition) => {
                 const presets = getPresetsForBlockType(definition.type)
 
                 return (
-                  <div key={definition.type} className="border-l-2 admin-border pl-3">
-                    <p className="text-sm font-medium admin-text mb-2">{definition.label}</p>
+                  <div
+                    key={definition.type}
+                    className="border-l-2 border-[color-mix(in_oklab,var(--admin-accent)_45%,var(--admin-border))] pl-4"
+                  >
+                    <p className="mb-2 text-sm font-semibold admin-text">{definition.label}</p>
 
                     {presets.length > 0 ? (
-                      <div className="space-y-2 mb-2">
+                      <div className="mb-2 space-y-2">
                         {presets.map((preset) => (
                           <button
                             type="button"
                             key={preset.id}
                             onClick={() => onAddBlock(definition.type, preset.id)}
-                            className={cn(
-                              "w-full rounded border px-3 py-2 text-xs text-left transition-all duration-200 admin-focus-ring",
-                              "admin-border admin-surface admin-text hover:opacity-90 active:scale-95",
-                            )}
+                            className={cn("w-full admin-text", adminFeatureCardClassNames(false))}
                           >
-                            <p className="font-medium text-xs">{preset.name}</p>
-                            <p className="text-xs admin-text-muted">{preset.description}</p>
+                            <p className="text-xs font-semibold">{preset.label}</p>
+                            {preset.description ? (
+                              <p className="mt-0.5 text-xs admin-text-muted">{preset.description}</p>
+                            ) : null}
                           </button>
                         ))}
                       </div>
@@ -92,11 +95,15 @@ export function BlockPalette({
                       type="button"
                       onClick={() => onAddBlock(definition.type)}
                       className={cn(
-                        "w-full rounded border px-3 py-2 text-xs text-left transition-all duration-200 admin-focus-ring",
-                        "admin-border admin-surface admin-text-muted hover:opacity-90 active:scale-95 opacity-75",
+                        "w-full text-xs admin-text-muted",
+                        adminFeatureCardClassNames(false),
+                        "opacity-90 hover:opacity-100",
                       )}
                     >
-                      <p className="text-xs font-medium">Leerer Block</p>
+                      <span className="font-semibold admin-text">Leerer Block</span>
+                      <span className="mt-0.5 block text-[11px] admin-text-muted">
+                        Ohne Preset-Startwerte
+                      </span>
                     </button>
                   </div>
                 )
@@ -105,6 +112,6 @@ export function BlockPalette({
           </div>
         ))}
       </div>
-    </div>
+    </AdminSectionCard>
   )
 }

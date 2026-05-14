@@ -66,19 +66,22 @@ export function MediaPicker({
           </div>
         )}
 
-        {error && (
-          <div className="rounded-md bg-red-900/20 border border-red-700/50 p-4" role="alert">
-            <p className="text-sm text-red-300">{error}</p>
+        {error ? (
+          <div className="p-4 admin-callout-error" role="alert">
+            <p className="text-sm font-medium">{error}</p>
           </div>
-        )}
+        ) : null}
 
-        {!isLoading && !error && assets.length === 0 && (
-          <div className="rounded-md bg-zinc-900/40 border border-zinc-700/50 p-6" aria-live="polite">
-            <p className="text-sm admin-text-muted text-center">
+        {!isLoading && !error && assets.length === 0 ? (
+          <div
+            className="rounded-lg border admin-border admin-surface-muted p-6"
+            aria-live="polite"
+          >
+            <p className="text-center text-sm admin-text-muted">
               No media assets found for this tenant
             </p>
           </div>
-        )}
+        ) : null}
 
         {!isLoading && !error && assets.length > 0 && (
           <section aria-label="Available media assets">
@@ -89,15 +92,15 @@ export function MediaPicker({
                 <div
                   role="option"
                   aria-selected={selectedId === asset.id}
-                  className={`w-full text-left rounded-lg border-2 p-4 transition-all admin-focus-ring ${
+                  className={`w-full rounded-lg border-2 p-4 text-left transition-all admin-focus-ring ${
                     selectedId === asset.id
-                      ? "border-blue-500 bg-blue-900/20"
-                      : "border-zinc-700 hover:border-zinc-600"
+                      ? "border-(--admin-accent) admin-accent-bg"
+                      : "border-(--admin-border) admin-surface hover:opacity-[0.97]"
                   }`}
                 >
                 {/* Image Preview for image type */}
                 {asset.type === "image" && (
-                  <div className="mb-3 bg-zinc-900 rounded h-24 flex items-center justify-center overflow-hidden">
+                  <div className="mb-3 flex h-24 items-center justify-center overflow-hidden rounded-md border admin-border admin-surface-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={asset.url}
@@ -109,10 +112,8 @@ export function MediaPicker({
 
                 {/* Non-image Type Placeholder */}
                 {asset.type !== "image" && (
-                  <div className="mb-3 bg-zinc-900 rounded h-24 flex items-center justify-center">
-                    <p className="text-xs admin-text-muted">
-                      [{asset.type}]
-                    </p>
+                  <div className="mb-3 flex h-24 items-center justify-center rounded-md border admin-border admin-surface-muted">
+                    <p className="text-xs admin-text-muted">[{asset.type}]</p>
                   </div>
                 )}
 
@@ -121,7 +122,7 @@ export function MediaPicker({
                   <p className="text-sm font-medium admin-text truncate">
                     {asset.title}
                     {selectedId === asset.id ? (
-                      <span className="ml-2 text-xs font-normal text-blue-300">(Selected)</span>
+                      <span className="ml-2 text-xs font-normal admin-accent">(Selected)</span>
                     ) : null}
                   </p>
                   <p className="text-xs admin-text-muted">{asset.type}</p>
