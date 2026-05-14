@@ -49,8 +49,10 @@ export function EditorBlockCard({
           }
         }}
         className={cn(
-          "cursor-pointer rounded-lg border p-4 transition-all duration-200 admin-focus-ring",
-          isSelected ? "border-sky-500 admin-accent-bg ring-1 ring-sky-400/40" : "admin-border hover:opacity-90",
+          "cursor-pointer rounded-lg border p-4 transition-all duration-200 admin-focus-ring animate-scale-in",
+          isSelected
+            ? "border-sky-500 admin-accent-bg ring-1 ring-sky-400/40 shadow-md"
+            : "admin-border hover:shadow-md hover:border-[color-mix(in_oklab,var(--admin-accent)_55%,var(--admin-border))]",
         )}
       >
         <div className="space-y-2">

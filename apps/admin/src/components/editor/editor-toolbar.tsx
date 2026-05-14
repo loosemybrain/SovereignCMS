@@ -25,9 +25,9 @@ export function EditorToolbar({
   canSave,
 }: EditorToolbarProps) {
   return (
-    <AdminCard className="p-4 space-y-3">
+    <AdminCard className="p-4 space-y-3 animate-slide-up">
       <div className="flex items-center justify-between gap-4">
-        <div className="text-sm space-y-1" aria-live="polite">
+        <div className="text-sm space-y-1 flex-1" aria-live="polite">
           {isSaving ? <EditorHint tone="info">Saving in progress...</EditorHint> : null}
           {saveError ? <EditorHint tone="danger">Save error: {saveError}</EditorHint> : null}
           {!isSaving && isDirty ? <EditorHint tone="warning">Unsaved changes</EditorHint> : null}
@@ -52,7 +52,13 @@ export function EditorToolbar({
           />
         </div>
 
-        <AdminButton onClick={onSave} disabled={!canSave} variant="primary">
+        <AdminButton
+          onClick={onSave}
+          disabled={!canSave}
+          variant="primary"
+          isLoading={isSaving}
+          className="shrink-0"
+        >
           {isSaving ? "Saving..." : "Save"}
         </AdminButton>
       </div>
