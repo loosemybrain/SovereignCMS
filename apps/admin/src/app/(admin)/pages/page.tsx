@@ -4,7 +4,7 @@ import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CompositionDebugPanel } from "@/components/composition-debug-panel"
 import { CreatePageForm } from "@/components/create-page-form"
-import { AdminDataTable, AdminDataTableHeadRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
+import { AdminDataTable, AdminDataTableHeadRow, AdminDataTableTh, AdminDataTableBody, AdminDataTableRow, AdminDataTableCell, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 type Props = {
@@ -88,28 +88,32 @@ export default async function PagesListPage({ searchParams }: Props) {
             <AdminDataTableTh>Status</AdminDataTableTh>
             <AdminDataTableTh>Updated</AdminDataTableTh>
           </AdminDataTableHeadRow>
-          <tbody className="divide-y admin-border">
+          <AdminDataTableBody>
             {pages.map((page) => (
-              <tr key={page.id} className="admin-row-hover">
-                <td className="px-4 py-3 admin-text">
+              <AdminDataTableRow key={page.id}>
+                <AdminDataTableCell>
                   <Link
                     href={`/pages/${page.slug}?locale=${activeLocale}`}
                     className="font-medium admin-accent underline-offset-2 hover:underline rounded-sm admin-focus-ring"
                   >
                     {page.title}
                   </Link>
-                </td>
-                <td className="px-4 py-3 font-mono text-xs admin-text-muted">{page.slug}</td>
-                <td className="px-4 py-3 admin-text-muted">{page.locale}</td>
-                <td className="px-4 py-3">
+                </AdminDataTableCell>
+                <AdminDataTableCell className="font-mono text-xs admin-text-muted">
+                  {page.slug}
+                </AdminDataTableCell>
+                <AdminDataTableCell className="admin-text-muted">
+                  {page.locale}
+                </AdminDataTableCell>
+                <AdminDataTableCell>
                   <ContentStatusBadge status={page.status} />
-                </td>
-                <td className="px-4 py-3 text-xs admin-text-muted">
+                </AdminDataTableCell>
+                <AdminDataTableCell className="text-xs admin-text-muted">
                   {new Date(page.updatedAt).toLocaleDateString()}
-                </td>
-              </tr>
+                </AdminDataTableCell>
+              </AdminDataTableRow>
             ))}
-          </tbody>
+          </AdminDataTableBody>
         </AdminDataTable>
       )}
     </div>
