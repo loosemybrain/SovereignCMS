@@ -16,11 +16,12 @@ export function AdminTopbar({ title, subtitle, actions, className }: AdminTopbar
     <header
       className={cn(
         "sticky top-0 z-10 shrink-0 border-b admin-border admin-surface px-6 py-3 sm:px-8 sm:py-4",
+        "transition-all duration-200 shadow-sm",
         className,
       )}
     >
       <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
+        <div className="min-w-0 animate-slide-up">
           <h2 className="truncate text-base font-semibold tracking-tight admin-text sm:text-lg">
             {title}
           </h2>
@@ -28,7 +29,11 @@ export function AdminTopbar({ title, subtitle, actions, className }: AdminTopbar
             <p className="mt-0.5 truncate text-xs admin-text-muted sm:text-sm">{subtitle}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2 animate-slide-in-right">
+            {actions}
+          </div>
+        ) : null}
       </div>
     </header>
   )
