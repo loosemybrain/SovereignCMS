@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ReactNode, TdHTMLAttributes } from "react"
 import { cn } from "@sovereign-cms/ui"
 
 export type AdminDataTableProps = {
@@ -13,7 +13,7 @@ export function AdminDataTable({ children, className }: AdminDataTableProps) {
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-xl border admin-border admin-surface shadow-sm transition-shadow duration-200 hover:shadow-md",
+        "admin-surface-table-wrap admin-gov-table-scroll overflow-x-auto admin-surface-interactive",
         className,
       )}
     >
@@ -25,7 +25,7 @@ export function AdminDataTable({ children, className }: AdminDataTableProps) {
 export function AdminDataTableHeadRow({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b admin-border admin-surface-muted bg-[color-mix(in_oklab,var(--admin-surface-muted)_0.5,var(--admin-surface))]">{children}</tr>
+      <tr className="border-b admin-border bg-transparent">{children}</tr>
     </thead>
   )
 }
@@ -42,8 +42,9 @@ export function AdminDataTableTh({
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide admin-text-muted",
-        sortable && "cursor-pointer select-none hover:admin-text transition-colors",
+        "admin-surface-table-th text-left text-[11px] font-bold uppercase tracking-[0.12em] admin-text-muted",
+        sortable &&
+          "cursor-pointer select-none transition-[color,background-color] duration-200 ease-out hover:bg-[color-mix(in_oklab,var(--admin-surface-muted)_100%,var(--admin-surface))] hover:admin-text motion-reduce:transition-none",
         className,
       )}
     >
@@ -68,7 +69,7 @@ export function AdminDataTableRow({
   return (
     <tr
       className={cn(
-        "transition-colors duration-150",
+        "transition-[background-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
         hover && "admin-row-hover",
         className,
       )}
@@ -81,12 +82,13 @@ export function AdminDataTableRow({
 export function AdminDataTableCell({
   children,
   className,
+  ...props
 }: {
   children: ReactNode
   className?: string
-}) {
+} & TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn("px-4 py-3 admin-text", className)}>
+    <td className={cn("admin-surface-table-td align-middle admin-text", className)} {...props}>
       {children}
     </td>
   )

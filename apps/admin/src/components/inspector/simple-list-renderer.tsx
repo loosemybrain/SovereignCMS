@@ -77,7 +77,7 @@ export function SimpleListRenderer({
 
     const newItem: SimpleListItem = {
       id: generateItemId(),
-      title: "New Item",
+      title: "Neuer Eintrag",
       body: "",
     }
 
@@ -115,32 +115,34 @@ export function SimpleListRenderer({
         <div
           aria-describedby={describedBy ?? fieldProps["aria-describedby"]}
           aria-invalid={invalid || fieldProps["aria-invalid"] || undefined}
-          className="mt-2 space-y-3"
+          className="mt-2 space-y-2.5"
         >
           {items.length === 0 ? (
-            <p className="text-xs italic admin-text-muted">No items yet</p>
+            <p className="text-xs leading-relaxed admin-text-muted">Noch keine Einträge.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {items.map((item, index) => (
                 <fieldset
                   key={item.id}
-                  className="space-y-2 rounded-lg border admin-border admin-surface-muted p-3 shadow-sm"
+                  className="admin-surface-fieldset admin-inspector-simple-list-item space-y-2.5 p-3.5 sm:p-4"
                 >
-                  <legend className="text-xs font-semibold admin-text">Item {index + 1}</legend>
+                  <legend className="px-0.5 text-[11px] font-bold uppercase tracking-[0.1em] admin-text-muted">
+                    Eintrag {index + 1}
+                  </legend>
 
                   <div>
                     <label
                       htmlFor={`${fieldId}-item-${index}-title`}
                       className="block text-xs font-medium admin-text"
                     >
-                      Title
+                      Titel
                     </label>
                     <AdminInput
                       id={`${fieldId}-item-${index}-title`}
                       type="text"
                       value={item.title}
                       onChange={(e) => handleUpdateItem(index, { title: e.target.value })}
-                      placeholder="Item title"
+                      placeholder="Kurztitel"
                       className="mt-1 text-xs"
                     />
                   </div>
@@ -150,28 +152,28 @@ export function SimpleListRenderer({
                       htmlFor={`${fieldId}-item-${index}-body`}
                       className="block text-xs font-medium admin-text"
                     >
-                      Description (optional)
+                      Text (optional)
                     </label>
                     <AdminTextarea
                       id={`${fieldId}-item-${index}-body`}
                       value={item.body ?? ""}
                       onChange={(e) => handleUpdateItem(index, { body: e.target.value })}
-                      placeholder="Item description"
+                      placeholder="Beschreibung oder Fließtext"
                       rows={2}
                       className="mt-1 text-xs"
                     />
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end pt-0.5">
                     <AdminButton
                       type="button"
                       variant="destructive"
                       onClick={() => handleRemoveItem(index)}
                       disabled={!canRemoveItem}
-                      aria-label={`Remove item ${index + 1}`}
-                      className="px-2 py-1 text-xs"
+                      aria-label={`Eintrag ${index + 1} entfernen`}
+                      className="admin-toolbar-destructive-quiet px-2 py-1 text-xs"
                     >
-                      Remove
+                      Entfernen
                     </AdminButton>
                   </div>
                 </fieldset>
@@ -184,19 +186,21 @@ export function SimpleListRenderer({
             variant="secondary"
             onClick={handleAddItem}
             disabled={!canAddItem}
-            aria-label="Add new item"
+            aria-label="Neuen Eintrag hinzufügen"
             className="text-xs"
           >
-            + Add Item
+            Eintrag hinzufügen
           </AdminButton>
 
           {minItems > 0 && items.length < minItems && (
-            <p className="text-xs admin-warning">At least {minItems} item{minItems !== 1 ? "s" : ""} required.</p>
+            <p className="text-xs admin-warning">
+              Mindestens {minItems} {minItems === 1 ? "Eintrag" : "Einträge"} erforderlich.
+            </p>
           )}
 
           {maxItems !== Infinity && items.length >= maxItems && (
             <p className="text-xs admin-warning">
-              Maximum {maxItems} item{maxItems !== 1 ? "s" : ""} allowed.
+              Höchstens {maxItems} {maxItems === 1 ? "Eintrag" : "Einträge"} erlaubt.
             </p>
           )}
         </div>

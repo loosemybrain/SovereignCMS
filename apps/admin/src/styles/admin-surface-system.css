@@ -1,0 +1,320 @@
+/**
+ * Phase 57 — Admin surface system (scoped to .admin-theme-root).
+ * Semantic tokens + a small set of composable surface classes.
+ * See docs/architecture/admin-surface-system-phase-57.md
+ */
+
+.admin-theme-root {
+  /* --- Motion (single source; governance aliases these) --- */
+  --admin-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --admin-motion-duration: 180ms;
+  --admin-motion-duration-fast: 140ms;
+
+  /* --- Semantic surfaces (map from existing theme tokens) --- */
+  --admin-surface-app: var(--admin-bg);
+  --admin-surface-raised: var(--admin-surface);
+  --admin-surface-sunken: color-mix(in oklch, var(--admin-surface-muted) 52%, var(--admin-surface));
+  --admin-surface-inset: color-mix(in oklch, var(--admin-surface-muted) 38%, var(--admin-surface));
+  --admin-surface-well: color-mix(in oklch, var(--admin-surface-raised) 92%, transparent);
+
+  /* --- Edges --- */
+  --admin-edge-subtle: color-mix(in oklch, var(--admin-border) 82%, transparent);
+  --admin-edge-default: var(--admin-border);
+  --admin-edge-accent-soft: color-mix(in oklch, var(--admin-border) 78%, var(--admin-accent));
+
+  /* --- Radius --- */
+  --admin-radius-sm: 0.5rem;
+  --admin-radius-md: 0.65rem;
+  --admin-radius-lg: 0.75rem;
+  --admin-radius-xl: 1rem;
+  --admin-radius-2xl: 1.25rem;
+
+  /* --- Elevation --- */
+  --admin-shadow-xs: 0 1px 2px color-mix(in oklch, black 4%, transparent);
+  --admin-shadow-sm: 0 8px 22px -18px color-mix(in oklch, black 24%, transparent),
+    0 1px 0 color-mix(in oklch, white 4%, transparent);
+  --admin-shadow-md: 0 12px 32px -22px color-mix(in oklch, black 28%, transparent),
+    0 1px 0 color-mix(in oklch, white 4%, transparent);
+  --admin-shadow-lg: 0 18px 40px -24px color-mix(in oklch, black 30%, transparent);
+
+  /* --- Density --- */
+  --admin-toolbar-pad-x: 1rem;
+  --admin-toolbar-pad-y: 0.75rem;
+  --admin-table-cell-x: 1rem;
+  --admin-table-cell-y: 0.625rem;
+  --admin-section-body-pad: 1rem;
+  --admin-section-body-pad-dense: 0.75rem;
+  --admin-inspector-stack-gap: 0.75rem;
+
+  /* --- Badges / meta pills --- */
+  --admin-badge-px: 0.5rem;
+  --admin-badge-py: 0.1875rem;
+  --admin-badge-font: 0.6875rem;
+  --admin-badge-radius: 9999px;
+
+  /* --- Focus --- */
+  --admin-focus-glow: color-mix(in oklch, var(--admin-accent) 20%, transparent);
+
+  /* --- Sticky stacking (main admin scrollport; no new layout engine) --- */
+  --admin-z-sticky-table-head: 1;
+  --admin-z-sticky-editor-toolbar: 8;
+  --admin-z-sticky-inspector-column: 10;
+  --admin-z-sticky-topbar: 25;
+  --admin-z-skip-link: 50;
+}
+
+/* --- Shared interactive transition --- */
+.admin-surface-interactive {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--admin-motion-duration);
+  transition-timing-function: var(--admin-motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-interactive {
+    transition-duration: 1ms;
+  }
+}
+
+.admin-surface-hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-hover-lift:hover {
+    transform: none;
+  }
+}
+
+/* --- Section cards (AdminSectionCard) --- */
+.admin-surface-section {
+  overflow: hidden;
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-edge-default);
+  background: var(--admin-surface-raised);
+}
+
+.admin-surface-section--default {
+  box-shadow: var(--admin-shadow-xs);
+}
+
+.admin-surface-section--default:hover {
+  box-shadow: var(--admin-shadow-sm);
+  border-color: var(--admin-edge-accent-soft);
+}
+
+.admin-surface-section--elevated {
+  box-shadow: var(--admin-shadow-md);
+  border-color: color-mix(in oklch, var(--admin-edge-default) 92%, var(--admin-accent));
+}
+
+.admin-surface-section--elevated:hover {
+  box-shadow: var(--admin-shadow-lg);
+}
+
+.admin-surface-section--muted {
+  background: color-mix(in oklch, var(--admin-surface-muted) 35%, var(--admin-surface-raised));
+  border-color: var(--admin-edge-subtle);
+  box-shadow: var(--admin-shadow-xs);
+}
+
+.admin-surface-section--muted:hover {
+  border-color: var(--admin-edge-default);
+}
+
+.admin-surface-section--accent {
+  background: color-mix(in oklch, var(--admin-accent-muted) 100%, var(--admin-surface-raised));
+  border-color: color-mix(in oklch, var(--admin-accent) 28%, var(--admin-edge-default));
+  box-shadow: var(--admin-shadow-xs);
+}
+
+.admin-surface-section--accent:hover {
+  border-color: color-mix(in oklch, var(--admin-accent) 40%, var(--admin-edge-default));
+}
+
+.admin-surface-section--inset {
+  background: var(--admin-surface-inset);
+  border-color: var(--admin-edge-subtle);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, black 6%, transparent);
+}
+
+.admin-surface-section-body {
+  padding: var(--admin-section-body-pad);
+}
+
+.admin-surface-section-body-dense {
+  padding: var(--admin-section-body-pad-dense);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-section--default:hover,
+  .admin-surface-section--muted:hover,
+  .admin-surface-section--accent:hover {
+    box-shadow: inherit;
+    border-color: inherit;
+  }
+}
+
+/* --- Toolbars --- */
+.admin-surface-toolbar {
+  border-radius: var(--admin-radius-md);
+  border: 1px solid var(--admin-edge-subtle);
+  background: var(--admin-surface-sunken);
+}
+
+.admin-surface-toolbar-well {
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-edge-subtle);
+  background: var(--admin-surface-well);
+}
+
+.admin-surface-editor-rail-footer {
+  background: color-mix(in oklch, var(--admin-surface-muted) 42%, var(--admin-surface-raised));
+}
+
+/* --- Tables --- */
+.admin-surface-table-wrap {
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-edge-default);
+  background: var(--admin-surface-raised);
+  transition: border-color var(--admin-motion-duration) var(--admin-motion-ease),
+    box-shadow var(--admin-motion-duration) var(--admin-motion-ease);
+}
+
+.admin-surface-table-wrap:hover {
+  border-color: var(--admin-edge-accent-soft);
+}
+
+.admin-surface-table-th {
+  padding: var(--admin-table-cell-y) var(--admin-table-cell-x);
+  background: color-mix(in oklch, var(--admin-surface-muted) 94%, var(--admin-surface-raised));
+  box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--admin-edge-default) 72%, transparent);
+}
+
+.admin-surface-table-td {
+  padding: var(--admin-table-cell-y) var(--admin-table-cell-x);
+}
+
+/* --- Stat / empty --- */
+.admin-surface-stat {
+  border-radius: var(--admin-radius-2xl);
+  border: 1px solid var(--admin-edge-default);
+  background: var(--admin-surface-raised);
+}
+
+.admin-surface-empty {
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-edge-default);
+  background: color-mix(in oklch, var(--admin-surface-muted) 12%, var(--admin-surface-raised));
+  box-shadow: var(--admin-shadow-xs);
+}
+
+/* --- Field groups & simple-list item shells --- */
+.admin-surface-fieldset {
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-edge-default);
+  background: color-mix(in oklch, var(--admin-surface-raised) 88%, var(--admin-surface-muted));
+  box-shadow: var(--admin-shadow-xs);
+  transition: box-shadow var(--admin-motion-duration) var(--admin-motion-ease);
+}
+
+.admin-surface-fieldset:hover {
+  box-shadow: var(--admin-shadow-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-fieldset:hover {
+    box-shadow: var(--admin-shadow-xs);
+  }
+}
+
+/* --- Block editor card (unselected hover) --- */
+.admin-surface-block-card {
+  border-radius: var(--admin-radius-xl);
+  border: 1px solid var(--admin-edge-default);
+  background: var(--admin-surface-raised);
+  transition: box-shadow var(--admin-motion-duration) var(--admin-motion-ease),
+    border-color var(--admin-motion-duration) var(--admin-motion-ease),
+    transform var(--admin-motion-duration) var(--admin-motion-ease);
+}
+
+.admin-surface-block-card:hover {
+  box-shadow: var(--admin-shadow-sm);
+  border-color: var(--admin-edge-accent-soft);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-surface-block-card:hover {
+    transform: none;
+  }
+}
+
+/* --- Meta pill (visibility, etc.) --- */
+.admin-surface-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--admin-radius-sm);
+  border: 1px solid var(--admin-edge-subtle);
+  background: color-mix(in oklch, var(--admin-surface-muted) 88%, transparent);
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-text-muted);
+}
+
+/* --- Badge base (AdminBadge adds variant color classes) --- */
+.admin-theme-root .admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: var(--admin-badge-py) var(--admin-badge-px);
+  font-size: var(--admin-badge-font);
+  line-height: 1.25;
+  font-weight: 500;
+  border-radius: var(--admin-badge-radius);
+}
+
+/* --- Alert shell: unified motion (globals define layout + hover border) --- */
+.admin-theme-root .admin-alert-shell {
+  transition-property: border-color, box-shadow;
+  transition-duration: var(--admin-motion-duration);
+  transition-timing-function: var(--admin-motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme-root .admin-alert-shell {
+    transition-duration: 1ms;
+  }
+}
+
+/* --- Phase 58 — editorial workflow footer (toolbar cohesion) --- */
+.admin-editor-workflow-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .admin-editor-workflow-foot {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}
+
+.admin-editor-workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.admin-editor-workflow-intro {
+  min-width: 0;
+  max-width: 22rem;
+}

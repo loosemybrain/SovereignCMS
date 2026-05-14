@@ -11,6 +11,7 @@ type EditorStatusPanelProps = {
     value: ReactNode
     tone?: StatusTone
   }>
+  className?: string
 }
 
 const toneClasses: Record<StatusTone, string> = {
@@ -21,9 +22,9 @@ const toneClasses: Record<StatusTone, string> = {
   muted: "admin-text-muted",
 }
 
-export function EditorStatusPanel({ title, statusItems }: EditorStatusPanelProps) {
+export function EditorStatusPanel({ title, statusItems, className }: EditorStatusPanelProps) {
   return (
-    <EditorPanel variant="muted">
+    <EditorPanel variant="muted" className={className}>
       {title ? <h4 className="text-sm font-semibold admin-text mb-2">{title}</h4> : null}
       <dl className="space-y-1.5">
         {statusItems.map((item) => (

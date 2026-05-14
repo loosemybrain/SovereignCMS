@@ -18,12 +18,15 @@ export function InspectorSection({
   className,
 }: InspectorSectionProps) {
   return (
-    <div className={cn("space-y-0", className)}>
+    <div className={cn("admin-inspector-section space-y-0", className)}>
       <AdminSectionCard
         title={title}
         description={description}
         dense={!raw}
-        className={cn(raw && "border-dashed opacity-95 shadow-none hover:shadow-none")}
+        variant="default"
+        className={cn(
+          raw && "admin-inspector-debug border-dashed shadow-sm hover:shadow-sm",
+        )}
       >
         {children}
       </AdminSectionCard>

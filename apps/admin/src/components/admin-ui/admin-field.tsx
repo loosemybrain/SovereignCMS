@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { createFieldIds, getDescribedBy } from "@/lib/a11y"
+import { cn } from "@sovereign-cms/ui"
 
 type FieldRenderProps = {
   id: string
@@ -29,8 +30,14 @@ export function AdminField({
   ])
 
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium admin-text-muted" htmlFor={ids.inputId}>
+    <div className="group/field admin-inspector-field space-y-2 rounded-lg border border-transparent px-0.5 py-0.5 transition-[border-color,background-color] duration-200 ease-out focus-within:border-[color-mix(in_oklab,var(--admin-accent)_35%,var(--admin-border))] focus-within:bg-[color-mix(in_oklab,var(--admin-surface-muted)_55%,transparent)] motion-reduce:transition-none">
+      <label
+        className={cn(
+          "block text-xs font-semibold tracking-tight transition-colors admin-text-muted",
+          "group-focus-within/field:admin-text group-focus-within/field:admin-accent",
+        )}
+        htmlFor={ids.inputId}
+      >
         {label}
       </label>
       {children({
@@ -39,7 +46,7 @@ export function AdminField({
         "aria-invalid": error ? true : undefined,
       })}
       {description ? (
-        <p id={ids.descriptionId} className="text-xs admin-text-muted">
+        <p id={ids.descriptionId} className="text-xs leading-relaxed admin-text-muted">
           {description}
         </p>
       ) : null}

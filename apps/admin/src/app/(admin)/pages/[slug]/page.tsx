@@ -3,7 +3,7 @@ import Link from "next/link"
 import { PageEditorClient } from "@/components/page-editor-client"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
-import { AdminBadge } from "@/components/admin-ui"
+import { AdminBadge, AdminPageHeader } from "@/components/admin-ui"
 import { loadAdminPageDetail } from "@/lib/load-admin-page-detail"
 
 type Props = {
@@ -58,35 +58,34 @@ export default async function AdminPageDetailRoute({ params, searchParams }: Pro
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-4">
+      <AdminPageHeader
+        eyebrow="Page editor"
+        title={page.title}
+        description="Edit page content and blocks"
+        meta={
+          <>
+            <AdminBadge variant="muted" className="rounded px-2 py-1">
+              <span className="font-mono">{page.slug}</span>
+            </AdminBadge>
+            <AdminBadge variant="muted" className="rounded px-2 py-1">
+              Locale: <span className="font-medium">{activeLocale}</span>
+            </AdminBadge>
+            <ContentStatusBadge status={page.status} />
+            <AdminBadge variant="muted" className="rounded px-2 py-1">
+              Tenant: <span className="font-medium">{tenant.tenantId}</span>
+            </AdminBadge>
+          </>
+        }
+        actions={
           <Link
             href={`/pages?locale=${activeLocale}`}
-            className="text-sm admin-text-muted hover:admin-text transition-colors"
+            className="text-sm font-medium admin-text-muted underline-offset-2 transition-colors hover:admin-text"
           >
             ← Back to Pages
           </Link>
-        </div>
-        <div>
-          <h1 className="text-4xl font-bold admin-text">{page.title}</h1>
-          <p className="text-sm admin-text-muted mt-1">Edit page content and blocks</p>
-        </div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <AdminBadge variant="muted" className="rounded px-2 py-1">
-            <span className="font-mono">{page.slug}</span>
-          </AdminBadge>
-          <AdminBadge variant="muted" className="rounded px-2 py-1">
-            Locale: <span className="font-medium">{activeLocale}</span>
-          </AdminBadge>
-          <ContentStatusBadge status={page.status} />
-          <AdminBadge variant="muted" className="rounded px-2 py-1">
-            Tenant: <span className="font-medium">{tenant.tenantId}</span>
-          </AdminBadge>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Locale Switcher */}
       <AdminLocaleSwitcher
         activeLocale={activeLocale}
         localeContext={localeContext}
@@ -94,7 +93,12 @@ export default async function AdminPageDetailRoute({ params, searchParams }: Pro
       />
 
       {/* Editor */}
-      <PageEditorClient page={page} blocks={blocks} tenant={tenant} runtimeConfig={runtimeConfig} />
+      <PageEditorClient
+        page={page}
+        blocks={blocks}
+        tenant={tenant}
+        databaseAdapterLabel={String(runtimeConfig.databaseAdapter)}
+      />
     </div>
   )
 }

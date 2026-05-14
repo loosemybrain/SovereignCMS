@@ -1,8 +1,9 @@
 import { headers } from "next/headers"
 import Link from "next/link"
+import { Box, Building2, Database, GitBranch, Layers, LayoutTemplate } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard-card"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
-import { AdminConfigGrid, AdminPageHeader, AdminSectionCard } from "@/components/admin-ui"
+import { AdminConfigGrid, AdminPageHeader, AdminSectionCard, AdminStatusBadge } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
@@ -28,7 +29,6 @@ export default async function DashboardPage({ searchParams }: Props) {
     searchParams: params,
   })
 
-  // Get runtime to calculate total blocks
   const { runtime } = getAdminRuntime({ host })
   const totalBlocks = await Promise.all(
     pages.map((page) => runtime.db.blocks.listByPage({ tenantId: tenant.tenantId, pageId: page.id })),
@@ -43,74 +43,91 @@ export default async function DashboardPage({ searchParams }: Props) {
   return (
     <div className="space-y-8">
       <AdminPageHeader
+        eyebrow="Orientierung"
         title="Dashboard"
-        description="Overview of your CMS"
+        description="Kurzer Überblick über Mandant, Sprachen und Inhalte — ohne zusätzliche Kennzahlen."
         actions={
           <Link
             href={`/pages?locale=${activeLocale}`}
-            className="text-sm admin-accent hover:opacity-80 transition-colors"
+            className="text-sm font-medium admin-accent underline-offset-2 transition-opacity hover:opacity-85"
           >
-            Create new page in Pages overview →
+            Zur Seitenübersicht →
           </Link>
         }
       />
 
-      {/* Locale Switcher */}
-      <div className="flex items-center justify-between">
-        <AdminLocaleSwitcher
-          activeLocale={activeLocale}
-          localeContext={localeContext}
-          createHref={createHref}
-        />
-        <div className="text-xs admin-text-muted">
-          Tenant: <span className="font-mono admin-text">{tenant.tenantId}</span>
+      <AdminSectionCard
+        variant="elevated"
+        title="Arbeitsbereich"
+        description="Sprache und Mandantenauflösung für diese Ansicht."
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <AdminLocaleSwitcher
+            activeLocale={activeLocale}
+            localeContext={localeContext}
+            createHref={createHref}
+          />
+          <div className="flex flex-wrap items-center gap-2 text-xs admin-text-muted">
+            <span>Tenant</span>
+            <AdminStatusBadge>{tenant.tenantId}</AdminStatusBadge>
+            <span className="opacity-60">·</span>
+            <span>Source</span>
+            <AdminStatusBadge variant="muted">{tenant.source}</AdminStatusBadge>
+          </div>
         </div>
-      </div>
+      </AdminSectionCard>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DashboardCard
-          title="Tenant ID"
-          value={tenant.tenantId}
-          description={`Resolved via: ${tenant.source}`}
-          variant="highlight"
-        />
-        <DashboardCard
-          title="Pages (Current Locale)"
-          value={activeLocalePagesCount}
-          description={`Pages in ${activeLocale} locale`}
-          sparklineData={[2, 3, 2, 5, 4, 6, 5, 7, 6, 8]}
-          sparklineColor="emerald"
-        />
-        <DashboardCard
-          title="Page Variants"
-          value={pageVariantsCount}
-          description="All locale-specific records"
-          sparklineData={[1, 2, 1, 3, 2, 4, 3, 5, 4, 6]}
-          sparklineColor="amber"
-        />
-        <DashboardCard
-          title="Logical Pages"
-          value={logicalPagesCount}
-          description="Unique slugs across locales"
-          sparklineData={[1, 1, 2, 2, 1, 3, 2, 3, 2, 4]}
-          sparklineColor="rose"
-        />
-        <DashboardCard
-          title="Blocks"
-          value={totalBlocks}
-          description="Total content blocks"
-          sparklineData={[5, 6, 7, 6, 8, 7, 9, 8, 10, 9]}
-          sparklineColor="primary"
-        />
-        <DashboardCard
-          title="Database"
-          value={runtimeConfig.databaseAdapter}
-          description="Currently active"
-        />
-      </div>
+      <AdminSectionCard
+        variant="elevated"
+        title="Key metrics"
+        description="Counts from the database for this tenant (no sample data)."
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <DashboardCard
+            title="Tenant ID"
+            value={tenant.tenantId}
+            description={`Resolved via: ${tenant.source}`}
+            variant="highlight"
+            icon={<Building2 strokeWidth={2} />}
+          />
+          <DashboardCard
+            title="Pages (Current Locale)"
+            value={activeLocalePagesCount}
+            description={`Pages in ${activeLocale} locale`}
+            icon={<LayoutTemplate strokeWidth={2} />}
+          />
+          <DashboardCard
+            title="Page Variants"
+            value={pageVariantsCount}
+            description="All locale-specific records"
+            icon={<Layers strokeWidth={2} />}
+          />
+          <DashboardCard
+            title="Logical Pages"
+            value={logicalPagesCount}
+            description="Unique slugs across locales"
+            icon={<GitBranch strokeWidth={2} />}
+          />
+          <DashboardCard
+            title="Blocks"
+            value={totalBlocks}
+            description="Total content blocks"
+            icon={<Box strokeWidth={2} />}
+          />
+          <DashboardCard
+            title="Database"
+            value={runtimeConfig.databaseAdapter}
+            description="Currently active"
+            icon={<Database strokeWidth={2} />}
+          />
+        </div>
+      </AdminSectionCard>
 
-      <AdminSectionCard title="Runtime Configuration">
+      <AdminSectionCard
+        variant="glass"
+        title="Runtime Configuration"
+        description="Adapter wiring from environment (read-only)."
+      >
         <AdminConfigGrid columns={2}>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">DB Adapter</p>

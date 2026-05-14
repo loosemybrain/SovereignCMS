@@ -25,7 +25,7 @@ export function AdminCard({
   return (
     <div
       className={cn(
-        "rounded-lg p-5 transition-all duration-300",
+        "rounded-lg p-5 admin-surface-interactive",
         variantClasses[variant],
         interactive && "card-hover cursor-pointer",
         className,

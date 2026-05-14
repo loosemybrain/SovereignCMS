@@ -21,7 +21,7 @@ export function AdminBadge({ children, variant = "default", className }: AdminBa
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border",
+        "admin-badge inline-flex items-center border font-medium",
         badgeVariantClasses[variant],
         className,
       )}

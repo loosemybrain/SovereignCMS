@@ -13,7 +13,11 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Settings" description="Tenant-wide site settings" />
+      <AdminPageHeader
+        eyebrow="Mandant"
+        title="Einstellungen"
+        description="Globale Site-Einstellungen für diesen Mandanten — sichtbar in der öffentlichen Site, sobald veröffentlicht."
+      />
       <SettingsEditor tenantId={tenant.tenantId} initialSettings={settings} />
     </div>
   )

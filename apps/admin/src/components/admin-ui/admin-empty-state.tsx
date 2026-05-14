@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
+import { Inbox } from "lucide-react"
 import { cn } from "@sovereign-cms/ui"
-import { AdminCard } from "@/components/admin-ui/admin-card"
 
 type AdminEmptyStateProps = {
   title: string
@@ -17,24 +17,28 @@ export function AdminEmptyState({
   icon,
   className,
 }: AdminEmptyStateProps) {
+  const showIcon = icon ?? (
+    <Inbox className="h-7 w-7 text-[color-mix(in_oklab,var(--admin-accent)_55%,var(--admin-text-muted))]" strokeWidth={1.75} aria-hidden />
+  )
+
   return (
-    <AdminCard className={cn("text-center py-12 animate-scale-in", className)}>
-      {icon && (
-        <div className="mb-4 flex justify-center">
-          <div className="text-4xl opacity-40">{icon}</div>
+    <div
+      role="status"
+      className={cn("admin-surface-empty py-12 text-center", className)}
+    >
+      <div className="mb-5 flex justify-center">
+        <div
+          className="admin-palette-type-icon mx-auto h-14 w-14 rounded-2xl [&>svg]:h-7 [&>svg]:w-7"
+          aria-hidden
+        >
+          {showIcon}
         </div>
-      )}
-      <p className="admin-text font-medium text-base">{title}</p>
+      </div>
+      <p className="text-base font-semibold tracking-tight admin-text">{title}</p>
       {description && (
-        <p className="admin-text-muted text-sm mt-2 max-w-sm mx-auto leading-relaxed">
-          {description}
-        </p>
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed admin-text-muted">{description}</p>
       )}
-      {children ? (
-        <div className="mt-6 flex justify-center gap-3 flex-wrap">
-          {children}
-        </div>
-      ) : null}
-    </AdminCard>
+      {children ? <div className="mt-6 flex flex-wrap justify-center gap-3">{children}</div> : null}
+    </div>
   )
 }

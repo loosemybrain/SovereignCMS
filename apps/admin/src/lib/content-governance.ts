@@ -7,6 +7,7 @@
  */
 
 import type { CmsBlock } from "@sovereign-cms/core"
+import { normalizeMediaReference } from "@sovereign-cms/core"
 
 /**
  * A single governance warning for a block.
@@ -218,10 +219,14 @@ function getFeatureGridWarnings(props: Record<string, unknown>): GovernanceWarni
 function getImageTextWarnings(props: Record<string, unknown>): GovernanceWarning[] {
   const warnings: GovernanceWarning[] = []
   const headline = getString(props, "headline")
-  const imageUrl = getString(props, "imageUrl")
-  const imageAlt = getString(props, "imageAlt")
   const ctaLabel = getString(props, "ctaLabel")
   const ctaHref = getString(props, "ctaHref")
+
+  const normalized = normalizeMediaReference({
+    imageUrl: props.imageUrl,
+    imageAlt: props.imageAlt,
+    assetId: props.mediaAssetId,
+  })
 
   if (!headline) {
     warnings.push({
@@ -232,12 +237,42 @@ function getImageTextWarnings(props: Record<string, unknown>): GovernanceWarning
     })
   }
 
-  if (imageUrl && !imageAlt) {
+  if (normalized.sourceType === "invalid") {
+    warnings.push({
+      id: "imgtext-media-invalid",
+      severity: "warning",
+      message: normalized.warning ?? "Image URL is invalid or not allowed for rendering.",
+      fieldPath: "imageUrl",
+    })
+  }
+
+  if (normalized.sourceType === "external") {
+    warnings.push({
+      id: "imgtext-media-external",
+      severity: "info",
+      message:
+        "External HTTPS image URL. Ensure you trust the host; the admin preview does not load external images.",
+      fieldPath: "imageUrl",
+    })
+  }
+
+  if (normalized.requiresAlt && !getString(props, "imageAlt").trim()) {
     warnings.push({
       id: "imgtext-no-alt",
       severity: "info",
       message: "Image has no alt text. Add alt text for accessibility.",
       fieldPath: "imageAlt",
+    })
+  }
+
+  if (normalized.sourceType === "placeholder") {
+    warnings.push({
+      id: "imgtext-media-placeholder",
+      severity: "info",
+      message:
+        normalized.warning ??
+        "Media asset reference is present without a renderable image URL; public output may omit the image until resolved.",
+      fieldPath: "imageUrl",
     })
   }
 
@@ -326,6 +361,7 @@ function getExternalEmbedWarnings(props: Record<string, unknown>): GovernanceWar
 function getHeroWarnings(props: Record<string, unknown>): GovernanceWarning[] {
   const warnings: GovernanceWarning[] = []
   const headline = getString(props, "headline")
+  const mediaAlt = getString(props, "mediaAlt")
 
   if (!headline) {
     warnings.push({
@@ -333,6 +369,51 @@ function getHeroWarnings(props: Record<string, unknown>): GovernanceWarning[] {
       severity: "warning",
       message: "Hero block has no headline.",
       fieldPath: "headline",
+    })
+  }
+
+  const mediaNorm = normalizeMediaReference({
+    imageUrl: props.mediaUrl,
+    imageAlt: props.mediaAlt,
+    assetId: props.mediaAssetId,
+  })
+
+  if (mediaNorm.sourceType === "invalid") {
+    warnings.push({
+      id: "hero-media-invalid",
+      severity: "warning",
+      message: mediaNorm.warning ?? "Hero media URL is invalid or not allowed for rendering.",
+      fieldPath: "mediaUrl",
+    })
+  }
+
+  if (mediaNorm.sourceType === "external") {
+    warnings.push({
+      id: "hero-media-external",
+      severity: "info",
+      message:
+        "External HTTPS hero media. Ensure you trust the host; the admin preview may not load external images.",
+      fieldPath: "mediaUrl",
+    })
+  }
+
+  if (mediaNorm.requiresAlt && !mediaAlt.trim()) {
+    warnings.push({
+      id: "hero-no-media-alt",
+      severity: "info",
+      message: "Hero image has no alt text. Add alt text for accessibility.",
+      fieldPath: "mediaAlt",
+    })
+  }
+
+  if (mediaNorm.sourceType === "placeholder") {
+    warnings.push({
+      id: "hero-media-placeholder",
+      severity: "info",
+      message:
+        mediaNorm.warning ??
+        "Hero media asset is selected without a renderable URL; verify media configuration.",
+      fieldPath: "mediaUrl",
     })
   }
 

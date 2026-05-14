@@ -15,14 +15,12 @@ export function AdminFieldGroup({ title, description, children, className }: Adm
   return (
     <fieldset
       className={cn(
-        "space-y-3 rounded-lg border admin-border admin-surface-muted p-4",
+        "admin-surface-fieldset admin-inspector-field-group space-y-3 p-4",
         className,
       )}
     >
-      <legend className="px-1 text-xs font-semibold uppercase tracking-wide admin-text">
-        {title}
-      </legend>
-      {description ? <p className="-mt-1 text-xs admin-text-muted">{description}</p> : null}
+      <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] admin-text">{title}</legend>
+      {description ? <p className="-mt-0.5 text-xs leading-relaxed admin-text-muted">{description}</p> : null}
       <div className="space-y-3">{children}</div>
     </fieldset>
   )

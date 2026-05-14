@@ -7,14 +7,12 @@ import {
   createDefaultSeoMetadata,
   getAvailableActionsForStatus,
   getPresetForBlockType,
-  getTransitionActionLabel,
   isSupportedPresetBlockType,
 } from "@sovereign-cms/core"
-import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
 import { renderAdminBlock } from "@/components/admin-block-renderer-registry"
-import { AdminCard, AdminEmptyState } from "@/components/admin-ui"
+import { AdminEmptyState, AdminButton, AdminSectionCard } from "@/components/admin-ui"
 import { clientEditorPersistence } from "@/lib/client-editor-persistence"
 import { clientPageStatusPersistence } from "@/lib/client-page-status-persistence"
 import { mergeProps } from "@/lib/merge-props"
@@ -28,15 +26,17 @@ import { EditorLiveRegion } from "@/components/editor-live-region"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import { EditorBlockCard } from "@/components/editor/editor-block-card"
 import { EditorHint, EditorSection } from "@/components/editor/patterns"
+import { getEditorTransitionActionLabel } from "@/lib/editor-action-labels"
 
 type PageEditorClientProps = {
   page: CmsPage
   blocks: CmsBlock[]
   tenant: AdminTenantContext
-  runtimeConfig: RuntimeConfig
+  /** DB adapter id for read-only context (string from server — not full RuntimeConfig). */
+  databaseAdapterLabel: string
 }
 
-export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEditorClientProps) {
+export function PageEditorClient({ page, blocks, tenant, databaseAdapterLabel }: PageEditorClientProps) {
   const { message, announce } = useEditorAnnouncements()
   const {
     selectedBlockId,
@@ -143,8 +143,8 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     // Select new block for immediate editing
     setSelectedBlockId(newBlock.id)
     setInsertAfterBlockId(null)
-    announce(`Block added: ${definition.label}`)
-    announce(`Block selected: ${newBlock.type}`)
+    announce(`Block hinzugefügt: ${definition.label}`)
+    announce(`Block ausgewählt: ${newBlock.type}`)
 
     // Mark as dirty
     setIsDirty(true)
@@ -154,14 +154,14 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     setDraftBlocks(moveBlockUp(draftBlocks, blockId))
     setSelectedBlockId(blockId)
     setIsDirty(true)
-    announce("Block moved up")
+    announce("Block nach oben verschoben")
   }
 
   const handleMoveBlockDown = (blockId: string) => {
     setDraftBlocks(moveBlockDown(draftBlocks, blockId))
     setSelectedBlockId(blockId)
     setIsDirty(true)
-    announce("Block moved down")
+    announce("Block nach unten verschoben")
   }
 
   const handleDeleteBlock = (blockId: string) => {
@@ -177,7 +177,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
     }
 
     setIsDirty(true)
-    announce("Block deleted")
+    announce("Block entfernt")
   }
 
   const handleTransitionPageStatus = async (action: ContentTransitionAction) => {
@@ -197,7 +197,7 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
       }
     } catch (error) {
       console.error("[editor] failed to transition page status", error)
-      setStatusTransitionError("Status transition failed")
+      setStatusTransitionError("Statuswechsel ist fehlgeschlagen")
     } finally {
       setIsTransitioningStatus(false)
     }
@@ -225,139 +225,170 @@ export function PageEditorClient({ page, blocks, tenant, runtimeConfig }: PageEd
         setIsDirty(false)
         setLastSavedAt(result.savedAt)
         setLastSavedStatus(result.status)
-        announce("Changes saved")
+        announce("Änderungen gespeichert")
       }
     } catch (error) {
       console.error("[editor] failed to save draft", error)
-      setSaveError("Save failed")
-      announce("Save failed")
+      setSaveError("Speichern fehlgeschlagen")
+      announce("Speichern fehlgeschlagen")
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <>
       <EditorLiveRegion message={message} />
-      {/* Blocks / Preview Area */}
-      <div className="lg:col-span-2 space-y-6" role="region" aria-label="Page blocks preview">
-        <EditorToolbar
-          isDirty={isDirty}
-          isSaving={isSaving}
-          saveError={saveError}
-          lastSavedAt={lastSavedAt}
-          lastSavedStatus={lastSavedStatus}
-          currentPageStatus={currentPageStatus}
-          onSave={handleSave}
-          canSave={!isSaving && isDirty}
-        />
+      <div className="admin-editor-workspace">
+        <a href="#inspector-panel" className="admin-skip-to-inspector">
+          Zum Inspector springen
+        </a>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6 xl:gap-8">
+          <div className="space-y-6 lg:col-span-2" role="region" aria-label="Seiteninhalt und Blöcke">
+            <EditorToolbar
+              isDirty={isDirty}
+              isSaving={isSaving}
+              saveError={saveError}
+              lastSavedAt={lastSavedAt}
+              lastSavedStatus={lastSavedStatus}
+              currentPageStatus={currentPageStatus}
+              onSave={handleSave}
+              canSave={!isSaving && isDirty}
+              footer={
+                <>
+                  {statusTransitionError ? (
+                    <EditorHint tone="danger">Status: {statusTransitionError}</EditorHint>
+                  ) : null}
+                  <div
+                    className={cn(
+                      "admin-editor-workflow-foot",
+                      statusTransitionError ? "mt-3" : "",
+                    )}
+                  >
+                    <div className="admin-editor-workflow-intro">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] admin-text-muted">
+                        Veröffentlichung
+                      </p>
+                      <p className="mt-1 text-xs leading-snug admin-text-muted">
+                        Nächster sichtbarer Schritt für die Seite — nur wenn der aktuelle Status es zulässt.
+                      </p>
+                    </div>
+                    <div className="admin-editor-workflow-actions">
+                      {getAvailableActionsForStatus(currentPageStatus).map((action) => (
+                        <AdminButton
+                          key={action}
+                          type="button"
+                          variant={
+                            action === "publish"
+                              ? "primary"
+                              : action === "archive"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          size="sm"
+                          onClick={() => handleTransitionPageStatus(action)}
+                          disabled={isTransitioningStatus}
+                          className="min-w-26"
+                          aria-label={getEditorTransitionActionLabel(action)}
+                        >
+                          {isTransitioningStatus ? "…" : getEditorTransitionActionLabel(action)}
+                        </AdminButton>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              }
+            />
 
-        <EditorSection title="Page Status Actions">
-          <AdminCard className="p-4 space-y-3">
-            {statusTransitionError ? (
-              <EditorHint tone="danger">Status transition error: {statusTransitionError}</EditorHint>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              {getAvailableActionsForStatus(currentPageStatus).map((action) => (
-                <button
-                  key={action}
-                  type="button"
-                  onClick={() => handleTransitionPageStatus(action)}
-                  disabled={isTransitioningStatus}
-                  className={cn(
-                    "rounded px-3 py-1 text-xs font-medium transition-all duration-200 admin-focus-ring",
-                    isTransitioningStatus
-                      ? "cursor-not-allowed admin-surface-muted admin-text-muted"
-                      : action === "publish"
-                        ? "bg-emerald-700 text-white hover:bg-emerald-800 active:scale-95"
-                        : action === "archive"
-                          ? "bg-orange-700 text-white hover:bg-orange-800 active:scale-95"
-                          : "bg-amber-700 text-white hover:bg-amber-800 active:scale-95",
-                  )}
-                >
-                  {isTransitioningStatus ? "..." : getTransitionActionLabel(action)}
-                </button>
-              ))}
-            </div>
-          </AdminCard>
-        </EditorSection>
+            <BlockPalette
+              onAddBlock={addBlock}
+              insertAfterBlockId={insertAfterBlockId}
+              onClearInsertPosition={() => setInsertAfterBlockId(null)}
+            />
 
-        {/* Block Palette */}
-        <BlockPalette
-          onAddBlock={addBlock}
-          insertAfterBlockId={insertAfterBlockId}
-          onClearInsertPosition={() => setInsertAfterBlockId(null)}
-        />
+            <EditorSection title={`Blöcke (${orderedBlocks.length})`}>
+              <div className="admin-editor-canvas p-4 sm:p-5">
+                {orderedBlocks.length === 0 ? (
+                  <AdminEmptyState
+                    title="Noch keine Blöcke"
+                    description="Fügen Sie den ersten Block über die Palette unten ein."
+                  />
+                ) : (
+                  <div className="space-y-3" role="list">
+                    {orderedBlocks.map((block, index) => {
+                      const isFirst = index === 0
+                      const isLast = index === orderedBlocks.length - 1
 
-        <EditorSection title={`Blocks (${orderedBlocks.length})`}>
-          <AdminCard className="p-4 space-y-2">
-            {orderedBlocks.length === 0 ? (
-              <AdminEmptyState
-                title="No blocks yet"
-                description="Add your first block from the block palette."
-              />
-            ) : (
-              <div className="space-y-2" role="list">
-                {orderedBlocks.map((block, index) => {
-                  const isFirst = index === 0
-                  const isLast = index === orderedBlocks.length - 1
-
-                  return (
-                    <EditorBlockCard
-                      key={block.id}
-                      block={block}
-                      isSelected={selectedBlockId === block.id}
-                      isFirst={isFirst}
-                      isLast={isLast}
-                      onSelect={() => {
-                        setSelectedBlockId(block.id)
-                        announce(`Block selected: ${block.type}`)
-                      }}
-                      onMoveUp={() => !isFirst && handleMoveBlockUp(block.id)}
-                      onMoveDown={() => !isLast && handleMoveBlockDown(block.id)}
-                      onDelete={() => handleDeleteBlock(block.id)}
-                      onInsertAfter={() => setInsertAfterBlockId(block.id)}
-                    >
-                      {renderAdminBlock(block)}
-                    </EditorBlockCard>
-                  )
-                })}
+                      return (
+                        <EditorBlockCard
+                          key={block.id}
+                          block={block}
+                          isSelected={selectedBlockId === block.id}
+                          isInsertAfterTarget={insertAfterBlockId === block.id}
+                          isFirst={isFirst}
+                          isLast={isLast}
+                          onSelect={() => {
+                            setSelectedBlockId(block.id)
+                            announce(`Block ausgewählt: ${block.type}`)
+                          }}
+                          onMoveUp={() => !isFirst && handleMoveBlockUp(block.id)}
+                          onMoveDown={() => !isLast && handleMoveBlockDown(block.id)}
+                          onDelete={() => handleDeleteBlock(block.id)}
+                          onInsertAfter={() => setInsertAfterBlockId(block.id)}
+                        >
+                          {renderAdminBlock(block)}
+                        </EditorBlockCard>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </AdminCard>
-        </EditorSection>
-      </div>
+            </EditorSection>
+          </div>
 
-      {/* Sticky Inspector */}
-      <div className="lg:col-span-1" role="region" aria-label="Inspector">
-        <div className="sticky top-8 space-y-4">
-          {/* Inspector */}
-          <AdminCard className="p-0 overflow-hidden">
-            <div className="border-b admin-border px-6 py-4 admin-surface-muted">
-              <h2 className="text-lg font-semibold admin-text">Inspector</h2>
-            </div>
-            <div className="p-4">
-              <EditorInspector
-                selectedBlock={selectedBlock}
-                onUpdateProps={updateBlockProps}
-                tenantId={tenant.tenantId}
-                pageSeo={pageSeo}
-                onUpdatePageSeo={updatePageSeo}
-              />
-            </div>
-          </AdminCard>
+          <div id="inspector-panel" className="lg:col-span-1" role="region" aria-label="Inspector">
+            <div className="admin-inspector-sticky-col space-y-4 lg:sticky lg:top-6">
+              <div className="admin-inspector-shell">
+                <div className="admin-section-card-head admin-section-card-glass-head border-b admin-border px-5 py-4">
+                  <h2 className="text-base font-semibold tracking-tight admin-text">Inspector</h2>
+                  <p className="mt-0.5 text-xs admin-text-muted">Block-Eigenschaften und Seiten-SEO</p>
+                </div>
+                <div className="admin-inspector-scroll max-h-[min(68vh,46rem)] overflow-y-auto overscroll-y-contain p-4 lg:max-h-[min(72vh,52rem)]">
+                  <EditorInspector
+                    selectedBlock={selectedBlock}
+                    onUpdateProps={updateBlockProps}
+                    tenantId={tenant.tenantId}
+                    pageSeo={pageSeo}
+                    onUpdatePageSeo={updatePageSeo}
+                  />
+                </div>
+              </div>
 
-          {/* Info Card */}
-          <AdminCard className="p-4 text-xs space-y-2">
-            <p className="font-medium admin-text">Meta</p>
-            <div className="space-y-1 admin-text-muted">
-              <p><span className="admin-text-muted">Tenant:</span> {tenant.tenantId}</p>
-              <p><span className="admin-text-muted">Source:</span> {tenant.source}</p>
-              <p><span className="admin-text-muted">DB:</span> {runtimeConfig.databaseAdapter}</p>
+              <AdminSectionCard
+                dense
+                variant="default"
+                title="Kontext"
+                description="Nur-Lese-Hinweise zu dieser Editor-Sitzung."
+              >
+                <dl className="space-y-2 text-xs admin-text-muted">
+                  <div className="flex justify-between gap-2">
+                    <dt>Tenant</dt>
+                    <dd className="truncate font-mono admin-text">{tenant.tenantId}</dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt>Quelle</dt>
+                    <dd className="truncate admin-text">{tenant.source}</dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt>DB adapter</dt>
+                    <dd className="truncate font-mono admin-text">{databaseAdapterLabel}</dd>
+                  </div>
+                </dl>
+              </AdminSectionCard>
             </div>
-          </AdminCard>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

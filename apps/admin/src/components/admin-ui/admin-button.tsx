@@ -15,15 +15,15 @@ type AdminButtonProps = {
 
 const variantClasses: Record<AdminButtonVariant, string> = {
   primary:
-    "admin-accent-bg admin-text border admin-border hover:opacity-90 active:scale-95 transition-all",
+    "admin-accent-bg admin-text border admin-border hover:opacity-90 active:scale-[0.98] transition-[opacity,transform,background-color,border-color] duration-200 ease-out motion-reduce:active:scale-100",
   secondary:
-    "admin-surface-muted admin-text border admin-border hover:opacity-90 active:scale-95 transition-all",
+    "admin-surface-muted admin-text border admin-border hover:opacity-90 active:scale-[0.98] transition-[opacity,transform,background-color,border-color] duration-200 ease-out motion-reduce:active:scale-100",
   destructive:
-    "bg-destructive/90 text-destructive-foreground border border-destructive/50 hover:bg-destructive active:scale-95 transition-all",
+    "bg-destructive/90 text-destructive-foreground border border-destructive/50 hover:bg-destructive active:scale-[0.98] transition-[opacity,transform,background-color,border-color] duration-200 ease-out motion-reduce:active:scale-100",
   outline:
-    "bg-transparent admin-text border-2 admin-border hover:admin-surface-muted active:scale-95 transition-all",
+    "bg-transparent admin-text border-2 admin-border hover:admin-surface-muted active:scale-[0.98] transition-[opacity,transform,background-color,border-color] duration-200 ease-out motion-reduce:active:scale-100",
   ghost:
-    "bg-transparent admin-text hover:admin-surface-muted active:scale-95 transition-all",
+    "bg-transparent admin-text hover:admin-surface-muted active:scale-[0.98] transition-[opacity,transform,background-color] duration-200 ease-out motion-reduce:active:scale-100",
 }
 
 const sizeClasses: Record<AdminButtonSize, string> = {

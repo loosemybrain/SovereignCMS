@@ -6,10 +6,11 @@ import type {
   FeatureGridBlockProps,
   ImageTextBlockProps,
 } from "@sovereign-cms/core"
+import { normalizeMediaReference } from "@sovereign-cms/core"
 import { PublicContactForm } from "@/components/public-contact-form"
 import { PublicExternalEmbed } from "@/components/public-external-embed"
 import { parseJsonSafe } from "@/lib/parse-json-safe"
-import { isValidHref, isValidImageUrl } from "@/lib/safe-url-validation"
+import { isValidHref } from "@/lib/safe-url-validation"
 
 type Props = {
   block: BlockInstance
@@ -210,14 +211,19 @@ export function PublicBlockRenderer({
       )
     }
     case "image-text": {
-      const props = (block.props ?? {}) as ImageTextBlockProps
+      const props = (block.props ?? {}) as ImageTextBlockProps & { mediaAssetId?: string | null }
       const headline = String(props.headline ?? "")
       const body = String(props.body ?? "")
-      const imageUrl = String(props.imageUrl ?? "")
-      const imageAlt = String(props.imageAlt ?? headline ?? "Image")
       const imagePosition = props.imagePosition === "left" ? "left" : "right"
       const ctaLabel = String(props.ctaLabel ?? "")
       const ctaHref = String(props.ctaHref ?? "")
+
+      const normalized = normalizeMediaReference({
+        imageUrl: props.imageUrl,
+        imageAlt: props.imageAlt,
+        assetId: props.mediaAssetId,
+      })
+      const imageAltDisplay = normalized.alt || headline || "Image"
 
       const contentElement = (
         <div className="flex flex-col justify-center">
@@ -240,16 +246,17 @@ export function PublicBlockRenderer({
         </div>
       )
 
-      const imageElement = isValidImageUrl(imageUrl) ? (
-        <div className="relative h-80">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt={imageAlt}
-            className="w-full h-full object-cover rounded-lg"
-          />
-        </div>
-      ) : null
+      const imageElement =
+        normalized.isRenderable && normalized.safeUrl ? (
+          <div className="relative h-80">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={normalized.safeUrl}
+              alt={imageAltDisplay}
+              className="h-full w-full rounded-lg object-cover"
+            />
+          </div>
+        ) : null
 
       return (
         <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">

@@ -27,10 +27,11 @@ export default async function PrivacyPage() {
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminPageHeader
+        eyebrow="Compliance"
         title="Privacy"
-        description="Privacy scan jobs and manual review"
+        description="Privacy-Scan-Jobs und manuelle Prüfung (Foundation-UI)."
       />
 
       <PrivacyScannerPanel tenantId={tenant.tenantId} initialScans={scans} />

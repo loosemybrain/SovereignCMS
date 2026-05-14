@@ -3,7 +3,7 @@ import { createLocaleContext } from "@sovereign-cms/runtime"
 import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CreateNavigationItemForm } from "@/components/create-navigation-item-form"
-import { AdminDataTable, AdminDataTableHeadRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
+import { AdminDataTable, AdminDataTableBody, AdminDataTableCell, AdminDataTableHeadRow, AdminDataTableRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader, AdminSectionCard } from "@/components/admin-ui"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
@@ -47,22 +47,30 @@ export default async function NavigationPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Navigation" description="Manage navigation items by locale" />
-
-      <AdminLocaleSwitcher
-        activeLocale={activeLocale}
-        localeContext={localeContext}
-        createHref={createHref}
+      <AdminPageHeader
+        eyebrow="Navigation"
+        title="Hauptmenü"
+        description="Menüeinträge und Ziele pro Sprache — strukturiert bearbeiten, ohne die öffentliche Darstellung zu wechseln."
       />
 
-      <CreateNavigationItemForm
-        key={`navigation-create-${activeLocale}`}
-        tenantId={tenant.tenantId}
-        activeLocale={activeLocale}
-        pages={pages}
-      />
+      <AdminSectionCard variant="elevated" title="Sprache & Bearbeitung" description={`Aktive Sprache: ${activeLocale}.`}>
+        <div className="space-y-4">
+          <AdminLocaleSwitcher
+            activeLocale={activeLocale}
+            localeContext={localeContext}
+            createHref={createHref}
+          />
+          <CreateNavigationItemForm
+            key={`navigation-create-${activeLocale}`}
+            tenantId={tenant.tenantId}
+            activeLocale={activeLocale}
+            pages={pages}
+          />
+        </div>
+      </AdminSectionCard>
 
-      <AdminDataTable>
+      <AdminSectionCard variant="glass" title="Einträge" description={`${items.length} Einträge für diese Sprache.`}>
+        <AdminDataTable>
         <AdminDataTableHeadRow>
           <AdminDataTableTh>Label</AdminDataTableTh>
           <AdminDataTableTh>Type</AdminDataTableTh>
@@ -70,33 +78,34 @@ export default async function NavigationPage({ searchParams }: Props) {
           <AdminDataTableTh>Status</AdminDataTableTh>
           <AdminDataTableTh>Sort</AdminDataTableTh>
         </AdminDataTableHeadRow>
-        <tbody className="divide-y admin-border">
+        <AdminDataTableBody>
           {items.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-4 py-10 text-center admin-text-muted">
+            <AdminDataTableRow hover={false}>
+              <AdminDataTableCell className="px-4 py-10 text-center admin-text-muted" colSpan={5}>
                 <AdminEmptyState
                   title={`Keine Navigation Items fuer Locale ${activeLocale}`}
                   description="Erstelle ein Item ueber das Formular oben."
                 />
-              </td>
-            </tr>
+              </AdminDataTableCell>
+            </AdminDataTableRow>
           ) : (
             items.map((item) => (
-              <tr key={item.id} className="admin-row-hover">
-                <td className="px-4 py-3 admin-text">{item.label}</td>
-                <td className="px-4 py-3 admin-text-muted">{item.type}</td>
-                <td className="px-4 py-3 font-mono text-xs admin-text-muted">
+              <AdminDataTableRow key={item.id}>
+                <AdminDataTableCell>{item.label}</AdminDataTableCell>
+                <AdminDataTableCell className="admin-text-muted">{item.type}</AdminDataTableCell>
+                <AdminDataTableCell className="font-mono text-xs admin-text-muted">
                   {item.type === "page" ? item.pageId : item.href}
-                </td>
-                <td className="px-4 py-3">
+                </AdminDataTableCell>
+                <AdminDataTableCell>
                   <ContentStatusBadge status={item.status} />
-                </td>
-                <td className="px-4 py-3 admin-text-muted">{item.sortOrder}</td>
-              </tr>
+                </AdminDataTableCell>
+                <AdminDataTableCell className="admin-text-muted">{item.sortOrder}</AdminDataTableCell>
+              </AdminDataTableRow>
             ))
           )}
-        </tbody>
+        </AdminDataTableBody>
       </AdminDataTable>
+      </AdminSectionCard>
     </div>
   )
 }

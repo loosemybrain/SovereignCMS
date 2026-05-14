@@ -39,37 +39,38 @@ export function AdminStatCard({
   return (
     <div
       className={cn(
-        "rounded-lg border p-5 transition-all duration-300",
-        "admin-border admin-surface hover:shadow-md",
-        variant === "highlight" && "admin-accent-bg admin-accent border-admin-accent glow-sm",
+        "admin-surface-stat admin-surface-interactive relative overflow-hidden p-5 motion-reduce:hover:translate-y-0",
+        "transition-[box-shadow,border-color,transform] duration-200 ease-out motion-reduce:transition-[box-shadow,border-color]",
+        variant === "default" &&
+          "shadow-sm hover:border-[color-mix(in_oklab,var(--admin-accent)_32%,var(--admin-border))] hover:shadow-md",
+        variant === "highlight" &&
+          "admin-accent-bg border-[color-mix(in_oklab,var(--admin-accent)_48%,var(--admin-border))] shadow-md hover:shadow-lg",
         showAnimation && "animate-slide-up",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {icon && <div className="text-lg">{icon}</div>}
-            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">
-              {title}
-            </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2.5">
+            {icon ? <span className="admin-stat-icon-well shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span> : null}
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] admin-text-muted">{title}</p>
           </div>
 
           <p
             className={cn(
               "mt-3 font-mono text-3xl font-bold tracking-tight",
-              variant === "highlight" ? "admin-accent-foreground" : "admin-text",
+              variant === "highlight" ? "admin-accent" : "admin-text",
             )}
           >
             {value}
           </p>
 
           {(description || trend) && (
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               {trend && (
                 <span
                   className={cn(
-                    "text-xs font-semibold flex items-center gap-1",
+                    "flex items-center gap-1 text-xs font-semibold",
                     trend.direction === "up" && "text-emerald-500",
                     trend.direction === "down" && "text-red-500",
                     trend.direction === "neutral" && "admin-text-muted",
@@ -81,22 +82,18 @@ export function AdminStatCard({
                   {trend.value}%
                 </span>
               )}
-              {description && <p className="text-xs admin-text-muted">{description}</p>}
+              {description && <p className="text-xs leading-relaxed admin-text-muted">{description}</p>}
             </div>
           )}
 
-          {sparklineData && (
-            <div className="mt-4 -mx-2">
-              <AdminSparkline
-                data={sparklineData}
-                color={sparklineColor}
-                animated={showAnimation}
-              />
+          {sparklineData && sparklineData.length > 0 ? (
+            <div className="admin-stat-sparkline-wrap -mx-0.5 mt-4">
+              <AdminSparkline data={sparklineData} color={sparklineColor} animated={showAnimation} />
             </div>
-          )}
+          ) : null}
         </div>
 
-        {chart && <div className="flex-shrink-0">{chart}</div>}
+        {chart ? <div className="flex-shrink-0">{chart}</div> : null}
       </div>
     </div>
   )

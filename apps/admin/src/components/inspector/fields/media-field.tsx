@@ -50,6 +50,11 @@ export function MediaField({
               })
             }}
           />
+          <p className="mt-2 text-xs leading-relaxed admin-text-muted">
+            Öffentliche Darstellung: nur normalisierte, sichere URLs (intern ab / oder https://). Externe Bilder
+            werden in der Admin-Vorschau nicht automatisch nachgeladen. Uploads und CDN-Umwandlung sind nicht
+            Bestandteil dieser Phase — Auswahl verweist auf bestehende Medien-Einträge.
+          </p>
         </div>
       )}
     </AdminField>

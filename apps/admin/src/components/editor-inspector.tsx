@@ -30,20 +30,28 @@ type EditorInspectorProps = {
 
 function BlockInfo({ block }: { block: CmsBlock }) {
   return (
-    <div className="space-y-1 text-xs admin-text-muted">
-      <p>
-        <span className="font-medium">Type:</span> {block.type}
-      </p>
-      <p>
-        <span className="font-medium">ID:</span> {block.id}
-      </p>
-      <p>
-        <span className="font-medium">Sort:</span> {block.sortOrder}
-      </p>
-      <p>
-        <span className="font-medium">Visibility:</span> {block.visibility}
-      </p>
-    </div>
+    <dl className="admin-gov-nested-surface grid gap-2 px-3 py-2.5 text-[11px] admin-text-muted">
+      <div className="flex justify-between gap-2">
+        <dt className="font-medium admin-text">Typ</dt>
+        <dd className="truncate font-medium capitalize admin-text">{block.type}</dd>
+      </div>
+      <div className="flex justify-between gap-2">
+        <dt className="font-medium admin-text">Position</dt>
+        <dd className="font-mono tabular-nums admin-text">{block.sortOrder}</dd>
+      </div>
+      <div className="flex justify-between gap-2">
+        <dt className="font-medium admin-text">Sichtbarkeit</dt>
+        <dd className="rounded-md border admin-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide admin-text">
+          {block.visibility}
+        </dd>
+      </div>
+      <div className="border-t border-[color-mix(in_oklab,var(--admin-border)_75%,transparent)] pt-2">
+        <dt className="sr-only">Block-ID</dt>
+        <dd className="break-all font-mono text-[10px] leading-snug opacity-60" title={block.id}>
+          {block.id}
+        </dd>
+      </div>
+    </dl>
   )
 }
 
@@ -112,7 +120,7 @@ function PropsEditing({
   if (fields.length === 0) {
     return (
       <p className="text-xs admin-text-muted">
-        No inspector fields registered for block type &quot;{block.type}&quot;
+        Für den Blocktyp „{block.type}“ sind keine Inspector-Felder registriert.
       </p>
     )
   }
@@ -171,21 +179,6 @@ function PropsEditing({
     <div className="space-y-3">
       <EditorValidationSummary errors={validationSummary} />
 
-      {governanceWarnings.length > 0 && (
-        <InspectorSection title="Content Hinweise" description="Hinweise zum Block-Inhalt (nicht blockierend)" raw>
-          <div className="space-y-2">
-            {governanceWarnings.map((warning) => (
-              <AdminAlert
-                key={warning.id}
-                variant={warning.severity === "warning" ? "warning" : "info"}
-                icon={<GovernanceIcon severity={warning.severity} />}
-              >
-                {warning.message}
-              </AdminAlert>
-            ))}
-          </div>
-        </InspectorSection>
-      )}
       {nonEmptySectionKeys.map((sectionKey) => {
         const sectionFields = sectionBuckets[sectionKey]
         return (
@@ -193,11 +186,35 @@ function PropsEditing({
             key={sectionKey}
             title={INSPECTOR_SECTION_LABELS[sectionKey]}
             dense
+            variant="default"
           >
-            <div className="space-y-2">{sectionFields.map(renderField)}</div>
+            <div className="space-y-2.5">{sectionFields.map(renderField)}</div>
           </AdminSectionCard>
         )
       })}
+
+      {governanceWarnings.length > 0 && (
+        <AdminSectionCard
+          title="Inhaltshinweise"
+          description="Hinweise zum Block-Inhalt (nicht blockierend)"
+          variant="default"
+          dense
+          className="border-[color-mix(in_oklab,var(--admin-accent)_12%,var(--admin-border))]"
+        >
+          <div className="space-y-2.5">
+            {governanceWarnings.map((warning) => (
+              <AdminAlert
+                key={warning.id}
+                variant={warning.severity === "warning" ? "warning" : "info"}
+                icon={<GovernanceIcon severity={warning.severity} />}
+                className="shadow-sm ring-1 ring-inset ring-[color-mix(in_oklab,var(--admin-border)_50%,transparent)]"
+              >
+                {warning.message}
+              </AdminAlert>
+            ))}
+          </div>
+        </AdminSectionCard>
+      )}
     </div>
   )
 }
@@ -212,27 +229,28 @@ export function EditorInspector({
   // If no block is selected, show page SEO editor
   if (selectedBlock === null) {
     return (
-      <div className="space-y-5 text-sm" aria-label="Inspector panel">
-        <InspectorSection title="No block selected">
+      <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
+        <InspectorSection title="Kein Block ausgewählt">
           <EditorHint tone="info">
-            Select a block from the list to edit its properties. You can still edit page SEO below.
+            Wählen Sie einen Block in der Liste, um dessen Eigenschaften zu bearbeiten. Die Seiten-SEO können Sie
+            weiter unten anpassen.
           </EditorHint>
         </InspectorSection>
-        <InspectorSection title="SEO Metadata">
+        <InspectorSection title="SEO">
           {onUpdatePageSeo ? (
             <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
           ) : (
-            <p className="text-xs admin-text-muted">SEO editing is not available in this view.</p>
+            <p className="text-xs admin-text-muted">SEO-Bearbeitung ist in dieser Ansicht nicht verfügbar.</p>
           )}
         </InspectorSection>
 
         {pageSeo && (
           <InspectorSection
-            title="Debug Preview: Raw SEO"
-            description="Debug preview for current SEO metadata."
+            title="Debug: Rohdaten SEO"
+            description="Nur zur Kontrolle — keine Eingabe."
             raw
           >
-            <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
+            <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
               {JSON.stringify(pageSeo, null, 2)}
             </pre>
           </InspectorSection>
@@ -243,8 +261,8 @@ export function EditorInspector({
 
   // Block is selected: show block properties
   return (
-    <div className="space-y-5 text-sm" aria-label="Inspector panel">
-      <InspectorSection title="Block Info">
+    <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
+      <InspectorSection title="Block-Info">
         <BlockInfo block={selectedBlock} />
       </InspectorSection>
 
@@ -261,33 +279,33 @@ export function EditorInspector({
       </InspectorSection>
 
       <InspectorSection
-        title="SEO Metadata"
-        description="Page-level SEO metadata can be edited independently of the selected block."
+        title="SEO"
+        description="Seitenweite Metadaten — unabhängig vom ausgewählten Block bearbeitbar."
       >
         {onUpdatePageSeo ? (
           <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
         ) : (
-          <EditorHint tone="info">SEO editing is not available in this view.</EditorHint>
+          <EditorHint tone="info">SEO-Bearbeitung ist in dieser Ansicht nicht verfügbar.</EditorHint>
         )}
       </InspectorSection>
 
       <InspectorSection
-        title="Debug Preview: Raw Props"
-        description="Debug preview for current block props."
+        title="Debug: Rohdaten Block"
+        description="Nur zur Kontrolle — keine Eingabe."
         raw
       >
-        <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
+        <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
           {JSON.stringify(selectedBlock.props, null, 2)}
         </pre>
       </InspectorSection>
 
       {pageSeo ? (
         <InspectorSection
-          title="Debug Preview: Raw SEO"
-          description="Debug preview for current SEO metadata."
+          title="Debug: Rohdaten SEO"
+          description="Nur zur Kontrolle — keine Eingabe."
           raw
         >
-          <pre className="admin-bg border admin-border rounded p-2 text-xs overflow-x-auto admin-text-muted">
+          <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
             {JSON.stringify(pageSeo, null, 2)}
           </pre>
         </InspectorSection>

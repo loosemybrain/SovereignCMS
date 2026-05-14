@@ -1,0 +1,326 @@
+/**
+ * Phase 56 — Admin visual governance (scoped to .admin-theme-root via usage in admin app).
+ * Accent rhythm, motion, surfaces, tables. Does not replace theme tokens in globals.css;
+ * calibrates intensity and documents intent (see docs/architecture/editorial-ux-governance-phase-56.md).
+ */
+
+.admin-theme-root {
+  --admin-gov-ease: var(--admin-motion-ease);
+  --admin-gov-duration: var(--admin-motion-duration);
+  --admin-gov-duration-fast: var(--admin-motion-duration-fast);
+}
+
+/* --- Motion: default interaction rhythm (reduced motion: globals already clamps animations) --- */
+.admin-gov-transition {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--admin-gov-duration);
+  transition-timing-function: var(--admin-gov-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-gov-transition {
+    transition-duration: 1ms;
+  }
+}
+
+/* --- Surfaces: calmer workspace wash (less accent competition) --- */
+.admin-theme-root .admin-main-scroll {
+  background: radial-gradient(
+      ellipse 120% 65% at 50% -12%,
+      color-mix(in oklch, var(--admin-accent) 6%, transparent),
+      transparent 50%
+    ),
+    var(--admin-bg);
+}
+
+/* --- Section headers: flatter strip (gradient reserved for nav + primary CTAs) --- */
+.admin-theme-root .admin-section-card-head {
+  background: linear-gradient(
+    95deg,
+    color-mix(in oklch, var(--admin-accent) 8%, var(--admin-surface-muted)) 0%,
+    color-mix(in oklch, var(--admin-surface-muted) 92%, var(--admin-surface)) 100%
+  );
+}
+
+.admin-theme-root .admin-section-card-elevated {
+  border-color: color-mix(in oklch, var(--admin-border) 92%, var(--admin-accent));
+  box-shadow: 0 10px 28px -22px color-mix(in oklch, black 28%, transparent),
+    0 1px 0 color-mix(in oklch, white 4%, transparent);
+}
+
+.admin-theme-root[data-theme="light"] .admin-section-card-elevated {
+  box-shadow: 0 12px 32px -24px color-mix(in oklch, black 14%, transparent),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Softer card lift (editorial, less bounce) */
+.admin-theme-root .admin-card-lift {
+  transition: box-shadow var(--admin-gov-duration) var(--admin-gov-ease),
+    border-color var(--admin-gov-duration) var(--admin-gov-ease),
+    transform var(--admin-gov-duration) var(--admin-gov-ease);
+}
+
+.admin-theme-root .admin-card-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px -26px color-mix(in oklch, black 30%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme-root .admin-card-lift:hover {
+    transform: none;
+  }
+}
+
+/* --- Editor chrome: less glow, clearer canvas --- */
+.admin-theme-root .admin-editor-workspace {
+  border-color: color-mix(in oklch, var(--admin-border) 88%, transparent);
+  background: var(--admin-bg);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 5%, transparent);
+}
+
+.admin-theme-root .admin-editor-canvas {
+  border-color: var(--admin-border);
+  box-shadow: 0 12px 32px -28px color-mix(in oklch, black 28%, transparent),
+    inset 0 1px 0 color-mix(in oklch, white 5%, transparent);
+}
+
+.admin-theme-root .admin-inspector-shell {
+  box-shadow: 0 8px 24px -18px color-mix(in oklch, black 22%, transparent);
+}
+
+.admin-theme-root .admin-block-card-selected {
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--admin-accent) 28%, transparent),
+    0 8px 22px -14px color-mix(in oklch, var(--admin-accent) 18%, black);
+}
+
+/* Dark theme: keep lift subtle (globals layer wins on specificity without this) */
+.admin-theme-root[data-theme="dark"] .admin-card-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 38px -30px color-mix(in oklch, black 48%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme-root[data-theme="dark"] .admin-card-lift:hover {
+    transform: none;
+  }
+}
+
+/* Stat icon wells: no colored glow */
+.admin-theme-root .admin-stat-icon-well {
+  box-shadow: none;
+  background: color-mix(in oklch, var(--admin-surface-muted) 88%, var(--admin-surface));
+  border-color: color-mix(in oklch, var(--admin-border) 92%, transparent);
+}
+
+/* --- Topbar: calmer separation from accent border --- */
+.admin-theme-root .admin-topbar {
+  z-index: var(--admin-z-sticky-topbar);
+  border-bottom-color: color-mix(in oklch, var(--admin-border) 88%, var(--admin-accent));
+  box-shadow: 0 1px 0 color-mix(in oklch, white 5%, transparent),
+    0 8px 24px -18px color-mix(in oklch, black 18%, transparent);
+}
+
+/* --- Table shell (scroll + sticky header live on .admin-gov-table-scroll) --- */
+.admin-surface-table-wrap {
+  box-shadow: var(--admin-shadow-xs);
+}
+
+.admin-theme-root[data-theme="dark"] .admin-surface-table-wrap {
+  box-shadow: 0 1px 0 color-mix(in oklch, white 4%, transparent);
+}
+
+/* Sticky table header when horizontal scroll container is the only scroll (safe default) */
+.admin-gov-table-scroll {
+  position: relative;
+}
+
+.admin-gov-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--admin-z-sticky-table-head);
+  background: color-mix(in oklch, var(--admin-surface-muted) 94%, var(--admin-surface));
+  box-shadow: 0 1px 0 color-mix(in oklch, var(--admin-border) 80%, transparent);
+}
+
+/* Nested card bodies: flatten (inspector / lists) */
+.admin-gov-nested-surface {
+  background: color-mix(in oklch, var(--admin-surface-muted) 35%, var(--admin-surface));
+  border: 1px solid color-mix(in oklch, var(--admin-border) 70%, transparent);
+  border-radius: 0.65rem;
+}
+
+/* Editor: unified primary action rail (save + status) */
+.admin-gov-editor-action-rail {
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklch, var(--admin-border) 88%, transparent);
+  background: color-mix(in oklch, var(--admin-surface-muted) 18%, var(--admin-surface));
+  box-shadow: 0 10px 28px -22px color-mix(in oklch, black 26%, transparent);
+}
+
+.admin-gov-editor-action-rail > .admin-editor-toolbar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: var(--admin-z-sticky-editor-toolbar);
+  background: color-mix(in oklch, var(--admin-surface-muted) 35%, var(--admin-surface));
+  border-bottom: 1px solid color-mix(in oklch, var(--admin-border) 85%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .admin-gov-editor-action-rail > .admin-editor-toolbar-sticky {
+    background: color-mix(in oklch, var(--admin-surface-muted) 55%, var(--admin-surface));
+  }
+}
+
+/* Compact metadata strip in editor toolbar */
+.admin-gov-meta-panel {
+  border-color: color-mix(in oklch, var(--admin-border) 82%, transparent) !important;
+  background: color-mix(in oklch, var(--admin-surface-muted) 45%, var(--admin-surface)) !important;
+}
+
+.admin-gov-meta-panel dl {
+  font-size: 0.6875rem;
+}
+
+/* Table row hover — same timing token, softer edge bar */
+.admin-theme-root .admin-row-hover {
+  transition: background-color var(--admin-gov-duration) var(--admin-gov-ease),
+    box-shadow var(--admin-gov-duration) var(--admin-gov-ease);
+}
+
+.admin-theme-root .admin-row-hover:hover {
+  background-color: color-mix(in oklch, var(--admin-surface-muted) 72%, var(--admin-surface));
+  box-shadow: inset 2px 0 0 color-mix(in oklch, var(--admin-accent) 32%, transparent);
+}
+
+/* Inspector field focus — calmer than default mix */
+.admin-theme-root .admin-inspector-field:focus-within {
+  border-color: color-mix(in oklch, var(--admin-accent) 26%, var(--admin-border));
+  background: color-mix(in oklch, var(--admin-surface-muted) 38%, transparent);
+}
+
+/* Debug / raw JSON cards — visually recess */
+.admin-theme-root .admin-inspector-debug {
+  opacity: 0.82;
+}
+
+.admin-theme-root .admin-inspector-debug .admin-section-card-head {
+  background: color-mix(in oklch, var(--admin-surface-muted) 96%, var(--admin-bg));
+}
+
+/* Block palette type icon — neutral surface, accent icon only */
+.admin-palette-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklch, var(--admin-border) 85%, transparent);
+  background: color-mix(in oklch, var(--admin-surface-muted) 78%, var(--admin-surface));
+  color: var(--admin-accent);
+  box-shadow: none;
+}
+
+/* --- Phase 58 — sticky column, skip link, inspector rhythm, block focus --- */
+.admin-theme-root .admin-inspector-sticky-col {
+  z-index: var(--admin-z-sticky-inspector-column);
+}
+
+.admin-theme-root .admin-skip-to-inspector {
+  position: fixed;
+  left: 0.75rem;
+  top: 0.65rem;
+  z-index: var(--admin-z-skip-link);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in oklch, var(--admin-border) 80%, var(--admin-accent));
+  background: color-mix(in oklch, var(--admin-surface) 92%, var(--admin-accent-muted));
+  color: var(--admin-text);
+  box-shadow: var(--admin-shadow-sm);
+  transform: translateY(-160%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform var(--admin-gov-duration) var(--admin-gov-ease),
+    opacity var(--admin-gov-duration) var(--admin-gov-ease);
+}
+
+.admin-theme-root .admin-skip-to-inspector:focus {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--admin-focus-glow), var(--admin-shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-theme-root .admin-skip-to-inspector {
+    transition-duration: 1ms;
+  }
+}
+
+.admin-theme-root .admin-inspector-scroll {
+  scroll-padding-top: 0.75rem;
+  scroll-padding-bottom: 1rem;
+}
+
+.admin-theme-root .admin-inspector-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--admin-inspector-stack-gap);
+}
+
+.admin-theme-root .admin-inspector-section {
+  min-width: 0;
+}
+
+.admin-theme-root .admin-inspector-field-group {
+  border-style: solid;
+  border-color: color-mix(in oklch, var(--admin-border) 88%, transparent);
+  box-shadow: var(--admin-shadow-xs);
+}
+
+.admin-theme-root .admin-inspector-simple-list-item {
+  border-style: dashed;
+  border-color: color-mix(in oklch, var(--admin-border) 78%, transparent);
+  background: color-mix(in oklch, var(--admin-surface-muted) 22%, var(--admin-surface-raised));
+}
+
+.admin-theme-root .admin-inspector-simple-list-item legend {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--admin-text-muted);
+}
+
+.admin-theme-root .admin-editor-block-selectable:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--admin-accent) 72%, var(--admin-border));
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--admin-focus-glow);
+}
+
+.admin-theme-root .admin-block-card-selected.admin-editor-block-selectable:focus-visible {
+  outline-offset: 4px;
+}
+
+/* Toolbar destructive: calmer strip (still clearly risky) */
+.admin-theme-root .admin-surface-toolbar .admin-toolbar-destructive-quiet {
+  box-shadow: none;
+  background: color-mix(in oklch, var(--destructive) 78%, var(--admin-surface));
+  border-color: color-mix(in oklch, var(--destructive) 45%, var(--admin-border));
+}
+
+.admin-theme-root .admin-page-header-actions,
+.admin-theme-root .admin-topbar-actions {
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .admin-theme-root .admin-page-header-actions,
+  .admin-theme-root .admin-topbar-actions {
+    gap: 0.625rem;
+  }
+}

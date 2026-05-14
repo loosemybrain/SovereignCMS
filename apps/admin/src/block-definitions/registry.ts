@@ -70,7 +70,8 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         label: "Hero Image",
         type: "media",
         section: "media",
-        description: "Select an image asset for the hero block.",
+        description:
+          "Medien-Asset für den Hero wählen. URL und Alt werden aus dem Eintrag übernommen; öffentliche Ausgabe nutzt nur sichere, normalisierte Bild-URLs (siehe Governance-Dokumentation).",
         mediaType: "image",
       },
     ],
@@ -424,16 +425,18 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         label: "Image URL",
         type: "text",
         section: "media",
-        description: "Full URL to the image.",
-        placeholder: "https://example.com/image.jpg",
+        description:
+          "Erlaubt: interner Pfad ab / (z. B. /images/foto.jpg) oder externe https://-URL. Nicht erlaubt: http://, data:, javascript:, vbscript:. Später: Verknüpfung über Medien-Assets (mediaAssetId) — noch ohne Upload-Pipeline.",
+        placeholder: "/images/beispiel.jpg oder https://…",
       },
       {
         key: "imageAlt",
         label: "Image Alt Text",
         type: "text",
         section: "media",
-        description: "Accessibility text for the image.",
-        placeholder: "Descriptive alt text",
+        description:
+          "Kurzer Alternativtext für barrierefreie Darstellung — bei darstellbarem Bild empfohlen bzw. in der Prüfung hervorgehoben.",
+        placeholder: "Beschreibender Alternativtext",
       },
       {
         key: "ctaLabel",

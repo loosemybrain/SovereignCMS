@@ -39,12 +39,16 @@ export type {
 } from "./navigation"
 export { validateNavigationLabel, validateExternalHref } from "./navigation"
 export type {
+  MediaSourceType,
+  MediaReference,
+  NormalizedMediaReference,
   MediaAssetType,
   MediaAsset,
   CreateMediaAssetInput,
   CreateMediaAssetResult,
 } from "./media"
 export {
+  normalizeMediaReference,
   validateMediaTitle,
   validateMediaUrl,
   MEDIA_ASSET_TYPES,

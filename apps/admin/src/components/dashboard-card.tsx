@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { AdminStatCard, type SparklineColor } from "@/components/admin-ui"
 
 type DashboardCardProps = {
@@ -5,6 +6,7 @@ type DashboardCardProps = {
   value: string | number
   description?: string
   variant?: "default" | "highlight"
+  icon?: ReactNode
   sparklineData?: number[]
   sparklineColor?: SparklineColor
 }
@@ -14,6 +16,7 @@ export function DashboardCard({
   value,
   description,
   variant = "default",
+  icon,
   sparklineData,
   sparklineColor = "primary",
 }: DashboardCardProps) {
@@ -23,6 +26,7 @@ export function DashboardCard({
       value={value}
       description={description}
       variant={variant}
+      icon={icon}
       sparklineData={sparklineData}
       sparklineColor={sparklineColor}
     />

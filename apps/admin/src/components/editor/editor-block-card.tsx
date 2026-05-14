@@ -9,6 +9,8 @@ import { AdminButton } from "@/components/admin-ui"
 type EditorBlockCardProps = {
   block: CmsBlock
   isSelected: boolean
+  /** When user chose “insert after” on this block — show insertion affordance. */
+  isInsertAfterTarget?: boolean
   isFirst: boolean
   isLast: boolean
   children: ReactNode
@@ -22,6 +24,7 @@ type EditorBlockCardProps = {
 export function EditorBlockCard({
   block,
   isSelected,
+  isInsertAfterTarget,
   isFirst,
   isLast,
   children,
@@ -37,7 +40,7 @@ export function EditorBlockCard({
         role="button"
         tabIndex={0}
         aria-pressed={isSelected}
-        aria-label={`Select block ${block.type} at position ${block.sortOrder}`}
+        aria-label={`Block ${block.type} an Position ${block.sortOrder} auswählen`}
         onClick={(event) => {
           event.stopPropagation()
           onSelect()
@@ -49,13 +52,18 @@ export function EditorBlockCard({
           }
         }}
         className={cn(
-          "cursor-pointer rounded-lg border p-4 transition-all duration-200 admin-focus-ring animate-scale-in",
-          isSelected
-            ? "border-sky-500 admin-accent-bg ring-1 ring-sky-400/40 shadow-md"
-            : "admin-border hover:shadow-md hover:border-[color-mix(in_oklab,var(--admin-accent)_55%,var(--admin-border))]",
+          "admin-editor-block-selectable relative cursor-pointer overflow-hidden p-4",
+          isInsertAfterTarget && "admin-insert-target-ring z-[1] border-[color-mix(in_oklab,var(--admin-accent)_65%,var(--admin-border))]",
+          isSelected ? "admin-block-card-selected z-[1]" : "admin-surface-block-card",
         )}
       >
-        <div className="space-y-2">
+        {isSelected ? (
+          <span
+            className="pointer-events-none absolute inset-y-3 left-0 w-1 rounded-full bg-linear-to-b from-sky-400 via-indigo-500 to-violet-600 opacity-90"
+            aria-hidden
+          />
+        ) : null}
+        <div className="relative space-y-3">
           <BlockToolbar
             blockType={block.type}
             sortOrder={block.sortOrder}
@@ -66,23 +74,23 @@ export function EditorBlockCard({
             onMoveDown={onMoveDown}
             onDelete={onDelete}
           />
-          <div className="text-xs px-2 py-1 rounded admin-surface-muted admin-text-muted w-fit">
-            {block.visibility}
-          </div>
-          <div className="pt-2 border-t admin-border mt-2">{children}</div>
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs admin-text-muted font-mono pt-1">{block.id}</p>
+          <div className="admin-surface-meta-pill">{block.visibility}</div>
+          <div className="mt-1 border-t admin-border pt-3">{children}</div>
+          <div className="flex items-center justify-between gap-2 border-t admin-border pt-3">
+            <p className="max-w-[58%] truncate font-mono text-[10px] tracking-tight admin-text-muted opacity-60" title={block.id}>
+              {block.id}
+            </p>
             <AdminButton
               type="button"
               variant="secondary"
-              className="px-2 py-1 text-xs"
+              className="shrink-0 px-3 py-1.5 text-xs"
               onClick={(event) => {
                 event.stopPropagation()
                 onInsertAfter()
               }}
-              aria-label={`Insert block after ${block.type}`}
+              aria-label={`Neuen Block nach ${block.type} einfügen`}
             >
-              Insert after
+              Danach einfügen
             </AdminButton>
           </div>
         </div>

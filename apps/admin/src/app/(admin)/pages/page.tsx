@@ -4,7 +4,7 @@ import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CompositionDebugPanel } from "@/components/composition-debug-panel"
 import { CreatePageForm } from "@/components/create-page-form"
-import { AdminDataTable, AdminDataTableHeadRow, AdminDataTableTh, AdminDataTableBody, AdminDataTableRow, AdminDataTableCell, AdminEmptyState, AdminPageHeader } from "@/components/admin-ui"
+import { AdminDataTable, AdminDataTableBody, AdminDataTableCell, AdminDataTableHeadRow, AdminDataTableRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader, AdminSectionCard, AdminStatusBadge } from "@/components/admin-ui"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 type Props = {
@@ -36,14 +36,27 @@ export default async function PagesListPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Pages" description="Manage your CMS pages" />
+      <AdminPageHeader eyebrow="Content" title="Pages" description="Manage your CMS pages" />
 
-      {/* Locale Switcher */}
-      <AdminLocaleSwitcher
-        activeLocale={activeLocale}
-        localeContext={localeContext}
-        createHref={createHref}
-      />
+      <AdminSectionCard variant="elevated" title="Locale & overview" description="Switch locale, then browse or create pages for that locale.">
+        <div className="space-y-4">
+          <AdminLocaleSwitcher
+            activeLocale={activeLocale}
+            localeContext={localeContext}
+            createHref={createHref}
+          />
+          <div className="flex flex-wrap items-center gap-2 text-xs admin-text-muted">
+            <span>Locale</span>
+            <AdminStatusBadge>{activeLocale}</AdminStatusBadge>
+            <span className="opacity-50">·</span>
+            <span>Variants</span>
+            <AdminStatusBadge variant="muted">{pageVariantsCount}</AdminStatusBadge>
+            <span className="opacity-50">·</span>
+            <span>Logical</span>
+            <AdminStatusBadge variant="muted">{logicalPagesCount}</AdminStatusBadge>
+          </div>
+        </div>
+      </AdminSectionCard>
 
       <CreatePageForm
         tenantId={tenant.tenantId}
@@ -57,19 +70,6 @@ export default async function PagesListPage({ searchParams }: Props) {
         runtimeDefaultLocale={localeContext.defaultLocale}
       />
 
-      {/* Page Counts Info */}
-      <div className="flex flex-wrap gap-4 text-xs">
-        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
-          Showing pages for locale: <span className="font-medium admin-text">{activeLocale}</span>
-        </div>
-        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
-          Total variants: <span className="font-medium admin-text">{pageVariantsCount}</span>
-        </div>
-        <div className="px-3 py-2 rounded admin-surface border admin-border admin-text-muted">
-          Logical pages: <span className="font-medium admin-text">{logicalPagesCount}</span>
-        </div>
-      </div>
-
       {error === true ? (
         <div className="rounded-xl border admin-border admin-callout-error p-4 text-sm">
           Failed to load pages. Please try again.
@@ -80,7 +80,8 @@ export default async function PagesListPage({ searchParams }: Props) {
           description="Other locale variants may exist. Use locale switcher above to view them."
         />
       ) : (
-        <AdminDataTable>
+        <AdminSectionCard variant="glass" title="Page list" description={`All page records for locale ${activeLocale}.`}>
+          <AdminDataTable>
           <AdminDataTableHeadRow>
             <AdminDataTableTh>Title</AdminDataTableTh>
             <AdminDataTableTh>Slug</AdminDataTableTh>
@@ -114,7 +115,8 @@ export default async function PagesListPage({ searchParams }: Props) {
               </AdminDataTableRow>
             ))}
           </AdminDataTableBody>
-        </AdminDataTable>
+          </AdminDataTable>
+        </AdminSectionCard>
       )}
     </div>
   )
