@@ -6,6 +6,24 @@ export type {
   CmsBlock,
 } from "./cms"
 export type {
+  SovereignRole,
+  SovereignPermission,
+  TenantAccess,
+  AuthorizationSubject,
+} from "./authorization"
+export {
+  AuthorizationError,
+  hasTenantRole,
+  hasTenantPermission,
+  canAccessTenant,
+} from "./authorization"
+export type {
+  TenantUserStatus,
+  TenantUserMembership,
+  TenantUserMembershipInput,
+} from "./tenant-access"
+export { isActiveTenantMembership } from "./tenant-access"
+export type {
   BlockType,
   BlockInstance,
   BlockDefinition,

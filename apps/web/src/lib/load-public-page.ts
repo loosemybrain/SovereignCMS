@@ -2,6 +2,7 @@ import type { BlockInstance, PreviewContext } from "@sovereign-cms/core"
 import type { PageRecord } from "@sovereign-cms/db"
 import type { TenantContext } from "@sovereign-cms/tenancy"
 import {
+  assertTenantScope,
   createRuntime,
   mapSeoMetadataToPublicViewModel,
   mapSettingsToPublicFooterViewModel,
@@ -45,10 +46,15 @@ export async function loadPublicPage(input: {
     console.info("[sovereign:web] tenant resolved", tenant.id)
   }
 
-  // Resolve page using public resolution with preview context
-  const page = await runtime.publicPageResolution.resolvePage({
+  const tenantScope = assertTenantScope({
     tenantId: tenant.id,
     locale: input.locale,
+  })
+
+  // Resolve page using public resolution with preview context
+  const page = await runtime.publicPageResolution.resolvePage({
+    tenantId: tenantScope.tenantId,
+    locale: tenantScope.locale ?? input.locale,
     slug: input.slug,
     preview: previewContext,
   })
@@ -58,8 +64,8 @@ export async function loadPublicPage(input: {
   }
 
   // Load blocks
-  const blocksRaw = await runtime.db.blocks.listByPage({
-    tenantId: tenant.id,
+  const blocksRaw = await runtime.content.listBlocks({
+    tenantId: tenantScope.tenantId,
     pageId: page.id,
   })
   const blocks = blocksRaw.filter((block) => block.visibility === "visible") as BlockInstance[]
@@ -68,7 +74,7 @@ export async function loadPublicPage(input: {
   }
 
   const navigation = await runtime.publicNavigationResolution.resolveNavigation({
-    tenantId: tenant.id,
+    tenantId: tenantScope.tenantId,
     locale: input.locale,
     preview: previewContext,
     scope: "main",
@@ -78,7 +84,7 @@ export async function loadPublicPage(input: {
   }
 
   const footerNavigation = await runtime.publicNavigationResolution.resolveNavigation({
-    tenantId: tenant.id,
+    tenantId: tenantScope.tenantId,
     locale: input.locale,
     preview: previewContext,
     scope: "footer",
@@ -88,7 +94,7 @@ export async function loadPublicPage(input: {
   }
 
   const settings = await runtime.settingsPersistence.getTenantSettings({
-    tenantId: tenant.id,
+    tenantId: tenantScope.tenantId,
   })
 
   const footer = mapSettingsToPublicFooterViewModel({

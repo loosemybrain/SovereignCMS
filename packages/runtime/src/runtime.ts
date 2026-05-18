@@ -21,9 +21,12 @@ import { createPublicNavigationResolution } from "./public-navigation-resolution
 import { createSettingsPersistence } from "./settings-persistence"
 import { createPrivacyScannerPersistence } from "./privacy-scanner-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
+import { resolveContentPersistenceAdapter } from "./persistence"
+import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 
 export type SovereignRuntime = {
   config: RuntimeConfig
+  content: ContentPersistenceAdapter
   db: DatabaseAdapter
   storage: StorageAdapter
   auth: AuthProvider
@@ -44,6 +47,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const mergedConfig: RuntimeConfig = { ...baseConfig, ...config }
 
   const db = selectDatabaseAdapter(mergedConfig)
+  const content = resolveContentPersistenceAdapter(mergedConfig, db)
   const storage = selectStorageAdapter(mergedConfig)
   const auth = selectAuthProvider(mergedConfig)
   const tenantResolver = createDatabaseTenantResolver(db)
@@ -52,13 +56,14 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const pageCreationPersistence = createPageCreationPersistence({ db })
   const navigationPersistence = createNavigationPersistence({ db })
   const mediaPersistence = createMediaPersistence({ db })
-  const publicPageResolution = createPublicPageResolution({ db })
+  const publicPageResolution = createPublicPageResolution({ content })
   const publicNavigationResolution = createPublicNavigationResolution({ db })
   const settingsPersistence = createSettingsPersistence({ db })
   const privacyScannerPersistence = createPrivacyScannerPersistence({ db })
 
   return {
     config: mergedConfig,
+    content,
     db,
     storage,
     auth,

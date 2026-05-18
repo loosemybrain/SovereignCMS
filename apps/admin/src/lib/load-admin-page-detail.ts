@@ -1,7 +1,7 @@
 import type { CmsBlock, CmsPage, LocaleContext, NavigationItem } from "@sovereign-cms/core"
 import type { PageGovernanceNavigationItem } from "@/lib/page-governance"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
-import { createLocaleContext } from "@sovereign-cms/runtime"
+import { assertTenantScope, createLocaleContext } from "@sovereign-cms/runtime"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
@@ -46,10 +46,15 @@ export async function loadAdminPageDetail(input: {
     localeContext,
   })
 
+  const tenantScope = assertTenantScope({
+    tenantId: tenant.tenantId,
+    locale: activeLocale,
+  })
+
   try {
-    const page = await runtime.db.pages.findBySlug({
-      tenantId: tenant.tenantId,
-      locale: activeLocale,
+    const page = await runtime.content.getPageBySlug({
+      tenantId: tenantScope.tenantId,
+      locale: tenantScope.locale ?? activeLocale,
       slug: input.slug,
     })
 
@@ -67,13 +72,13 @@ export async function loadAdminPageDetail(input: {
     }
 
     const [blocks, navigationItems] = await Promise.all([
-      runtime.db.blocks.listByPage({
-        tenantId: tenant.tenantId,
+      runtime.content.listBlocks({
+        tenantId: tenantScope.tenantId,
         pageId: page.id,
       }),
       runtime.db.navigation.listByTenant({
-        tenantId: tenant.tenantId,
-        locale: activeLocale,
+        tenantId: tenantScope.tenantId,
+        locale: tenantScope.locale ?? activeLocale,
       }),
     ])
 

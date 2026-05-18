@@ -36,7 +36,8 @@ export function selectDatabaseAdapter(config: RuntimeConfig): DatabaseAdapter {
     case "memory":
       return createInMemoryAdapter()
     case "supabase":
-      throw new Error("Adapter not implemented yet: supabase database")
+      // Phase 66: content reads use Supabase via `runtime.content`; other repos stay in-memory until extraction.
+      return createInMemoryAdapter()
     case "postgres":
       throw new Error("Adapter not implemented yet: postgres database")
   }

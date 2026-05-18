@@ -17,8 +17,8 @@ npm run sprint:finish -- --phase <label>
 Ohne `--phase` wird die **neueste** `docs/migration/phase-*-result.md` (Änderungsdatum) verwendet.
 
 Das Skript führt nacheinander aus: `typecheck` → `lint` → `build` → zwei ZIPs unter `artifacts/phase-zips/`:
-- `SovereignCMS-<label>-nur-Aenderungen.zip`
-- `SovereignCMS-<label>-repo-slim.zip`
+- `SovereignCMS-<label>-nur-Aenderungen.zip` (ohne Pfade unter `artifacts/`)
+- `SovereignCMS-<label>-repo-slim.zip` (ohne `node_modules`, `.next`, `.turbo`, `dist`, `artifacts`)
 
 Nur bei erfolgreicher Validierung fortfahren. Bei Fehlern: beheben, erneut `sprint:finish` — **kein ZIP bei rotem Build**.
 

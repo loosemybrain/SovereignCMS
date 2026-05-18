@@ -96,7 +96,7 @@ npm run phase:zip -- --phase 54
 ```
 
 1. **Nur Änderungen** — alle Dateien, die Git gegenüber `HEAD` als geändert, gestaged oder untracked (respektive `.gitignore`) meldet.
-2. **Slim-Repo-Snapshot** — Projektbaum inkl. **`.git`**, aber ohne **`node_modules`**, **`.next`**, **`.turbo`** und **`dist`** (überall im Baum).
+2. **Slim-Repo-Snapshot** — Projektbaum inkl. **`.git`**, aber ohne **`node_modules`**, **`.next`**, **`.turbo`**, **`dist`** und **`artifacts`** (überall im Baum).
 
 Die Archive liegen unter **`artifacts/phase-zips/`** (`.gitignore`). Voraussetzung: `git` und `tar` im `PATH`.
 
