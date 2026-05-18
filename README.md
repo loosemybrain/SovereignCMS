@@ -73,25 +73,41 @@ Current public runtime in `apps/web`:
 
 ### Phasen-Artefakte (ZIP)
 
-Nach einem **erfolgreichen** Migrationsschritt (z. B. nach bestandenem `typecheck` / `lint` / `build`) **immer** die beiden ZIP-Dateien erzeugen — das gehört zum festen Abschluss einer Phase (Delta + slim Repo).
+Nach jedem **Sprint / Phasenschritt** gehören Validierung und ZIP-Artefakte zum festen Abschluss.
 
-1. **Nur Änderungen** — alle Dateien, die Git gegenüber `HEAD` als geändert, gestaged oder untracked (respektive `.gitignore`) meldet.
-2. **Slim-Repo-Snapshot** — Projektbaum inkl. **`.git`**, aber ohne **`node_modules`**, **`.next`**, **`.turbo`** und **`dist`** (überall im Baum).
+**Empfohlen (automatisch):**
 
-Die Archive liegen standardmäßig im Projekt unter **`artifacts/phase-zips/`** (Ordner ist per `.gitignore` ausgeschlossen). Voraussetzung: `git` und `tar` im `PATH`.
+```bash
+npm run sprint:finish -- --phase 61
+```
+
+Führt nacheinander `typecheck`, `lint`, `build` aus und erzeugt danach die beiden ZIPs. Ohne `--phase` wird die neueste Datei `docs/migration/phase-*-result.md` verwendet.
+
+Nur ZIPs (Phase auto oder Zeitstempel):
+
+```bash
+npm run sprint:zip
+```
+
+Manuell mit festem Label:
 
 ```bash
 npm run phase:zip -- --phase 54
 ```
+
+1. **Nur Änderungen** — alle Dateien, die Git gegenüber `HEAD` als geändert, gestaged oder untracked (respektive `.gitignore`) meldet.
+2. **Slim-Repo-Snapshot** — Projektbaum inkl. **`.git`**, aber ohne **`node_modules`**, **`.next`**, **`.turbo`** und **`dist`** (überall im Baum).
+
+Die Archive liegen unter **`artifacts/phase-zips/`** (`.gitignore`). Voraussetzung: `git` und `tar` im `PATH`.
 
 Anderes Zielverzeichnis (optional):
 
 ```bash
 set SOVEREIGN_PHASE_ZIP_DIR=C:\Pfad\zu\Archiven
-npm run phase:zip -- --phase 54
+npm run sprint:finish -- --phase 54
 ```
 
-Ohne `--phase` wird ein Zeitstempel im Dateinamen verwendet.
+Umgebungsvariable `SPRINT_PHASE=61` setzt das Label, wenn `--phase` fehlt.
 
 Targeted runs:
 

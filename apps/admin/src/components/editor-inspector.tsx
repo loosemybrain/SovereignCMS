@@ -1,100 +1,54 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type RefObject } from "react"
 import type { CmsBlock } from "@sovereign-cms/core"
 import { InspectorFieldRenderer } from "./inspector/inspector-field-renderer"
 import { SeoEditorSection } from "@/components/seo-editor-section"
 import type { SeoMetadata } from "@sovereign-cms/core"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
 import { validateFieldValue } from "@/lib/field-validation"
-import { getBlockGovernanceWarnings } from "@/lib/content-governance"
+import { getBlockGovernanceIssues } from "@/lib/content-governance"
+import { GovernanceCategoryIcon } from "@/lib/governance-category-icons"
+import type { GovernanceSeverity } from "@sovereign-cms/core"
+import { EditorValidationSummary, InspectorSection } from "@/components/editor/patterns"
+import { AdminEmptyState, AdminSectionCard } from "@/components/admin-ui"
+import { EditorSelectedBlockContext } from "@/components/editor/editor-selected-block-context"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getBlockEditorPosition } from "@/lib/editor-block-context"
 import {
-  EditorHint,
-  EditorValidationSummary,
-  InspectorSection,
-} from "@/components/editor/patterns"
-import { AdminAlert, AdminSectionCard } from "@/components/admin-ui"
-import {
-  INSPECTOR_SECTION_LABELS,
+  getInspectorSectionLabels,
   INSPECTOR_SECTION_ORDER,
   bucketInspectorFieldsBySection,
 } from "@/components/inspector/inspector-sections"
+import { cn } from "@sovereign-cms/ui"
 
 type EditorInspectorProps = {
   selectedBlock: CmsBlock | null
+  orderedBlocks: CmsBlock[]
   onUpdateProps?: (blockId: string, newProps: Record<string, unknown>) => void
   tenantId?: string
   pageSeo?: SeoMetadata | null
   onUpdatePageSeo?: (patch: Partial<SeoMetadata>) => void
+  topAnchorRef?: RefObject<HTMLDivElement | null>
 }
 
-function BlockInfo({ block }: { block: CmsBlock }) {
-  return (
-    <dl className="admin-gov-nested-surface grid gap-2 px-3 py-2.5 text-[11px] admin-text-muted">
-      <div className="flex justify-between gap-2">
-        <dt className="font-medium admin-text">Typ</dt>
-        <dd className="truncate font-medium capitalize admin-text">{block.type}</dd>
-      </div>
-      <div className="flex justify-between gap-2">
-        <dt className="font-medium admin-text">Position</dt>
-        <dd className="font-mono tabular-nums admin-text">{block.sortOrder}</dd>
-      </div>
-      <div className="flex justify-between gap-2">
-        <dt className="font-medium admin-text">Sichtbarkeit</dt>
-        <dd className="rounded-md border admin-border px-1.5 py-0.5 text-[10px] uppercase tracking-wide admin-text">
-          {block.visibility}
-        </dd>
-      </div>
-      <div className="border-t border-[color-mix(in_oklab,var(--admin-border)_75%,transparent)] pt-2">
-        <dt className="sr-only">Block-ID</dt>
-        <dd className="break-all font-mono text-[10px] leading-snug opacity-60" title={block.id}>
-          {block.id}
-        </dd>
-      </div>
-    </dl>
-  )
-}
-
-/**
- * Build field patch from field value.
- * For media fields that return object patches, merge them.
- * For regular fields, wrap value under field key.
- */
 function buildFieldPatch(fieldKey: string, value: unknown): Record<string, unknown> {
-  // Media fields return object patches (e.g., { mediaAssetId, mediaUrl, mediaAlt })
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  ) {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
     return value as Record<string, unknown>
   }
-
-  // Regular fields wrap value under field key
-  return {
-    [fieldKey]: value,
-  }
+  return { [fieldKey]: value }
 }
 
-function GovernanceIcon({ severity }: { severity: "info" | "warning" }) {
-  if (severity === "warning") {
-    return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M12 9v4M12 17h.01M10.3 3.9L2.7 18.1c-.4.7.1 1.6.9 1.6h16.8c.8 0 1.3-.9.9-1.6L13.7 3.9c-.4-.7-1.4-.7-1.8 0z" />
-      </svg>
-    )
-  }
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4M12 8h.01" />
-    </svg>
-  )
+function governanceNoteClass(severity: GovernanceSeverity): string {
+  if (severity === "critical") return "admin-editorial-governance-note--critical"
+  if (severity === "warning") return "admin-editorial-governance-note--warning"
+  return "admin-editorial-governance-note--info"
 }
 
 function toSafeDomId(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9_-]/g, "-")
 }
+
 function PropsEditing({
   block,
   onUpdate,
@@ -104,11 +58,11 @@ function PropsEditing({
   onUpdate: (newProps: Record<string, unknown>) => void
   tenantId?: string
 }) {
-  // Safely read props
+  const { locale, messages: t } = useAdminI18n()
+  const ins = t.inspector
+  const sectionLabels = getInspectorSectionLabels(locale)
   const props =
-    block &&
-    typeof block.props === "object" &&
-    block.props !== null
+    block && typeof block.props === "object" && block.props !== null
       ? (block.props as Record<string, unknown>)
       : {}
 
@@ -116,51 +70,47 @@ function PropsEditing({
   const definition = getAdminBlockDefinition(block.type)
   const fields = definition?.inspectorFields ?? []
 
-  // No fields registered for this block type
   if (fields.length === 0) {
     return (
-      <p className="text-xs admin-text-muted">
-        Für den Blocktyp „{block.type}“ sind keine Inspector-Felder registriert.
+      <p className="text-xs leading-relaxed admin-text-muted">
+        {ins.noFieldsForType} „{block.type}“.
       </p>
     )
   }
 
   const sectionBuckets = bucketInspectorFieldsBySection(fields)
 
-  const getFieldError = (fieldKey: string, value: unknown, fieldValidations: typeof fields[number]["validations"]) => {
-    if (!touchedFields[fieldKey]) {
-      return null
-    }
+  const getFieldError = (fieldKey: string, value: unknown, fieldValidations: (typeof fields)[number]["validations"]) => {
+    if (!touchedFields[fieldKey]) return null
     const result = validateFieldValue(value, fieldValidations)
-    return result.valid ? null : result.errors[0] ?? "Invalid value."
+    return result.valid ? null : (result.errors[0] ?? "Invalid value.")
   }
 
   const renderField = (field: (typeof fields)[number]) => {
     const error = getFieldError(field.key, props[field.key], field.validations)
     const fieldId = `block-${toSafeDomId(block.id)}-field-${toSafeDomId(field.key)}`
     return (
-      <InspectorFieldRenderer
-        key={field.key}
-        id={fieldId}
-        field={field}
-        value={props[field.key]}
-        tenantId={tenantId}
-        invalid={Boolean(error)}
-        error={error}
-        onChange={(value) => {
-          setTouchedFields((prev) => ({ ...prev, [field.key]: true }))
-          onUpdate(buildFieldPatch(field.key, value))
-        }}
-      />
+      <div key={field.key} className="admin-inspector-field">
+        <InspectorFieldRenderer
+          id={fieldId}
+          field={field}
+          value={props[field.key]}
+          tenantId={tenantId}
+          invalid={Boolean(error)}
+          error={error}
+          onChange={(value) => {
+            setTouchedFields((prev) => ({ ...prev, [field.key]: true }))
+            onUpdate(buildFieldPatch(field.key, value))
+          }}
+        />
+      </div>
     )
   }
 
   const validationSummary = fields
     .map((field) => {
       const result = validateFieldValue(props[field.key], field.validations)
-      if (result.valid) {
-        return null
-      }
+      if (result.valid) return null
       return {
         fieldLabel: field.label,
         fieldId: `block-${toSafeDomId(block.id)}-field-${toSafeDomId(field.key)}`,
@@ -169,14 +119,11 @@ function PropsEditing({
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
 
-  const governanceWarnings = getBlockGovernanceWarnings(block)
-
-  const nonEmptySectionKeys = INSPECTOR_SECTION_ORDER.filter(
-    (sectionKey) => sectionBuckets[sectionKey].length > 0,
-  )
+  const governanceIssues = getBlockGovernanceIssues(block)
+  const nonEmptySectionKeys = INSPECTOR_SECTION_ORDER.filter((sectionKey) => sectionBuckets[sectionKey].length > 0)
 
   return (
-    <div className="space-y-3">
+    <div className="admin-inspector-props space-y-4">
       <EditorValidationSummary errors={validationSummary} />
 
       {nonEmptySectionKeys.map((sectionKey) => {
@@ -184,127 +131,127 @@ function PropsEditing({
         return (
           <AdminSectionCard
             key={sectionKey}
-            title={INSPECTOR_SECTION_LABELS[sectionKey]}
+            title={sectionLabels[sectionKey]}
             dense
             variant="default"
+            className="admin-inspector-props-section"
           >
-            <div className="space-y-2.5">{sectionFields.map(renderField)}</div>
+            <div className="admin-inspector-field-stack">{sectionFields.map(renderField)}</div>
           </AdminSectionCard>
         )
       })}
 
-      {governanceWarnings.length > 0 && (
+      {governanceIssues.length > 0 ? (
         <AdminSectionCard
-          title="Inhaltshinweise"
-          description="Hinweise zum Block-Inhalt (nicht blockierend)"
+          title={ins.governanceTitle}
+          description={ins.governanceDescription}
           variant="default"
           dense
-          className="border-[color-mix(in_oklab,var(--admin-accent)_12%,var(--admin-border))]"
+          className="admin-inspector-props-section admin-inspector-governance-section"
         >
-          <div className="space-y-2.5">
-            {governanceWarnings.map((warning) => (
-              <AdminAlert
-                key={warning.id}
-                variant={warning.severity === "warning" ? "warning" : "info"}
-                icon={<GovernanceIcon severity={warning.severity} />}
-                className="shadow-sm ring-1 ring-inset ring-[color-mix(in_oklab,var(--admin-border)_50%,transparent)]"
+          <ul className="admin-editorial-governance-list" role="list">
+            {governanceIssues.map((issue) => (
+              <li
+                key={issue.id}
+                className={cn("admin-editorial-governance-note", governanceNoteClass(issue.severity))}
               >
-                {warning.message}
-              </AdminAlert>
+                <GovernanceCategoryIcon category={issue.category} className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-80" />
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-xs leading-relaxed admin-text">{issue.message}</p>
+                  {issue.suggestion ? (
+                    <p className="text-[11px] leading-snug admin-text-muted">{issue.suggestion}</p>
+                  ) : null}
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </AdminSectionCard>
-      )}
+      ) : null}
     </div>
   )
 }
 
 export function EditorInspector({
   selectedBlock,
+  orderedBlocks,
   onUpdateProps,
   tenantId,
   pageSeo,
   onUpdatePageSeo,
+  topAnchorRef,
 }: EditorInspectorProps) {
-  // If no block is selected, show page SEO editor
+  const { messages: t } = useAdminI18n()
+  const ins = t.inspector
+  const o = t.editor.orientation
+
   if (selectedBlock === null) {
     return (
       <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
-        <InspectorSection title="Kein Block ausgewählt">
-          <EditorHint tone="info">
-            Wählen Sie einen Block in der Liste, um dessen Eigenschaften zu bearbeiten. Die Seiten-SEO können Sie
-            weiter unten anpassen.
-          </EditorHint>
-        </InspectorSection>
-        <InspectorSection title="SEO">
+        <div ref={topAnchorRef} className="h-px w-full shrink-0 scroll-mt-4" tabIndex={-1} aria-hidden />
+        <AdminEmptyState
+          title={o.emptyInspectorTitle}
+          description={o.emptyInspectorDescription}
+          className="admin-inspector-empty-state"
+        />
+        <InspectorSection title={ins.seo}>
           {onUpdatePageSeo ? (
             <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
           ) : (
-            <p className="text-xs admin-text-muted">SEO-Bearbeitung ist in dieser Ansicht nicht verfügbar.</p>
+            <p className="text-xs admin-text-muted">{ins.seoUnavailable}</p>
           )}
         </InspectorSection>
-
-        {pageSeo && (
-          <InspectorSection
-            title="Debug: Rohdaten SEO"
-            description="Nur zur Kontrolle — keine Eingabe."
-            raw
-          >
+        {pageSeo ? (
+          <InspectorSection title={ins.debugSeo} description={ins.debugHint} raw>
             <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
               {JSON.stringify(pageSeo, null, 2)}
             </pre>
           </InspectorSection>
-        )}
+        ) : null}
       </div>
     )
   }
 
-  // Block is selected: show block properties
+  const position = getBlockEditorPosition(selectedBlock.id, orderedBlocks)
+
   return (
     <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
-      <InspectorSection title="Block-Info">
-        <BlockInfo block={selectedBlock} />
-      </InspectorSection>
+      <div ref={topAnchorRef} className="h-px w-full shrink-0 scroll-mt-4" tabIndex={-1} aria-hidden />
+      {position ? (
+        <EditorSelectedBlockContext
+          block={selectedBlock}
+          displayIndex={position.displayIndex}
+          total={position.total}
+          className="admin-editor-inspector-context-sticky"
+        />
+      ) : null}
 
-      <InspectorSection title="Block-Eigenschaften">
+      <div className="admin-inspector-active-region">
         <PropsEditing
+          key={selectedBlock.id}
           block={selectedBlock}
           tenantId={tenantId}
           onUpdate={(newProps) => {
-            if (onUpdateProps) {
-              onUpdateProps(selectedBlock.id, newProps)
-            }
+            onUpdateProps?.(selectedBlock.id, newProps)
           }}
         />
-      </InspectorSection>
+      </div>
 
-      <InspectorSection
-        title="SEO"
-        description="Seitenweite Metadaten — unabhängig vom ausgewählten Block bearbeitbar."
-      >
+      <InspectorSection title={ins.seo} description={ins.seoPageDescription}>
         {onUpdatePageSeo ? (
           <SeoEditorSection seo={pageSeo} onUpdate={onUpdatePageSeo} tenantId={tenantId} />
         ) : (
-          <EditorHint tone="info">SEO-Bearbeitung ist in dieser Ansicht nicht verfügbar.</EditorHint>
+          <p className="text-xs admin-text-muted">{ins.seoUnavailable}</p>
         )}
       </InspectorSection>
 
-      <InspectorSection
-        title="Debug: Rohdaten Block"
-        description="Nur zur Kontrolle — keine Eingabe."
-        raw
-      >
+      <InspectorSection title={ins.debugBlock} description={ins.debugHint} raw>
         <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
           {JSON.stringify(selectedBlock.props, null, 2)}
         </pre>
       </InspectorSection>
 
       {pageSeo ? (
-        <InspectorSection
-          title="Debug: Rohdaten SEO"
-          description="Nur zur Kontrolle — keine Eingabe."
-          raw
-        >
+        <InspectorSection title={ins.debugSeo} description={ins.debugHint} raw>
           <pre className="admin-inspector-debug-pre admin-bg overflow-x-auto rounded-md p-3 font-mono admin-text-muted">
             {JSON.stringify(pageSeo, null, 2)}
           </pre>

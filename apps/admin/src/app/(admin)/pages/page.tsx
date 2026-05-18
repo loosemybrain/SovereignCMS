@@ -28,23 +28,13 @@ export default async function PagesListPage({ searchParams }: Props) {
     searchParams: params,
   })
 
-  const createHref = (locale: string) => {
-    const newParams = new URLSearchParams()
-    newParams.set("locale", locale)
-    return `/pages?${newParams.toString()}`
-  }
-
   return (
     <div className="space-y-6">
       <AdminPageHeader eyebrow="Content" title="Pages" description="Manage your CMS pages" />
 
       <AdminSectionCard variant="elevated" title="Locale & overview" description="Switch locale, then browse or create pages for that locale.">
         <div className="space-y-4">
-          <AdminLocaleSwitcher
-            activeLocale={activeLocale}
-            localeContext={localeContext}
-            createHref={createHref}
-          />
+          <AdminLocaleSwitcher activeLocale={activeLocale} localeContext={localeContext} />
           <div className="flex flex-wrap items-center gap-2 text-xs admin-text-muted">
             <span>Locale</span>
             <AdminStatusBadge>{activeLocale}</AdminStatusBadge>

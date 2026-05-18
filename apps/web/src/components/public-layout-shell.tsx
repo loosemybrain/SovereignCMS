@@ -15,7 +15,7 @@ export function PublicLayoutShell({ header, footer, previewEnabled, children }: 
   return (
     <>
       <PublicHeader header={header} previewEnabled={previewEnabled} />
-      <main className="flex flex-1 flex-col">{children}</main>
+      <main className="pub-main">{children}</main>
       <PublicFooter footer={footer} previewEnabled={previewEnabled} />
     </>
   )

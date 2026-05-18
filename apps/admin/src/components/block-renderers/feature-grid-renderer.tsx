@@ -1,4 +1,6 @@
 import type { CmsBlock } from "@sovereign-cms/core"
+import { cn } from "@sovereign-cms/ui"
+import { bp } from "@/components/block-renderers/preview-classes"
 import { parseJsonSafe } from "@/lib/parse-json-safe"
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -10,7 +12,7 @@ function asString(value: unknown, fallback = ""): string {
 }
 
 function asNumber(value: unknown, fallback = 3): number {
-  const num = typeof value === "number" ? value : (typeof value === "string" ? parseInt(value, 10) : NaN)
+  const num = typeof value === "number" ? value : typeof value === "string" ? parseInt(value, 10) : NaN
   return isNaN(num) ? fallback : num
 }
 
@@ -23,7 +25,6 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
   const headline = asString(props.headline)
   const intro = asString(props.intro)
 
-  // Prefer items, fallback to itemsJson for old content only
   let items = asArray(props.items)
   let usedFallback = false
 
@@ -38,34 +39,28 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
     }
   }
 
-  // Handle columns as string or number
   const columnsRaw = props.columns ?? "3"
   const columns = asNumber(columnsRaw, 3)
 
-  const gridColsClass = {
-    2: "grid-cols-2",
-    3: "grid-cols-3",
-    4: "grid-cols-4",
-  }[columns as 2 | 3 | 4] || "grid-cols-3"
+  const gridColsClass =
+    {
+      2: "grid-cols-2",
+      3: "grid-cols-3",
+      4: "grid-cols-4",
+    }[columns as 2 | 3 | 4] || "grid-cols-3"
 
   return (
-    <div className="space-y-4">
-      {usedFallback && (
-        <div className="rounded border border-amber-600 bg-amber-50 p-2">
-          <p className="text-xs text-amber-900 font-medium">
-            ℹ️ Using legacy itemsJson format. Consider re-saving with the new items editor.
-          </p>
-        </div>
-      )}
+    <div className={bp.stack}>
+      {usedFallback ? (
+        <p className={bp.noticeWarning}>
+          ℹ️ Using legacy itemsJson format. Consider re-saving with the new items editor.
+        </p>
+      ) : null}
 
-      {headline && (
-        <p className="font-semibold text-gray-900">{headline}</p>
-      )}
-      {intro && (
-        <p className="text-sm text-gray-600">{intro}</p>
-      )}
+      {headline ? <p className={bp.title}>{headline}</p> : null}
+      {intro ? <p className={bp.body}>{intro}</p> : null}
 
-      <div className={`grid ${gridColsClass} gap-4`}>
+      <div className={cn("grid gap-3", gridColsClass)}>
         {items.length > 0 ? (
           items.map((item, idx) => {
             const itemRecord = asRecord(item)
@@ -73,19 +68,14 @@ export function FeatureGridAdminRenderer({ block }: { block: CmsBlock }) {
             const itemBody = asString(itemRecord.body)
 
             return (
-              <div
-                key={String(itemRecord.id || `item-${idx}`)}
-                className="rounded border border-gray-200 bg-gray-50 p-3"
-              >
-                <p className="font-medium text-sm text-gray-900">{itemTitle}</p>
-                {itemBody && (
-                  <p className="text-xs text-gray-600 mt-1">{itemBody}</p>
-                )}
+              <div key={String(itemRecord.id || `item-${idx}`)} className={bp.card}>
+                <p className={cn(bp.title, "text-sm")}>{itemTitle}</p>
+                {itemBody ? <p className={cn(bp.body, "mt-1 text-xs")}>{itemBody}</p> : null}
               </div>
             )
           })
         ) : (
-          <p className="text-xs text-gray-500 col-span-full">Keine Items definiert</p>
+          <p className={cn(bp.meta, "col-span-full")}>Keine Items definiert</p>
         )}
       </div>
     </div>

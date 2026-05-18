@@ -80,16 +80,16 @@ export function PublicContactForm({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+    <section className="pub-form-surface">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">{headline}</h2>
-        {intro && <p className="mt-2 text-gray-600">{intro}</p>}
+        <h2 className="pub-heading-section">{headline}</h2>
+        {intro ? <p className="pub-body">{intro}</p> : null}
       </div>
 
       {errors.length > 0 && (
-        <div role="alert" className="mb-4 rounded-lg bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Please fix the following errors:</p>
-          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+        <div role="alert" className="pub-notice pub-notice--danger pub-notice--spaced">
+          <p className="font-medium">Please fix the following:</p>
+          <ul className="mt-2 list-inside list-disc space-y-1">
             {errors.map((error, idx) => (
               <li key={idx}>{error}</li>
             ))}
@@ -98,24 +98,17 @@ export function PublicContactForm({
       )}
 
       {showSuccess && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 rounded-lg bg-green-50 p-4"
-        >
-          <p className="text-sm font-medium text-green-800">{successMessage}</p>
-          <p className="mt-1 text-xs text-green-700">
+        <div role="status" aria-live="polite" className="pub-notice pub-notice--success pub-notice--spaced">
+          <p className="font-medium">{successMessage}</p>
+          <p className="mt-1 text-xs opacity-90">
             Note: In demo mode, no email has been sent. Mail delivery is not yet configured.
           </p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Honeypot field (hidden) */}
-        <div className="absolute -left-96 -top-96">
-          <label htmlFor="website" className="sr-only">
-            Website
-          </label>
+      <form onSubmit={handleSubmit} className="pub-form-stack">
+        <div className="pub-sr-only" aria-hidden="true">
+          <label htmlFor="website">Website</label>
           <input
             id="website"
             name="website"
@@ -124,13 +117,12 @@ export function PublicContactForm({
             onChange={(e) => setHoneypot(e.target.value)}
             tabIndex={-1}
             autoComplete="off"
-            aria-hidden="true"
           />
         </div>
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name <span className="text-red-500">*</span>
+        <div className="pub-form-field">
+          <label htmlFor="name" className="pub-form-label">
+            Name <span aria-hidden="true">*</span>
           </label>
           <input
             id="name"
@@ -141,13 +133,13 @@ export function PublicContactForm({
             placeholder="Your name"
             required
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-form-input"
           />
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email <span className="text-red-500">*</span>
+        <div className="pub-form-field">
+          <label htmlFor="email" className="pub-form-label">
+            Email <span aria-hidden="true">*</span>
           </label>
           <input
             id="email"
@@ -158,12 +150,12 @@ export function PublicContactForm({
             placeholder="you@example.com"
             required
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-form-input"
           />
         </div>
 
-        <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+        <div className="pub-form-field">
+          <label htmlFor="phone" className="pub-form-label">
             Phone
           </label>
           <input
@@ -172,30 +164,30 @@ export function PublicContactForm({
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Your phone (optional)"
+            placeholder="Optional"
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-form-input"
           />
         </div>
 
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-            Message <span className="text-red-500">*</span>
+        <div className="pub-form-field">
+          <label htmlFor="message" className="pub-form-label">
+            Message <span aria-hidden="true">*</span>
           </label>
           <textarea
             id="message"
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Your message..."
+            placeholder="Your message"
             rows={5}
             required
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-form-input pub-form-textarea"
           />
         </div>
 
-        <div className="flex items-start gap-3">
+        <div className="pub-form-consent">
           <input
             id="consent"
             name="consent"
@@ -204,21 +196,20 @@ export function PublicContactForm({
             onChange={(e) => setConsentAccepted(e.target.checked)}
             required
             disabled={isSubmitting}
-            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
           />
-          <label htmlFor="consent" className="text-sm text-gray-700">
-            {consentLabel} <span className="text-red-500">*</span>
+          <label htmlFor="consent" className="pub-form-label font-normal">
+            {consentLabel} <span aria-hidden="true">*</span>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting || showSuccess}
-          className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="pub-btn pub-btn--primary pub-interactive w-full"
         >
-          {isSubmitting ? "Sending..." : submitLabel}
+          {isSubmitting ? "Sending…" : submitLabel}
         </button>
       </form>
-    </div>
+    </section>
   )
 }

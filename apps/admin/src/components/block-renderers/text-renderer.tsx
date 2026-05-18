@@ -1,4 +1,5 @@
 import type { CmsBlock } from "@sovereign-cms/core"
+import { bp } from "@/components/block-renderers/preview-classes"
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {}
@@ -13,8 +14,8 @@ export function TextAdminRenderer({ block }: { block: CmsBlock }) {
   const body = asString(props.body, "(ohne body)")
 
   return (
-    <p>
-      <span className="font-medium">body:</span> {body}
+    <p className={bp.body}>
+      <span className="font-medium admin-text">body:</span> {body}
     </p>
   )
 }

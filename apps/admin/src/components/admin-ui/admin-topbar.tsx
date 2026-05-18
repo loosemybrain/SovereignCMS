@@ -4,6 +4,8 @@ import { cn } from "@sovereign-cms/ui"
 export type AdminTopbarProps = {
   title: string
   subtitle?: string
+  /** Eyebrow above title (e.g. "View" / "Ansicht"). */
+  viewLabel?: string
   /** Real metadata only (e.g. tenant resolution source) — no fake system status. */
   badge?: ReactNode
   actions?: ReactNode
@@ -13,7 +15,7 @@ export type AdminTopbarProps = {
 /**
  * Sticky top bar: translucent surface + blur (v0-style), title hierarchy, actions.
  */
-export function AdminTopbar({ title, subtitle, badge, actions, className }: AdminTopbarProps) {
+export function AdminTopbar({ title, subtitle, viewLabel = "View", badge, actions, className }: AdminTopbarProps) {
   return (
     <header
       className={cn(
@@ -23,7 +25,7 @@ export function AdminTopbar({ title, subtitle, badge, actions, className }: Admi
     >
       <div className="flex w-full min-w-0 items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] admin-text-muted">Ansicht</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] admin-text-muted">{viewLabel}</p>
           <div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1">
             <h2 className="truncate text-base font-semibold tracking-tight admin-text sm:text-[1.0625rem]">
               {title}

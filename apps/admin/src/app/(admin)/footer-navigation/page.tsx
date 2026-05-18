@@ -4,6 +4,8 @@ import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
 import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CreateNavigationItemForm } from "@/components/create-navigation-item-form"
 import { AdminDataTable, AdminDataTableBody, AdminDataTableCell, AdminDataTableHeadRow, AdminDataTableRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader, AdminSectionCard } from "@/components/admin-ui"
+import { formatAdminMessage, getAdminMessages } from "@/lib/admin-i18n"
+import { getAdminUiLocale } from "@/lib/admin-i18n/server"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
@@ -16,6 +18,9 @@ export default async function FooterNavigationPage({ searchParams }: Props) {
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
   const { runtime, tenant } = getAdminRuntime({ host })
+  const t = getAdminMessages(await getAdminUiLocale())
+  const f = t.footerNavigation
+  const n = t.navigation
 
   const localeContext = createLocaleContext({
     locale: runtime.config.defaultLocale,
@@ -39,26 +44,20 @@ export default async function FooterNavigationPage({ searchParams }: Props) {
     }),
   ])
 
-  const createHref = (locale: string) => {
-    const next = new URLSearchParams()
-    next.set("locale", locale)
-    return `/footer-navigation?${next.toString()}`
-  }
-
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        eyebrow="Navigation"
-        title="Fußzeile"
-        description="Links in der öffentlichen Fußzeile — getrennt vom Hauptmenü, gleiche Bearbeitungslogik."
-      />
+      <AdminPageHeader eyebrow={f.eyebrow} title={f.title} description={f.description} />
 
-      <AdminSectionCard variant="elevated" title="Sprache & Bearbeitung" description={`Aktive Sprache: ${activeLocale}.`}>
+      <AdminSectionCard
+        variant="elevated"
+        title={n.localeSection}
+        description={formatAdminMessage(n.localeSectionDescription, { locale: activeLocale })}
+      >
         <div className="space-y-4">
           <AdminLocaleSwitcher
             activeLocale={activeLocale}
             localeContext={localeContext}
-            createHref={createHref}
+            label={t.locale.contentLanguage}
           />
           <CreateNavigationItemForm
             key={`footer-navigation-create-${activeLocale}`}
@@ -71,7 +70,11 @@ export default async function FooterNavigationPage({ searchParams }: Props) {
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard variant="glass" title="Einträge" description={`${items.length} Einträge für diese Sprache.`}>
+      <AdminSectionCard
+        variant="glass"
+        title={n.entries}
+        description={formatAdminMessage(n.entriesDescription, { count: items.length })}
+      >
         <AdminDataTable>
         <AdminDataTableHeadRow>
           <AdminDataTableTh>Label</AdminDataTableTh>

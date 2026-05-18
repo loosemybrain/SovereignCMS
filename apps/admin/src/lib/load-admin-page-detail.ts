@@ -1,8 +1,20 @@
-import type { CmsBlock, CmsPage, LocaleContext } from "@sovereign-cms/core"
+import type { CmsBlock, CmsPage, LocaleContext, NavigationItem } from "@sovereign-cms/core"
+import type { PageGovernanceNavigationItem } from "@/lib/page-governance"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
 import { createLocaleContext } from "@sovereign-cms/runtime"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
+
+function toGovernanceNavigationItems(items: NavigationItem[]): PageGovernanceNavigationItem[] {
+  return items.map((item) => ({
+    id: item.id,
+    label: item.label,
+    type: item.type,
+    pageId: item.pageId,
+    href: item.href,
+    scope: item.scope,
+  }))
+}
 
 export async function loadAdminPageDetail(input: {
   host?: string
@@ -15,6 +27,7 @@ export async function loadAdminPageDetail(input: {
   runtimeConfig: RuntimeConfig
   page: CmsPage | null
   blocks: CmsBlock[]
+  navigationGovernanceItems: PageGovernanceNavigationItem[]
   localeContext: LocaleContext
   activeLocale: string
   error?: boolean
@@ -46,22 +59,30 @@ export async function loadAdminPageDetail(input: {
         runtimeConfig: runtime.config,
         page: null,
         blocks: [],
+        navigationGovernanceItems: [],
         localeContext,
         activeLocale,
         notFound: true,
       }
     }
 
-    const blocks = await runtime.db.blocks.listByPage({
-      tenantId: tenant.tenantId,
-      pageId: page.id,
-    })
+    const [blocks, navigationItems] = await Promise.all([
+      runtime.db.blocks.listByPage({
+        tenantId: tenant.tenantId,
+        pageId: page.id,
+      }),
+      runtime.db.navigation.listByTenant({
+        tenantId: tenant.tenantId,
+        locale: activeLocale,
+      }),
+    ])
 
     return {
       tenant,
       runtimeConfig: runtime.config,
       page,
       blocks,
+      navigationGovernanceItems: toGovernanceNavigationItems(navigationItems),
       localeContext,
       activeLocale,
     }
@@ -72,6 +93,7 @@ export async function loadAdminPageDetail(input: {
       runtimeConfig: runtime.config,
       page: null,
       blocks: [],
+      navigationGovernanceItems: [],
       localeContext,
       activeLocale,
       error: true,

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import type {
   BlockInstance,
   ContactFormBlockProps,
@@ -20,6 +21,14 @@ type Props = {
   settingsContactEmail?: string
 }
 
+function MediaFallback({ message }: { message: string }) {
+  return (
+    <div className="pub-fallback-media" aria-hidden="true">
+      {message}
+    </div>
+  )
+}
+
 export function PublicBlockRenderer({
   block,
   tenantId,
@@ -34,38 +43,67 @@ export function PublicBlockRenderer({
         block.props.subline !== undefined && block.props.subline !== null
           ? String(block.props.subline)
           : undefined
-      const mediaUrl =
-        block.props.mediaUrl !== undefined && block.props.mediaUrl !== null
-          ? String(block.props.mediaUrl)
-          : undefined
-      const mediaAlt = String(block.props.mediaAlt ?? headline ?? "Hero image")
+
+      const normalized = normalizeMediaReference({
+        imageUrl: block.props.mediaUrl,
+        imageAlt: block.props.mediaAlt,
+        assetId: block.props.mediaAssetId,
+        label: headline,
+      })
+      const mediaAlt = normalized.alt || headline || "Hero image"
+
+      let mediaNode: ReactNode = null
+      if (normalized.isRenderable && normalized.safeUrl) {
+        mediaNode = (
+          <div className="pub-block-media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={normalized.safeUrl} alt={mediaAlt} />
+          </div>
+        )
+      } else if (normalized.sourceType === "invalid") {
+        mediaNode = (
+          <div className="pub-block-inner">
+            <div className="pub-notice pub-notice--danger" role="status">
+              Media could not be displayed safely.
+            </div>
+          </div>
+        )
+      } else if (normalized.sourceType === "placeholder" || normalized.sourceType === "missing") {
+        if (headline || subline) {
+          mediaNode = null
+        } else {
+          mediaNode = <MediaFallback message="Hero media will appear here when configured." />
+        }
+      }
+
+      if (!headline && !subline && !mediaNode) {
+        return null
+      }
 
       return (
-        <section className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
-          {mediaUrl ? (
-            <div className="relative w-full h-64">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={mediaUrl}
-                alt={mediaAlt}
-                className="w-full h-full object-cover"
-              />
+        <section className="pub-block">
+          {mediaNode}
+          {(headline || subline) && (
+            <div className="pub-block-inner">
+              {headline ? <h1 className="pub-heading-hero">{headline}</h1> : null}
+              {subline ? <p className="pub-body">{subline}</p> : null}
             </div>
-          ) : null}
-          <div className="p-6">
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-900">{headline}</h1>
-            {subline ? <p className="mt-2 text-gray-600">{subline}</p> : null}
-          </div>
+          )}
         </section>
       )
     }
     case "text": {
-      const body = String(block.props.body ?? "")
-      return <p className="text-base leading-relaxed text-gray-700">{body}</p>
+      const body = String(block.props.body ?? "").trim()
+      if (!body) return null
+      return <p className="pub-text-block">{body}</p>
     }
     case "contact-form": {
       if (!tenantId || !locale) {
-        return <p className="text-sm text-red-600">Contact form requires tenantId and locale</p>
+        return (
+          <div className="pub-notice pub-notice--danger" role="alert">
+            Contact form is temporarily unavailable.
+          </div>
+        )
       }
 
       const props = (block.props ?? {}) as ContactFormBlockProps
@@ -101,48 +139,42 @@ export function PublicBlockRenderer({
     }
     case "cta": {
       const props = (block.props ?? {}) as CtaBlockProps
-      const eyebrow = String(props.eyebrow ?? "")
-      const headline = String(props.headline ?? "")
-      const body = String(props.body ?? "")
-      const primaryLabel = String(props.primaryLabel ?? "")
+      const eyebrow = String(props.eyebrow ?? "").trim()
+      const headline = String(props.headline ?? "").trim()
+      const body = String(props.body ?? "").trim()
+      const primaryLabel = String(props.primaryLabel ?? "").trim()
       const primaryHref = String(props.primaryHref ?? "")
-      const secondaryLabel = String(props.secondaryLabel ?? "")
+      const secondaryLabel = String(props.secondaryLabel ?? "").trim()
       const secondaryHref = String(props.secondaryHref ?? "")
       const align = props.align === "left" ? "left" : "center"
+      const centered = align === "center"
 
-      const alignClass = align === "center" ? "text-center" : "text-left"
-      const justifyClass = align === "center" ? "justify-center" : "justify-start"
+      if (!eyebrow && !headline && !body && !primaryLabel && !secondaryLabel) {
+        return null
+      }
 
       return (
-        <section className={`py-12 px-6 rounded-lg bg-white border border-gray-200 shadow-sm ${alignClass}`}>
-          {eyebrow && (
-            <p className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{eyebrow}</p>
-          )}
-          {headline && (
-            <h2 className="text-3xl font-semibold text-gray-900 mt-2">{headline}</h2>
-          )}
-          {body && (
-            <p className="text-lg text-gray-600 mt-4">{body}</p>
-          )}
+        <section
+          className={`pub-block pub-block-inner--spacious${centered ? " pub-align-center" : ""}`}
+        >
+          {eyebrow ? <p className="pub-eyebrow">{eyebrow}</p> : null}
+          {headline ? (
+            <h2 className={`pub-heading-section${eyebrow ? " mt-2" : ""}`}>{headline}</h2>
+          ) : null}
+          {body ? <p className="pub-body pub-body--lead">{body}</p> : null}
 
           {(primaryLabel || secondaryLabel) && (
-            <div className={`flex gap-4 mt-8 ${justifyClass}`}>
-              {primaryLabel && isValidHref(primaryHref) && (
-                <a
-                  href={primaryHref}
-                  className="px-6 py-3 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors"
-                >
+            <div className={`pub-actions${centered ? " pub-actions--center" : ""}`}>
+              {primaryLabel && isValidHref(primaryHref) ? (
+                <a href={primaryHref} className="pub-btn pub-btn--primary pub-interactive">
                   {primaryLabel}
                 </a>
-              )}
-              {secondaryLabel && isValidHref(secondaryHref) && (
-                <a
-                  href={secondaryHref}
-                  className="px-6 py-3 bg-gray-200 text-gray-900 rounded font-semibold hover:bg-gray-300 transition-colors"
-                >
+              ) : null}
+              {secondaryLabel && isValidHref(secondaryHref) ? (
+                <a href={secondaryHref} className="pub-btn pub-btn--secondary pub-interactive">
                   {secondaryLabel}
                 </a>
-              )}
+              ) : null}
             </div>
           )}
         </section>
@@ -150,10 +182,9 @@ export function PublicBlockRenderer({
     }
     case "feature-grid": {
       const props = (block.props ?? {}) as FeatureGridBlockProps & { itemsJson?: string }
-      const headline = String(props.headline ?? "")
-      const intro = String(props.intro ?? "")
+      const headline = String(props.headline ?? "").trim()
+      const intro = String(props.intro ?? "").trim()
 
-      // Prefer items, fallback to itemsJson for old content only
       let items: unknown[] = Array.isArray(props.items) ? props.items : []
       if (items.length === 0) {
         const itemsJson = typeof props.itemsJson === "string" ? props.itemsJson : null
@@ -165,102 +196,106 @@ export function PublicBlockRenderer({
         }
       }
 
-      // Handle columns as string or number
       const columnsRaw = props.columns ?? "3"
       const columnsNum = typeof columnsRaw === "string" ? parseInt(columnsRaw, 10) : columnsRaw
       const columns = isNaN(columnsNum) ? 3 : columnsNum
+      const gridClass =
+        columns === 2
+          ? "pub-grid-features--2"
+          : columns === 4
+            ? "pub-grid-features--4"
+            : "pub-grid-features--3"
 
-      const gridColsClass = {
-        2: "md:grid-cols-2",
-        3: "md:grid-cols-3",
-        4: "md:grid-cols-4",
-      }[columns as 2 | 3 | 4] || "md:grid-cols-3"
+      if (!headline && !intro && items.length === 0) {
+        return null
+      }
 
       return (
-        <section className="py-12 px-6 rounded-lg bg-white border border-gray-200 shadow-sm">
-          {headline && (
-            <h2 className="text-3xl font-semibold text-gray-900">{headline}</h2>
-          )}
-          {intro && (
-            <p className="text-lg text-gray-600 mt-2">{intro}</p>
-          )}
+        <section className="pub-block pub-block-inner--spacious">
+          {headline ? <h2 className="pub-heading-section">{headline}</h2> : null}
+          {intro ? <p className="pub-body">{intro}</p> : null}
 
-          {items.length > 0 && (
-            <div className={`grid grid-cols-1 ${gridColsClass} gap-6 mt-8`}>
+          {items.length > 0 ? (
+            <div className={`pub-grid-features ${gridClass}`}>
               {items.map((item: unknown) => {
                 const itemRecord = item && typeof item === "object" ? (item as Record<string, unknown>) : {}
                 const itemId = String(itemRecord.id ?? "")
-                const itemTitle = String(itemRecord.title ?? "")
-                const itemBody = String(itemRecord.body ?? "")
+                const itemTitle = String(itemRecord.title ?? "").trim()
+                const itemBody = String(itemRecord.body ?? "").trim()
+
+                if (!itemTitle && !itemBody) return null
 
                 return (
-                  <div
-                    key={itemId || itemTitle}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-6"
-                  >
-                    <h3 className="font-semibold text-gray-900">{itemTitle}</h3>
-                    {itemBody && (
-                      <p className="text-sm text-gray-600 mt-2">{itemBody}</p>
-                    )}
-                  </div>
+                  <article key={itemId || itemTitle} className="pub-card">
+                    {itemTitle ? <h3 className="pub-heading-card">{itemTitle}</h3> : null}
+                    {itemBody ? <p className="pub-body">{itemBody}</p> : null}
+                  </article>
                 )
               })}
             </div>
+          ) : (
+            <p className="pub-notice pub-notice--muted pub-notice--spaced" role="status">
+              Features will appear here when items are added.
+            </p>
           )}
         </section>
       )
     }
     case "image-text": {
       const props = (block.props ?? {}) as ImageTextBlockProps & { mediaAssetId?: string | null }
-      const headline = String(props.headline ?? "")
-      const body = String(props.body ?? "")
+      const headline = String(props.headline ?? "").trim()
+      const body = String(props.body ?? "").trim()
       const imagePosition = props.imagePosition === "left" ? "left" : "right"
-      const ctaLabel = String(props.ctaLabel ?? "")
+      const ctaLabel = String(props.ctaLabel ?? "").trim()
       const ctaHref = String(props.ctaHref ?? "")
 
       const normalized = normalizeMediaReference({
         imageUrl: props.imageUrl,
         imageAlt: props.imageAlt,
         assetId: props.mediaAssetId,
+        label: headline,
       })
       const imageAltDisplay = normalized.alt || headline || "Image"
 
       const contentElement = (
-        <div className="flex flex-col justify-center">
-          {headline && (
-            <h2 className="text-3xl font-semibold text-gray-900">{headline}</h2>
-          )}
-          {body && (
-            <p className="text-gray-600 mt-4">{body}</p>
-          )}
-          {ctaLabel && isValidHref(ctaHref) && (
-            <div className="mt-6">
-              <a
-                href={ctaHref}
-                className="px-6 py-3 bg-blue-600 text-white rounded font-semibold hover:bg-blue-700 transition-colors inline-block"
-              >
+        <div>
+          {headline ? <h2 className="pub-heading-section">{headline}</h2> : null}
+          {body ? <p className="pub-body">{body}</p> : null}
+          {ctaLabel && isValidHref(ctaHref) ? (
+            <div className="pub-actions">
+              <a href={ctaHref} className="pub-btn pub-btn--primary pub-interactive">
                 {ctaLabel}
               </a>
             </div>
-          )}
+          ) : null}
         </div>
       )
 
-      const imageElement =
-        normalized.isRenderable && normalized.safeUrl ? (
-          <div className="relative h-80">
+      let imageElement: ReactNode = null
+      if (normalized.isRenderable && normalized.safeUrl) {
+        imageElement = (
+          <div className="pub-block-media pub-block-media--portrait">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={normalized.safeUrl}
-              alt={imageAltDisplay}
-              className="h-full w-full rounded-lg object-cover"
-            />
+            <img src={normalized.safeUrl} alt={imageAltDisplay} className="rounded-lg" />
           </div>
-        ) : null
+        )
+      } else if (normalized.sourceType === "invalid") {
+        imageElement = (
+          <div className="pub-notice pub-notice--danger" role="status">
+            Image could not be displayed safely.
+          </div>
+        )
+      } else if (headline || body) {
+        imageElement = <MediaFallback message="Image will appear here when media is configured." />
+      }
+
+      if (!headline && !body && !imageElement) {
+        return null
+      }
 
       return (
-        <section className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <section className="pub-block pub-block-inner--spacious">
+          <div className="pub-grid-2">
             {imagePosition === "left" ? (
               <>
                 {imageElement}
@@ -280,3 +315,4 @@ export function PublicBlockRenderer({
       return null
   }
 }
+

@@ -2,8 +2,10 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { Box, Building2, Database, GitBranch, Layers, LayoutTemplate } from "lucide-react"
 import { DashboardCard } from "@/components/dashboard-card"
-import { AdminLocaleSwitcher } from "@/components/admin-locale-switcher"
+import { AdminLocaleToolbar } from "@/components/admin-locale-toolbar"
 import { AdminConfigGrid, AdminPageHeader, AdminSectionCard, AdminStatusBadge } from "@/components/admin-ui"
+import { formatAdminMessage, getAdminMessages } from "@/lib/admin-i18n"
+import { getAdminUiLocale } from "@/lib/admin-i18n/server"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
@@ -15,6 +17,10 @@ export default async function DashboardPage({ searchParams }: Props) {
   const params = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
+  const uiLocale = await getAdminUiLocale()
+  const t = getAdminMessages(uiLocale)
+  const d = t.dashboard
+
   const {
     tenant,
     runtimeConfig,
@@ -34,100 +40,76 @@ export default async function DashboardPage({ searchParams }: Props) {
     pages.map((page) => runtime.db.blocks.listByPage({ tenantId: tenant.tenantId, pageId: page.id })),
   ).then((results) => results.reduce((sum, blocks) => sum + blocks.length, 0))
 
-  const createHref = (locale: string) => {
-    const params = new URLSearchParams()
-    params.set("locale", locale)
-    return `/dashboard?${params.toString()}`
-  }
-
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        eyebrow="Orientierung"
-        title="Dashboard"
-        description="Kurzer Überblick über Mandant, Sprachen und Inhalte — ohne zusätzliche Kennzahlen."
+        eyebrow={d.eyebrow}
+        title={d.title}
+        description={d.description}
         actions={
           <Link
             href={`/pages?locale=${activeLocale}`}
             className="text-sm font-medium admin-accent underline-offset-2 transition-opacity hover:opacity-85"
           >
-            Zur Seitenübersicht →
+            {d.pagesLink}
           </Link>
         }
       />
 
-      <AdminSectionCard
-        variant="elevated"
-        title="Arbeitsbereich"
-        description="Sprache und Mandantenauflösung für diese Ansicht."
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <AdminLocaleSwitcher
-            activeLocale={activeLocale}
-            localeContext={localeContext}
-            createHref={createHref}
-          />
-          <div className="flex flex-wrap items-center gap-2 text-xs admin-text-muted">
-            <span>Tenant</span>
-            <AdminStatusBadge>{tenant.tenantId}</AdminStatusBadge>
-            <span className="opacity-60">·</span>
-            <span>Source</span>
-            <AdminStatusBadge variant="muted">{tenant.source}</AdminStatusBadge>
-          </div>
+      <AdminSectionCard variant="elevated" title={d.workspaceTitle} description={d.workspaceDescription}>
+        <AdminLocaleToolbar activeLocale={activeLocale} localeContext={localeContext} />
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs admin-text-muted">
+          <span>{t.shell.tenant}</span>
+          <AdminStatusBadge>{tenant.tenantId}</AdminStatusBadge>
+          <span className="opacity-60">·</span>
+          <span>Source</span>
+          <AdminStatusBadge variant="muted">{tenant.source}</AdminStatusBadge>
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        variant="elevated"
-        title="Key metrics"
-        description="Counts from the database for this tenant (no sample data)."
-      >
+      <AdminSectionCard variant="elevated" title={d.metricsTitle} description={d.metricsDescription}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <DashboardCard
-            title="Tenant ID"
+            title={d.tenantId}
             value={tenant.tenantId}
             description={`Resolved via: ${tenant.source}`}
             variant="highlight"
             icon={<Building2 strokeWidth={2} />}
           />
           <DashboardCard
-            title="Pages (Current Locale)"
+            title={d.pagesCurrentLocale}
             value={activeLocalePagesCount}
-            description={`Pages in ${activeLocale} locale`}
+            description={formatAdminMessage(d.pagesInLocale, { locale: activeLocale })}
             icon={<LayoutTemplate strokeWidth={2} />}
           />
           <DashboardCard
-            title="Page Variants"
+            title={d.pageVariants}
             value={pageVariantsCount}
-            description="All locale-specific records"
+            description={d.pageVariantsDescription}
             icon={<Layers strokeWidth={2} />}
           />
           <DashboardCard
-            title="Logical Pages"
+            title={d.logicalPages}
             value={logicalPagesCount}
-            description="Unique slugs across locales"
+            description={d.logicalPagesDescription}
             icon={<GitBranch strokeWidth={2} />}
           />
           <DashboardCard
-            title="Blocks"
+            title={d.blocks}
             value={totalBlocks}
-            description="Total content blocks"
+            description={d.blocksDescription}
             icon={<Box strokeWidth={2} />}
           />
           <DashboardCard
-            title="Database"
+            title={d.database}
             value={runtimeConfig.databaseAdapter}
-            description="Currently active"
+            description={d.databaseDescription}
             icon={<Database strokeWidth={2} />}
           />
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        variant="glass"
-        title="Runtime Configuration"
-        description="Adapter wiring from environment (read-only)."
-      >
+      <AdminSectionCard variant="glass" title={d.runtimeConfigTitle} description={d.runtimeConfigDescription}>
         <AdminConfigGrid columns={2}>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">DB Adapter</p>
@@ -146,11 +128,11 @@ export default async function DashboardPage({ searchParams }: Props) {
             <p className="mt-2 font-mono text-lg admin-text">{runtimeConfig.appEnv}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Default Locale</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">{d.defaultLocale}</p>
             <p className="mt-2 font-mono text-lg admin-text">{localeContext.defaultLocale}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Supported Locales</p>
+            <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">{d.supportedLocales}</p>
             <p className="mt-2 font-mono text-lg admin-text">
               {localeContext.supportedLocales.map((l) => l.code).join(", ")}
             </p>

@@ -27,21 +27,14 @@ function NavigationLink({
   item: PublicHeaderNavigationLink
   previewEnabled: boolean
 }) {
-  const activeStyles =
-    "font-semibold text-zinc-50 underline decoration-2 underline-offset-4 shadow-[inset_0_0_0_1px_rgb(161_161_170)]"
-  const inactiveStyles = "text-zinc-300 hover:text-zinc-100"
+  const className = cn(
+    "pub-chrome-link",
+    item.active && "pub-chrome-link--active",
+  )
 
   if (!item.href.startsWith("/")) {
     return (
-      <a
-        href={item.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "rounded-md px-2 py-1 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400",
-          inactiveStyles,
-        )}
-      >
+      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
         {item.label}
       </a>
     )
@@ -50,10 +43,7 @@ function NavigationLink({
   return (
     <Link
       href={resolveHref(item.href, previewEnabled)}
-      className={cn(
-        "rounded-md px-2 py-1 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400",
-        item.active ? activeStyles : inactiveStyles,
-      )}
+      className={className}
       aria-current={item.active ? "page" : undefined}
     >
       {item.label}
@@ -73,10 +63,8 @@ function LocaleLink({
       href={resolveHref(item.href, previewEnabled)}
       lang={item.locale}
       className={cn(
-        "rounded-md px-2 py-1 text-xs font-medium uppercase tracking-wide outline-none transition-colors focus-visible:ring-2 focus-visible:ring-zinc-400",
-        item.active
-          ? "bg-zinc-800 font-semibold text-zinc-50 ring-2 ring-zinc-500 ring-offset-2 ring-offset-zinc-950"
-          : "text-zinc-400 hover:text-zinc-100",
+        "pub-chrome-link text-xs font-medium uppercase tracking-wide",
+        item.active && "bg-zinc-800 text-zinc-50 ring-2 ring-zinc-500 ring-offset-2 ring-offset-zinc-950",
       )}
       aria-current={item.active ? "true" : undefined}
     >
@@ -95,8 +83,8 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
     Boolean(header.logoUrl)
 
   return (
-    <header className="border-b border-zinc-700 bg-zinc-950 text-zinc-300">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <header className="pub-chrome border-b">
+      <div className="pub-container">
         <div className="flex flex-wrap items-center justify-between gap-4 py-4">
           {hasIdentity ? (
             <div className="flex min-w-0 shrink-0 items-center gap-3">
@@ -115,7 +103,7 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
             </div>
           ) : null}
 
-          <div className="flex shrink-0 items-center gap-3 md:gap-6">
+          <div className="flex shrink-0 items-center gap-3 md:gap-5">
             <nav aria-label="Locale navigation" className="hidden items-center gap-1 md:flex">
               {header.localeLinks.map((item) => (
                 <LocaleLink key={item.locale} item={item} previewEnabled={previewEnabled} />
@@ -124,7 +112,7 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
 
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-md border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-100 hover:bg-zinc-900 focus-visible:outline focus-visible:ring-2 focus-visible:ring-zinc-400 md:hidden"
+              className="pub-chrome-btn md:hidden"
               aria-expanded={mobileOpen}
               aria-controls={mobilePanelId}
               onClick={() => setMobileOpen((open) => !open)}
@@ -135,8 +123,11 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
         </div>
 
         {header.navigationLinks.length > 0 ? (
-          <nav aria-label="Main navigation" className="hidden border-t border-zinc-800 py-3 md:block">
-            <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <nav
+            aria-label="Main navigation"
+            className="hidden border-t pub-chrome-divider py-3 md:block"
+          >
+            <ul className="flex flex-wrap items-center gap-x-1 gap-y-2">
               {header.navigationLinks.map((item, index) => (
                 <li key={`${item.href}-${index}`}>
                   <NavigationLink item={item} previewEnabled={previewEnabled} />
@@ -148,11 +139,11 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
 
         <div
           id={mobilePanelId}
-          className={cn(!mobileOpen && "hidden", "border-t border-zinc-800 py-4 md:hidden")}
+          className={cn(!mobileOpen && "hidden", "border-t pub-chrome-divider py-4 md:hidden")}
         >
           {header.navigationLinks.length > 0 ? (
             <nav aria-label="Main navigation">
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-1">
                 {header.navigationLinks.map((item, index) => (
                   <li key={`${item.href}-m-${index}`}>
                     <NavigationLink item={item} previewEnabled={previewEnabled} />
@@ -166,7 +157,7 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
               aria-label="Locale navigation"
               className={cn(
                 "flex flex-wrap gap-2",
-                header.navigationLinks.length > 0 && "mt-4 border-t border-zinc-800 pt-4",
+                header.navigationLinks.length > 0 && "mt-4 border-t pub-chrome-divider pt-4",
               )}
             >
               {header.localeLinks.map((item) => (
@@ -179,3 +170,4 @@ export function PublicHeader({ header, previewEnabled = false }: Props) {
     </header>
   )
 }
+

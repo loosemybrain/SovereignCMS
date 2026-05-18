@@ -1,0 +1,33 @@
+---
+description: Nach jedem abgeschlossenen Sprint/Phasenschritt automatisch Validierung und ZIP-Artefakte erzeugen
+alwaysApply: true
+---
+
+# Sprint-Abschluss: ZIP-Artefakte
+
+Wenn ein **Sprint oder eine Phase** (z. B. 59.7, 61) als erledigt gilt:
+
+1. `docs/migration/phase-<label>-result.md` anlegen oder aktualisieren (Validierungsergebnis ehrlich dokumentieren).
+2. **Immer** aus dem Repo-Root ausführen:
+
+```bash
+npm run sprint:finish -- --phase <label>
+```
+
+Ohne `--phase` wird die **neueste** `docs/migration/phase-*-result.md` (Änderungsdatum) verwendet.
+
+Das Skript führt nacheinander aus: `typecheck` → `lint` → `build` → zwei ZIPs unter `artifacts/phase-zips/`:
+- `SovereignCMS-<label>-nur-Aenderungen.zip`
+- `SovereignCMS-<label>-repo-slim.zip`
+
+Nur bei erfolgreicher Validierung fortfahren. Bei Fehlern: beheben, erneut `sprint:finish` — **kein ZIP bei rotem Build**.
+
+Nur ZIPs ohne erneute Validierung (z. B. nach manuellem Fix):
+
+```bash
+npm run sprint:zip
+# oder explizit:
+npm run phase:zip -- --phase <label>
+```
+
+Voraussetzungen: `git` und `tar` im PATH. ZIPs nicht committen (`artifacts/` ist ignoriert).

@@ -23,19 +23,17 @@ export function ExternalMediaGate({
   }
 
   return (
-    <div className="rounded-lg border border-gray-300 bg-gray-50 p-6">
-      <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="mt-2 text-sm text-gray-700">{consentText}</p>
+    <div className="pub-notice pub-notice--muted text-center">
+      <h3 className="pub-heading-card">{title}</h3>
+      <p className="pub-body pub-mt-2">{consentText}</p>
 
-        <button
-          type="button"
-          onClick={acceptExternalMedia}
-          className="mt-4 inline-block rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          {buttonLabel}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={acceptExternalMedia}
+        className="pub-btn pub-btn--primary pub-interactive pub-mt-4"
+      >
+        {buttonLabel}
+      </button>
     </div>
   )
 }
