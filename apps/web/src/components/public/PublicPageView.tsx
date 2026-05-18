@@ -17,38 +17,39 @@ export function PublicPageView({
   const previewEnabled = previewContext.mode === "enabled"
 
   return (
-    <div className="pub-site">
+    <div className="flex min-h-screen flex-col">
       <PublicPreviewBadge previewEnabled={previewEnabled} />
       <PublicLayoutShell header={header} footer={footer} previewEnabled={previewEnabled}>
-        <article className="pub-page">
-          <header className="pub-page-meta">
-            <span className="font-medium">{page.title}</span>
-            {" · "}
-            <span>
-              {tenant.displayName} ({tenant.id}) · {page.locale}
+        {/* Draft indicator — visible only in preview mode */}
+        {previewEnabled && page.status === "draft" && (
+          <div className="pub-container py-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              Draft preview — {page.title}
             </span>
-            {page.status === "draft" && previewEnabled ? (
-              <span className="ml-2 inline-block rounded px-2 py-0.5 text-xs bg-amber-100 text-amber-900">
-                Draft
-              </span>
-            ) : null}
-          </header>
-
-          {seo.description ? <p className="pub-page-lead">{seo.description}</p> : null}
-
-          <div className="pub-block-stack">
-            {blocks.map((block) => (
-              <PublicBlockRenderer
-                key={block.id}
-                block={block}
-                tenantId={tenant.id}
-                locale={page.locale}
-                pageId={page.id}
-                settingsContactEmail={contactEmail}
-              />
-            ))}
           </div>
-        </article>
+        )}
+
+        {/* SEO description — only shown in preview to aid editorial review */}
+        {previewEnabled && seo.description && (
+          <div className="pub-container pb-2">
+            <p className="text-sm italic text-gray-400">{seo.description}</p>
+          </div>
+        )}
+
+        {/* Blocks flow full-width; each block manages its own container and spacing */}
+        <div>
+          {blocks.map((block) => (
+            <PublicBlockRenderer
+              key={block.id}
+              block={block}
+              tenantId={tenant.id}
+              locale={page.locale}
+              pageId={page.id}
+              settingsContactEmail={contactEmail}
+            />
+          ))}
+        </div>
       </PublicLayoutShell>
     </div>
   )
