@@ -1,4 +1,6 @@
 import type { CmsBlock } from "@sovereign-cms/core"
+import { bp } from "@/components/block-renderers/preview-classes"
+import { cn } from "@sovereign-cms/ui"
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {}
@@ -16,10 +18,10 @@ export function HeroAdminRenderer({ block }: { block: CmsBlock }) {
   const mediaAlt = asString(props.mediaAlt)
 
   return (
-    <div className="space-y-3">
+    <div className={bp.stack}>
       {/* Hero Image Preview */}
       {mediaUrl && (
-        <div className="rounded-lg bg-zinc-900 border border-zinc-700 overflow-hidden h-32 flex items-center justify-center">
+        <div className={cn(bp.media, "h-32")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={mediaUrl}
@@ -30,15 +32,15 @@ export function HeroAdminRenderer({ block }: { block: CmsBlock }) {
       )}
 
       {/* Text Content */}
-      <div>
-        <p>
-          <span className="font-medium">headline:</span> {headline}
+      <div className={bp.stack}>
+        <p className={bp.body}>
+          <span className="font-medium admin-text">headline:</span> {headline}
         </p>
-        <p>
-          <span className="font-medium">subline:</span> {subline || "-"}
+        <p className={bp.body}>
+          <span className="font-medium admin-text">subline:</span> {subline || "-"}
         </p>
         {mediaUrl && (
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className={cn(bp.meta, "mt-1")}>
             <span className="font-medium">mediaUrl:</span> {mediaUrl.substring(0, 30)}...
           </p>
         )}

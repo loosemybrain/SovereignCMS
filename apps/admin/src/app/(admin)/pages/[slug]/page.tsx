@@ -48,16 +48,11 @@ export default async function AdminPageDetailRoute({ params, searchParams }: Pro
     )
   }
 
-  const { tenant, runtimeConfig, page, blocks, localeContext, activeLocale } = result
-
-  const createHref = (locale: string) => {
-    const newParams = new URLSearchParams()
-    newParams.set("locale", locale)
-    return `/pages/${slug}?${newParams.toString()}`
-  }
+  const { tenant, runtimeConfig, page, blocks, navigationGovernanceItems, localeContext, activeLocale } =
+    result
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page-editor-layout space-y-4">
       <AdminPageHeader
         eyebrow="Page editor"
         title={page.title}
@@ -86,16 +81,13 @@ export default async function AdminPageDetailRoute({ params, searchParams }: Pro
         }
       />
 
-      <AdminLocaleSwitcher
-        activeLocale={activeLocale}
-        localeContext={localeContext}
-        createHref={createHref}
-      />
+      <AdminLocaleSwitcher activeLocale={activeLocale} localeContext={localeContext} />
 
       {/* Editor */}
       <PageEditorClient
         page={page}
         blocks={blocks}
+        navigationGovernanceItems={navigationGovernanceItems}
         tenant={tenant}
         databaseAdapterLabel={String(runtimeConfig.databaseAdapter)}
       />

@@ -1,10 +1,13 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { ContentTransitionAction } from "@sovereign-cms/core"
+import { isContentStatus } from "@sovereign-cms/core"
 import { Save } from "lucide-react"
+import { cn } from "@sovereign-cms/ui"
 import { AdminButton } from "@/components/admin-ui"
-import { EditorHint, EditorStatusPanel } from "@/components/editor/patterns"
-import { getEditorPageStatusDisplay } from "@/lib/editor-action-labels"
+import { ContentStatusBadge } from "@/components/content-status-badge"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getEditorPageStatusDisplay, getEditorTransitionActionLabel } from "@/lib/editor-action-labels"
 
 type EditorToolbarProps = {
   isDirty: boolean
@@ -13,10 +16,13 @@ type EditorToolbarProps = {
   lastSavedAt: string | null
   lastSavedStatus?: string | null
   currentPageStatus?: string
+  governanceReady?: boolean
+  statusTransitionError?: string | null
+  isTransitioningStatus?: boolean
+  transitionActions?: ContentTransitionAction[]
+  onTransitionAction?: (action: ContentTransitionAction) => void
   onSave: () => void
   canSave: boolean
-  /** Editorial workflow actions (e.g. publish) — same handlers as before, grouped below metadata. */
-  footer?: ReactNode
 }
 
 export function EditorToolbar({
@@ -26,71 +32,111 @@ export function EditorToolbar({
   lastSavedAt,
   lastSavedStatus,
   currentPageStatus,
+  governanceReady,
+  statusTransitionError,
+  isTransitioningStatus = false,
+  transitionActions = [],
+  onTransitionAction,
   onSave,
   canSave,
-  footer,
 }: EditorToolbarProps) {
-  const statusLine = currentPageStatus ? getEditorPageStatusDisplay(currentPageStatus) : null
+  const { locale, messages: t } = useAdminI18n()
+  const e = t.editor
+  const g = t.publishGovernance
+  const statusLine = currentPageStatus ? getEditorPageStatusDisplay(currentPageStatus, locale) : null
+  const lastSavedLabel = lastSavedAt
+    ? `${e.lastSaved} ${new Date(lastSavedAt).toLocaleTimeString()}`
+    : e.notSavedYet
+  const hasAlerts = Boolean(saveError || statusTransitionError)
 
   return (
-    <div className="admin-gov-editor-action-rail overflow-hidden">
-      <div className="admin-editor-toolbar-sticky flex flex-col gap-3 border-b admin-border px-[var(--admin-toolbar-pad-x)] py-[var(--admin-toolbar-pad-y)] min-[1024px]:flex-row min-[1024px]:items-center min-[1024px]:justify-between">
-        <div className="admin-editor-workflow-intro space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] admin-text-muted">Entwurf und Speichern</p>
-          {statusLine ? (
-            <p className="text-xs leading-snug admin-text">
-              <span className="admin-text-muted">Seitenstatus · </span>
-              <span className="font-medium tabular-nums">{statusLine}</span>
+    <div className="admin-editor-action-rail">
+      <div className="admin-editor-action-bar" role="region" aria-label={e.draftAndSave}>
+        <div className="admin-editor-action-meta">
+          {currentPageStatus && isContentStatus(currentPageStatus) ? (
+            <ContentStatusBadge status={currentPageStatus} />
+          ) : statusLine ? (
+            <span className="admin-editor-status-fallback">{statusLine}</span>
+          ) : null}
+          <span
+            className={cn(
+              "admin-editor-save-state",
+              isDirty && "admin-editor-save-state--dirty",
+              !isDirty && lastSavedAt && "admin-editor-save-state--saved",
+            )}
+            aria-live="polite"
+          >
+            {isSaving ? e.saveRunning : isDirty ? e.unsavedChanges : lastSavedLabel}
+          </span>
+          {lastSavedStatus && !isDirty ? (
+            <span className="admin-editor-save-state-secondary" title={e.statusAfterSave}>
+              {lastSavedStatus}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="admin-editor-action-state">
+          {governanceReady !== undefined ? (
+            <span
+              role="status"
+              className={cn(
+                "admin-editor-governance-pill",
+                governanceReady
+                  ? "admin-editor-governance-pill--ready"
+                  : "admin-editor-governance-pill--review",
+              )}
+              aria-label={governanceReady ? g.toolbarReady : g.toolbarReview}
+              title={governanceReady ? g.toolbarReady : g.toolbarReview}
+            >
+              {governanceReady ? g.toolbarReadyShort : g.toolbarReviewShort}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="admin-editor-action-buttons">
+          <AdminButton
+            onClick={onSave}
+            disabled={!canSave}
+            variant="primary"
+            size="sm"
+            isLoading={isSaving}
+            className="admin-editor-save-primary shrink-0 gap-1.5 px-3"
+            aria-label={isSaving ? e.savingAria : e.saveAria}
+          >
+            <Save className="h-3.5 w-3.5 opacity-90" aria-hidden />
+            {isSaving ? e.saving : e.save}
+          </AdminButton>
+          {transitionActions.map((action) => (
+            <AdminButton
+              key={action}
+              type="button"
+              variant={
+                action === "publish" ? "primary" : action === "archive" ? "destructive" : "secondary"
+              }
+              size="sm"
+              onClick={() => onTransitionAction?.(action)}
+              disabled={isTransitioningStatus}
+              className="shrink-0"
+              aria-label={getEditorTransitionActionLabel(action, locale)}
+            >
+              {isTransitioningStatus ? "…" : getEditorTransitionActionLabel(action, locale)}
+            </AdminButton>
+          ))}
+        </div>
+      </div>
+
+      {hasAlerts ? (
+        <div className="admin-editor-action-alerts" aria-live="assertive">
+          {saveError ? (
+            <p className="admin-editor-action-alert admin-error text-xs font-medium" role="alert">
+              <span className="font-semibold">{e.saveFailed}:</span> {saveError}
             </p>
-          ) : (
-            <p className="text-xs admin-text-muted">Speichern sichert den Entwurf. Veröffentlichen und Archiv steuern Sie im Workflow unten.</p>
-          )}
-        </div>
-        <AdminButton
-          onClick={onSave}
-          disabled={!canSave}
-          variant="primary"
-          size="sm"
-          isLoading={isSaving}
-          className="admin-editor-save-primary min-w-[7.5rem] shrink-0 gap-2 px-4 shadow-sm"
-          aria-label={isSaving ? "Entwurf wird gespeichert" : "Entwurf speichern"}
-        >
-          <Save className="h-4 w-4 opacity-90" aria-hidden />
-          {isSaving ? "Speichern…" : "Speichern"}
-        </AdminButton>
-      </div>
-
-      <div className="space-y-3 px-[var(--admin-toolbar-pad-x)] py-4">
-        <div className="min-w-0 space-y-1.5 text-sm" aria-live="polite">
-          {isSaving ? <EditorHint tone="info">Speichern läuft …</EditorHint> : null}
-          {saveError ? <EditorHint tone="danger">Speichern fehlgeschlagen: {saveError}</EditorHint> : null}
-          {!isSaving && isDirty ? <EditorHint tone="warning">Ungespeicherte Änderungen</EditorHint> : null}
-          <EditorStatusPanel
-            className="admin-gov-meta-panel p-2.5"
-            statusItems={[
-              {
-                label: "Zuletzt gespeichert",
-                value: lastSavedAt ? new Date(lastSavedAt).toLocaleTimeString() : "Noch nicht gespeichert",
-                tone: lastSavedAt ? "success" : "muted",
-              },
-              {
-                label: "Stand nach Speichern",
-                value: lastSavedStatus ? lastSavedStatus : "—",
-                tone: lastSavedStatus ? "default" : "muted",
-              },
-              {
-                label: "Seitenstatus",
-                value: currentPageStatus ? getEditorPageStatusDisplay(currentPageStatus) : "—",
-                tone: currentPageStatus ? "default" : "muted",
-              },
-            ]}
-          />
-        </div>
-      </div>
-
-      {footer ? (
-        <div className="admin-surface-editor-rail-footer border-t admin-border px-[var(--admin-toolbar-pad-x)] py-3">
-          {footer}
+          ) : null}
+          {statusTransitionError ? (
+            <p className="admin-editor-action-alert admin-error text-xs font-medium" role="alert">
+              <span className="font-semibold">{e.statusTransitionFailed}:</span> {statusTransitionError}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

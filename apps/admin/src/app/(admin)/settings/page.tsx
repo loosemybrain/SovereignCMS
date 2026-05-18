@@ -1,6 +1,8 @@
 import { headers } from "next/headers"
 import { AdminPageHeader } from "@/components/admin-ui"
 import { SettingsEditor } from "@/components/settings-editor"
+import { getAdminMessages } from "@/lib/admin-i18n"
+import { getAdminUiLocale } from "@/lib/admin-i18n/server"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 
 export default async function SettingsPage() {
@@ -10,14 +12,11 @@ export default async function SettingsPage() {
   const settings = await runtime.settingsPersistence.getTenantSettings({
     tenantId: tenant.tenantId,
   })
+  const t = getAdminMessages(await getAdminUiLocale()).settings
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        eyebrow="Mandant"
-        title="Einstellungen"
-        description="Globale Site-Einstellungen für diesen Mandanten — sichtbar in der öffentlichen Site, sobald veröffentlicht."
-      />
+      <AdminPageHeader eyebrow={t.eyebrow} title={t.title} description={t.description} />
       <SettingsEditor tenantId={tenant.tenantId} initialSettings={settings} />
     </div>
   )

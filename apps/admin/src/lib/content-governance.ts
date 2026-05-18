@@ -1,440 +1,482 @@
 /**
- * Lightweight content governance for blocks.
- * Editor-only, non-blocking warnings about block content quality.
- *
- * This system provides helpful hints to editors without enforcing rules.
- * Warnings do not prevent saving or publishing.
+ * Block-level publish governance — editor-only, non-blocking.
  */
 
-import type { CmsBlock } from "@sovereign-cms/core"
-import { normalizeMediaReference } from "@sovereign-cms/core"
+import type { CmsBlock, PublishGovernanceIssue } from "@sovereign-cms/core"
+import { deduplicateGovernanceIssues, validateExternalEmbedUrl } from "@sovereign-cms/core"
+import {
+  blockIssue,
+  getArray,
+  getString,
+  governanceProps,
+  normalizeBlockMedia,
+  pushHeadlineLengthHint,
+  pushLinkHygieneIssues,
+  pushMediaNormalizationIssues,
+} from "@/lib/governance-checks"
 
-/**
- * A single governance warning for a block.
- */
-export type GovernanceWarning = {
-  id: string
-  severity: "info" | "warning"
-  message: string
-  fieldPath?: string
-}
+export function getBlockGovernanceIssues(block: CmsBlock | null | undefined): PublishGovernanceIssue[] {
+  if (!block) return []
 
-/**
- * Helper: safely get a string prop from block props.
- */
-function getString(props: Record<string, unknown>, key: string, fallback = ""): string {
-  const value = props[key]
-  return typeof value === "string" ? value : fallback
-}
-
-/**
- * Helper: safely get an array from block props.
- */
-function getArray(props: Record<string, unknown>, key: string): unknown[] {
-  const value = props[key]
-  return Array.isArray(value) ? value : []
-}
-
-/**
- * Get governance warnings for a block.
- * Non-blocking, editor-only hints about block content.
- */
-export function getBlockGovernanceWarnings(block: CmsBlock | null | undefined): GovernanceWarning[] {
-  if (!block) {
-    return []
-  }
-
-  const warnings: GovernanceWarning[] = []
-  const props = block.props && typeof block.props === "object" ? (block.props as Record<string, unknown>) : {}
+  const props = governanceProps(block)
+  const issues: PublishGovernanceIssue[] = []
 
   switch (block.type) {
     case "cta":
-      warnings.push(...getCtaWarnings(props))
+      issues.push(...getCtaIssues(block, props))
       break
     case "feature-grid":
-      warnings.push(...getFeatureGridWarnings(props))
+      issues.push(...getFeatureGridIssues(block, props))
       break
     case "image-text":
-      warnings.push(...getImageTextWarnings(props))
+      issues.push(...getImageTextIssues(block, props))
       break
     case "contact-form":
-      warnings.push(...getContactFormWarnings(props))
+      issues.push(...getContactFormIssues(block, props))
       break
     case "external-embed":
-      warnings.push(...getExternalEmbedWarnings(props))
+      issues.push(...getExternalEmbedIssues(block, props))
       break
     case "hero":
-      warnings.push(...getHeroWarnings(props))
+      issues.push(...getHeroIssues(block, props))
       break
     case "text":
-      warnings.push(...getTextWarnings(props))
+      issues.push(...getTextIssues(block, props))
       break
   }
 
-  return warnings
+  return deduplicateGovernanceIssues(issues)
 }
 
-/**
- * CTA block governance warnings.
- */
-function getCtaWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+/** @deprecated Use getBlockGovernanceIssues */
+export function getBlockGovernanceWarnings(block: CmsBlock | null | undefined) {
+  return getBlockGovernanceIssues(block).map((issue) => ({
+    id: issue.id,
+    severity: issue.severity === "critical" ? ("warning" as const) : issue.severity,
+    message: issue.message,
+    fieldPath: issue.field,
+  }))
+}
+
+function getCtaIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const headline = getString(props, "headline")
   const primaryLabel = getString(props, "primaryLabel")
-  const primaryHref = getString(props, "primaryHref")
   const secondaryLabel = getString(props, "secondaryLabel")
-  const secondaryHref = getString(props, "secondaryHref")
 
   if (!headline) {
-    warnings.push({
-      id: "cta-no-headline",
-      severity: "warning",
-      message: "CTA block has no headline. Consider adding one for context.",
-      fieldPath: "headline",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "cta-no-headline",
+        severity: "warning",
+        category: "editorial",
+        message: "Call-to-action block has no headline. Add context before the buttons.",
+        field: "headline",
+        suggestion: "A short headline helps visitors understand why they should act.",
+      }),
+    )
+  } else {
+    pushHeadlineLengthHint(issues, block, { idPrefix: "cta", field: "headline", headline })
   }
 
-  if (primaryLabel && !primaryHref) {
-    warnings.push({
-      id: "cta-primary-no-href",
-      severity: "info",
-      message: "Primary button has a label but no URL. Add a link or remove the label.",
-      fieldPath: "primaryHref",
-    })
+  if (
+    primaryLabel &&
+    secondaryLabel &&
+    primaryLabel.toLowerCase() === secondaryLabel.toLowerCase()
+  ) {
+    issues.push(
+      blockIssue(block, {
+        id: "cta-duplicate-labels",
+        severity: "info",
+        category: "editorial",
+        message: "Primary and secondary buttons use the same label. Differentiate them if both are needed.",
+      }),
+    )
   }
 
-  if (primaryHref && !primaryLabel) {
-    warnings.push({
-      id: "cta-primary-no-label",
-      severity: "info",
-      message: "Primary button has a URL but no label. Add a label or remove the URL.",
-      fieldPath: "primaryLabel",
-    })
-  }
+  pushLinkHygieneIssues(issues, block, "cta", props, [
+    { urlKey: "primaryHref", labelKey: "primaryLabel", userFacingCta: true, labelWithoutUrlSeverity: "warning" },
+    {
+      urlKey: "secondaryHref",
+      labelKey: "secondaryLabel",
+      userFacingCta: true,
+      labelWithoutUrlSeverity: "info",
+    },
+  ])
 
-  if (secondaryLabel && !secondaryHref) {
-    warnings.push({
-      id: "cta-secondary-no-href",
-      severity: "info",
-      message: "Secondary button has a label but no URL.",
-      fieldPath: "secondaryHref",
-    })
-  }
-
-  if (secondaryHref && !secondaryLabel) {
-    warnings.push({
-      id: "cta-secondary-no-label",
-      severity: "info",
-      message: "Secondary button has a URL but no label.",
-      fieldPath: "secondaryLabel",
-    })
-  }
-
-  return warnings
+  return issues
 }
 
-/**
- * Feature Grid block governance warnings.
- */
-function getFeatureGridWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function getFeatureGridIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const headline = getString(props, "headline")
   const items = getArray(props, "items")
+  const columnsRaw = props.columns
+  const columns = typeof columnsRaw === "number" && columnsRaw >= 2 ? columnsRaw : 3
 
   if (!headline) {
-    warnings.push({
-      id: "grid-no-headline",
-      severity: "warning",
-      message: "Feature Grid has no headline. Consider adding one.",
-      fieldPath: "headline",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "grid-no-headline",
+        severity: "warning",
+        category: "editorial",
+        message: "Feature grid has no section headline.",
+        field: "headline",
+      }),
+    )
   }
 
-  // Check if there are valid items
   const validItems = items.filter((item) => {
     if (typeof item !== "object" || !item) return false
-    const itemRecord = item as Record<string, unknown>
-    return typeof itemRecord.title === "string" && itemRecord.title.trim().length > 0
+    return getString(item as Record<string, unknown>, "title").length > 0
   })
 
   if (validItems.length === 0) {
-    warnings.push({
-      id: "grid-no-items",
-      severity: "warning",
-      message: "Feature Grid has no items. Add at least one feature.",
-      fieldPath: "items",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "grid-no-items",
+        severity: "warning",
+        category: "content",
+        message: "Feature grid has no complete items. Add at least one titled feature.",
+        field: "items",
+      }),
+    )
   }
 
-  // Check items for empty titles/bodies and duplicate IDs
-  const seenIds = new Set<string>()
+  const maxReasonable = columns * 4
+  if (validItems.length > maxReasonable) {
+    issues.push(
+      blockIssue(block, {
+        id: "grid-many-items",
+        severity: "info",
+        category: "editorial",
+        message: `Feature grid has many items (${validItems.length}) for ${columns} columns. Consider splitting or reducing.`,
+        field: "items",
+      }),
+    )
+  }
+
+  const seenTitles = new Map<string, number>()
   items.forEach((item, index) => {
     if (typeof item !== "object" || !item) return
-
     const itemRecord = item as Record<string, unknown>
-    const id = itemRecord.id
-    const title = itemRecord.title
-    const body = itemRecord.body
+    const title = getString(itemRecord, "title")
+    const body = getString(itemRecord, "body")
 
-    // Check for empty title
-    if (typeof title !== "string" || title.trim().length === 0) {
-      warnings.push({
-        id: `grid-item-${index}-no-title`,
-        severity: "info",
-        message: `Grid item ${index + 1} has no title.`,
-        fieldPath: "items",
-      })
-    }
-
-    // Check for empty body
-    if (body === "" || (typeof body === "string" && body.trim().length === 0)) {
-      warnings.push({
-        id: `grid-item-${index}-no-body`,
-        severity: "info",
-        message: `Grid item ${index + 1} has no description.`,
-        fieldPath: "items",
-      })
-    }
-
-    // Check for duplicate IDs
-    if (typeof id === "string") {
-      if (seenIds.has(id)) {
-        warnings.push({
-          id: `grid-duplicate-id`,
+    if (!title) {
+      issues.push(
+        blockIssue(block, {
+          id: `grid-item-${index}-no-title`,
           severity: "warning",
-          message: `Grid has duplicate item ID: "${id}". Each item should have a unique ID.`,
-          fieldPath: "items",
-        })
+          category: "content",
+          message: `Feature ${index + 1} has no title.`,
+          field: "items",
+        }),
+      )
+    } else {
+      const key = title.toLowerCase()
+      const prev = seenTitles.get(key)
+      if (prev !== undefined) {
+        issues.push(
+          blockIssue(block, {
+            id: `grid-item-${index}-dup-title`,
+            severity: "info",
+            category: "editorial",
+            message: `Feature ${index + 1} repeats the title “${title}”.`,
+            field: "items",
+          }),
+        )
       }
-      seenIds.add(id)
+      seenTitles.set(key, index)
+    }
+
+    if (!body) {
+      issues.push(
+        blockIssue(block, {
+          id: `grid-item-${index}-no-body`,
+          severity: "info",
+          category: "editorial",
+          message: `Feature ${index + 1} has no description.`,
+          field: "items",
+        }),
+      )
     }
   })
 
-  return warnings
+  return issues
 }
 
-/**
- * Image + Text block governance warnings.
- */
-function getImageTextWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function getImageTextIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const headline = getString(props, "headline")
-  const ctaLabel = getString(props, "ctaLabel")
-  const ctaHref = getString(props, "ctaHref")
-
-  const normalized = normalizeMediaReference({
-    imageUrl: props.imageUrl,
-    imageAlt: props.imageAlt,
-    assetId: props.mediaAssetId,
-  })
+  const body = getString(props, "body")
+  const normalized = normalizeBlockMedia(props, "imageUrl", "imageAlt", "mediaAssetId")
 
   if (!headline) {
-    warnings.push({
-      id: "imgtext-no-headline",
-      severity: "warning",
-      message: "Image + Text block has no headline.",
-      fieldPath: "headline",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "imgtext-no-headline",
+        severity: "warning",
+        category: "editorial",
+        message: "Image + text block has no headline.",
+        field: "headline",
+      }),
+    )
   }
 
-  if (normalized.sourceType === "invalid") {
-    warnings.push({
-      id: "imgtext-media-invalid",
-      severity: "warning",
-      message: normalized.warning ?? "Image URL is invalid or not allowed for rendering.",
-      fieldPath: "imageUrl",
-    })
+  if (!body) {
+    issues.push(
+      blockIssue(block, {
+        id: "imgtext-no-body",
+        severity: "info",
+        category: "editorial",
+        message: "Image + text block has no body copy.",
+        field: "body",
+      }),
+    )
   }
 
-  if (normalized.sourceType === "external") {
-    warnings.push({
-      id: "imgtext-media-external",
-      severity: "info",
-      message:
-        "External HTTPS image URL. Ensure you trust the host; the admin preview does not load external images.",
-      fieldPath: "imageUrl",
-    })
-  }
+  pushMediaNormalizationIssues(issues, block, {
+    idPrefix: "imgtext",
+    urlField: "imageUrl",
+    normalized,
+    altField: "imageAlt",
+    altValue: getString(props, "imageAlt"),
+  })
 
-  if (normalized.requiresAlt && !getString(props, "imageAlt").trim()) {
-    warnings.push({
-      id: "imgtext-no-alt",
-      severity: "info",
-      message: "Image has no alt text. Add alt text for accessibility.",
-      fieldPath: "imageAlt",
-    })
-  }
+  pushLinkHygieneIssues(issues, block, "imgtext", props, [
+    { urlKey: "ctaHref", labelKey: "ctaLabel", userFacingCta: true },
+  ])
 
-  if (normalized.sourceType === "placeholder") {
-    warnings.push({
-      id: "imgtext-media-placeholder",
-      severity: "info",
-      message:
-        normalized.warning ??
-        "Media asset reference is present without a renderable image URL; public output may omit the image until resolved.",
-      fieldPath: "imageUrl",
-    })
-  }
-
-  if (ctaLabel && !ctaHref) {
-    warnings.push({
-      id: "imgtext-cta-no-href",
-      severity: "info",
-      message: "CTA button has a label but no URL.",
-      fieldPath: "ctaHref",
-    })
-  }
-
-  if (ctaHref && !ctaLabel) {
-    warnings.push({
-      id: "imgtext-cta-no-label",
-      severity: "info",
-      message: "CTA button has a URL but no label.",
-      fieldPath: "ctaLabel",
-    })
-  }
-
-  return warnings
+  return issues
 }
 
-/**
- * Contact Form block governance warnings.
- */
-function getContactFormWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function getContactFormIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
+  const headline = getString(props, "headline")
+  const intro = getString(props, "intro")
   const consentLabel = getString(props, "consentLabel")
+  const submitLabel = getString(props, "submitLabel")
   const recipientEmail = getString(props, "recipientEmail")
 
   if (!consentLabel) {
-    warnings.push({
-      id: "contact-no-consent",
-      severity: "info",
-      message: "Contact form has no consent text. Users should approve data processing.",
-      fieldPath: "consentLabel",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "contact-no-consent",
+        severity: "warning",
+        category: "accessibility",
+        message: "Contact form has no consent text. Visitors should be able to approve data processing.",
+        field: "consentLabel",
+      }),
+    )
+  }
+
+  if (!submitLabel) {
+    issues.push(
+      blockIssue(block, {
+        id: "contact-no-submit-label",
+        severity: "warning",
+        category: "accessibility",
+        message: "Contact form has no submit button label.",
+        field: "submitLabel",
+      }),
+    )
+  }
+
+  if (!headline && !intro) {
+    issues.push(
+      blockIssue(block, {
+        id: "contact-no-intro",
+        severity: "info",
+        category: "editorial",
+        message: "Contact form has no headline or intro. Consider brief context above the fields.",
+        field: "intro",
+      }),
+    )
   }
 
   if (!recipientEmail) {
-    warnings.push({
-      id: "contact-no-recipient",
-      severity: "info",
-      message: "Contact form has no recipient email. Will use tenant default if available.",
-      fieldPath: "recipientEmail",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "contact-no-recipient",
+        severity: "info",
+        category: "editorial",
+        message: "No recipient email set; tenant default may apply if configured.",
+        field: "recipientEmail",
+      }),
+    )
   }
 
-  return warnings
+  return issues
 }
 
-/**
- * External Embed block governance warnings.
- */
-function getExternalEmbedWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function getExternalEmbedIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const embedUrl = getString(props, "embedUrl")
-  const provider = getString(props, "provider")
-
-  if (!provider) {
-    warnings.push({
-      id: "embed-no-provider",
-      severity: "warning",
-      message: "External Embed has no provider specified.",
-      fieldPath: "provider",
-    })
-  }
+  const provider = getString(props, "provider") as "google-maps" | "generic" | ""
+  const title = getString(props, "title")
+  const consentText = getString(props, "consentText")
+  const buttonLabel = getString(props, "buttonLabel")
 
   if (!embedUrl) {
-    warnings.push({
-      id: "embed-no-url",
-      severity: "info",
-      message: "External Embed has no URL. Add an embed URL.",
-      fieldPath: "embedUrl",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "embed-no-url",
+        severity: "critical",
+        category: "media",
+        message: "External embed has no URL. Add an embed URL before publishing.",
+        field: "embedUrl",
+      }),
+    )
+  } else if (isUnsafeEmbedUrl(embedUrl)) {
+    issues.push(
+      blockIssue(block, {
+        id: "embed-unsafe-url",
+        severity: "critical",
+        category: "media",
+        message: "Embed URL uses a blocked or unsafe scheme.",
+        field: "embedUrl",
+      }),
+    )
+  } else if (
+    provider === "google-maps" ||
+    provider === "generic"
+  ) {
+    if (!validateExternalEmbedUrl({ provider, embedUrl })) {
+      issues.push(
+        blockIssue(block, {
+          id: "embed-url-format",
+          severity: "warning",
+          category: "content",
+          message: "Embed URL does not match the selected provider format.",
+          field: "embedUrl",
+          suggestion:
+            provider === "google-maps"
+              ? "Use an HTTPS Google Maps embed URL."
+              : "Use an HTTPS URL for generic embeds.",
+        }),
+      )
+    }
   }
 
-  return warnings
+  if (!provider) {
+    issues.push(
+      blockIssue(block, {
+        id: "embed-no-provider",
+        severity: "warning",
+        category: "content",
+        message: "External embed has no provider type selected.",
+        field: "provider",
+      }),
+    )
+  }
+
+  if (!title) {
+    issues.push(
+      blockIssue(block, {
+        id: "embed-no-title",
+        severity: "warning",
+        category: "accessibility",
+        message: "External embed has no title. Add a short label for context and assistive tech.",
+        field: "title",
+      }),
+    )
+  }
+
+  if (!consentText && !buttonLabel) {
+    issues.push(
+      blockIssue(block, {
+        id: "embed-no-consent-copy",
+        severity: "warning",
+        category: "accessibility",
+        message: "External embed has no consent text or button label for loading third-party content.",
+        field: "consentText",
+      }),
+    )
+  } else if (!consentText) {
+    issues.push(
+      blockIssue(block, {
+        id: "embed-no-consent",
+        severity: "info",
+        category: "editorial",
+        message: "Consider adding consent text explaining third-party content.",
+        field: "consentText",
+      }),
+    )
+  }
+
+  pushLinkHygieneIssues(issues, block, "embed", props, [
+    { urlKey: "embedUrl", field: "embedUrl", userFacingCta: false },
+  ])
+
+  return issues
 }
 
-/**
- * Hero block governance warnings.
- */
-function getHeroWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function isUnsafeEmbedUrl(url: string): boolean {
+  const lower = url.trim().toLowerCase()
+  return (
+    lower.startsWith("javascript:") ||
+    lower.startsWith("vbscript:") ||
+    lower.startsWith("data:") ||
+    lower.startsWith("file:")
+  )
+}
+
+function getHeroIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const headline = getString(props, "headline")
-  const mediaAlt = getString(props, "mediaAlt")
 
   if (!headline) {
-    warnings.push({
-      id: "hero-no-headline",
-      severity: "warning",
-      message: "Hero block has no headline.",
-      fieldPath: "headline",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "hero-no-headline",
+        severity: "warning",
+        category: "editorial",
+        message: "Hero block has no headline.",
+        field: "headline",
+      }),
+    )
+  } else {
+    pushHeadlineLengthHint(issues, block, { idPrefix: "hero", field: "headline", headline })
   }
 
-  const mediaNorm = normalizeMediaReference({
-    imageUrl: props.mediaUrl,
-    imageAlt: props.mediaAlt,
-    assetId: props.mediaAssetId,
+  const mediaNorm = normalizeBlockMedia(props, "mediaUrl", "mediaAlt", "mediaAssetId")
+  pushMediaNormalizationIssues(issues, block, {
+    idPrefix: "hero",
+    urlField: "mediaUrl",
+    normalized: mediaNorm,
+    altField: "mediaAlt",
+    altValue: getString(props, "mediaAlt"),
   })
 
-  if (mediaNorm.sourceType === "invalid") {
-    warnings.push({
-      id: "hero-media-invalid",
-      severity: "warning",
-      message: mediaNorm.warning ?? "Hero media URL is invalid or not allowed for rendering.",
-      fieldPath: "mediaUrl",
-    })
-  }
-
-  if (mediaNorm.sourceType === "external") {
-    warnings.push({
-      id: "hero-media-external",
-      severity: "info",
-      message:
-        "External HTTPS hero media. Ensure you trust the host; the admin preview may not load external images.",
-      fieldPath: "mediaUrl",
-    })
-  }
-
-  if (mediaNorm.requiresAlt && !mediaAlt.trim()) {
-    warnings.push({
-      id: "hero-no-media-alt",
-      severity: "info",
-      message: "Hero image has no alt text. Add alt text for accessibility.",
-      fieldPath: "mediaAlt",
-    })
-  }
-
-  if (mediaNorm.sourceType === "placeholder") {
-    warnings.push({
-      id: "hero-media-placeholder",
-      severity: "info",
-      message:
-        mediaNorm.warning ??
-        "Hero media asset is selected without a renderable URL; verify media configuration.",
-      fieldPath: "mediaUrl",
-    })
-  }
-
-  return warnings
+  return issues
 }
 
-/**
- * Text block governance warnings.
- */
-function getTextWarnings(props: Record<string, unknown>): GovernanceWarning[] {
-  const warnings: GovernanceWarning[] = []
+function getTextIssues(block: CmsBlock, props: Record<string, unknown>): PublishGovernanceIssue[] {
+  const issues: PublishGovernanceIssue[] = []
   const body = getString(props, "body")
 
   if (!body) {
-    warnings.push({
-      id: "text-no-body",
-      severity: "warning",
-      message: "Text block is empty.",
-      fieldPath: "body",
-    })
+    issues.push(
+      blockIssue(block, {
+        id: "text-no-body",
+        severity: "warning",
+        category: "content",
+        message: "Text block is empty.",
+        field: "body",
+      }),
+    )
+  } else if (body.length < 40) {
+    issues.push(
+      blockIssue(block, {
+        id: "text-short-body",
+        severity: "info",
+        category: "editorial",
+        message: "Text block is very short for a content-heavy section.",
+        field: "body",
+      }),
+    )
   }
 
-  return warnings
+  return issues
 }

@@ -17,6 +17,8 @@ import {
   Layers,
 } from "lucide-react"
 import { AdminAppearanceToggle } from "@/components/admin-appearance-toggle"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { AdminUiLocaleSwitcher } from "@/components/admin-ui-locale-switcher"
 import { AdminBadge, AdminTopbar } from "@/components/admin-ui"
 import type { AdminRuntimeAdapterLabels } from "@/lib/admin-runtime-display"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
@@ -28,18 +30,19 @@ type AdminShellProps = {
   runtimeAdapterLabels: AdminRuntimeAdapterLabels
 }
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/pages", label: "Pages", icon: FileText },
-  { href: "/navigation", label: "Navigation", icon: Navigation },
-  { href: "/footer-navigation", label: "Footer Navigation", icon: PanelBottom },
-  { href: "/media", label: "Media", icon: Image },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/privacy", label: "Privacy", icon: Shield },
-]
-
 export function AdminShell({ children, tenant, runtimeAdapterLabels }: AdminShellProps) {
   const pathname = usePathname()
+  const { messages: m } = useAdminI18n()
+
+  const navItems = [
+    { href: "/", label: m.shell.nav.dashboard, icon: LayoutDashboard },
+    { href: "/pages", label: m.shell.nav.pages, icon: FileText },
+    { href: "/navigation", label: m.shell.nav.navigation, icon: Navigation },
+    { href: "/footer-navigation", label: m.shell.nav.footerNavigation, icon: PanelBottom },
+    { href: "/media", label: m.shell.nav.media, icon: Image },
+    { href: "/settings", label: m.shell.nav.settings, icon: Settings },
+    { href: "/privacy", label: m.shell.nav.privacy, icon: Shield },
+  ]
 
   const isRouteActive = (href: string): boolean => {
     if (href === "/") {
@@ -63,9 +66,9 @@ export function AdminShell({ children, tenant, runtimeAdapterLabels }: AdminShel
               <Layers className="relative h-5 w-5 drop-shadow-sm" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1 pt-0.5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] admin-text-muted">Arbeitsbereich</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] admin-text-muted">{m.shell.workspace}</p>
               <h1 className="text-sm font-bold tracking-tight admin-text">SovereignCMS</h1>
-              <p className="mt-2 truncate text-[10px] font-medium uppercase tracking-wide admin-text-muted">Tenant</p>
+              <p className="mt-2 truncate text-[10px] font-medium uppercase tracking-wide admin-text-muted">{m.shell.tenant}</p>
               <span className="mt-0.5 block truncate font-mono text-[11px] leading-snug admin-text" title={tenant.tenantId}>
                 {tenant.tenantId}
               </span>
@@ -116,13 +119,13 @@ export function AdminShell({ children, tenant, runtimeAdapterLabels }: AdminShel
         <div className="admin-sidebar-footer space-y-2 border-t admin-border p-4 text-xs">
           <p className="mb-1 flex items-center gap-1.5 font-semibold uppercase tracking-wide admin-text-muted">
             <Sparkles className="h-3 w-3 shrink-0 admin-accent" aria-hidden />
-            Runtime
+            {m.shell.runtime}
           </p>
           <dl className="space-y-2 text-[11px] admin-text-muted">
             {[
-              { icon: Database, label: "DB", value: runtimeAdapterLabels.databaseAdapter },
-              { icon: HardDrive, label: "Storage", value: runtimeAdapterLabels.storageAdapter },
-              { icon: Lock, label: "Auth", value: runtimeAdapterLabels.authAdapter },
+              { icon: Database, label: m.shell.db, value: runtimeAdapterLabels.databaseAdapter },
+              { icon: HardDrive, label: m.shell.storage, value: runtimeAdapterLabels.storageAdapter },
+              { icon: Lock, label: m.shell.auth, value: runtimeAdapterLabels.authAdapter },
             ].map((row) => {
               const RowIcon = row.icon
               return (
@@ -144,8 +147,14 @@ export function AdminShell({ children, tenant, runtimeAdapterLabels }: AdminShel
         <AdminTopbar
           title={activeNav?.label ?? "Admin"}
           subtitle={tenant.tenantId}
+          viewLabel={m.shell.topbarView}
           badge={<AdminBadge variant="muted">{tenant.source}</AdminBadge>}
-          actions={<AdminAppearanceToggle />}
+          actions={
+            <div className="flex items-center gap-2">
+              <AdminUiLocaleSwitcher />
+              <AdminAppearanceToggle />
+            </div>
+          }
         />
 
         <div className="admin-main-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain">

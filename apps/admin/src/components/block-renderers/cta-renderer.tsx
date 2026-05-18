@@ -1,4 +1,5 @@
 import type { CmsBlock } from "@sovereign-cms/core"
+import { cn } from "@sovereign-cms/ui"
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {}
@@ -19,33 +20,25 @@ export function CtaAdminRenderer({ block }: { block: CmsBlock }) {
 
   return (
     <div className="space-y-3">
-      <div className={`text-sm ${align === "center" ? "text-center" : ""}`}>
-        {eyebrow && (
-          <p className="text-xs font-medium text-gray-500 uppercase">{eyebrow}</p>
-        )}
-        <p className="font-semibold text-gray-900">{headline}</p>
-        {body && (
-          <p className="text-sm text-gray-600 mt-1">{body}</p>
-        )}
+      <div className={cn("text-sm", align === "center" && "text-center")}>
+        {eyebrow ? (
+          <p className="text-xs font-medium uppercase admin-text-muted">{eyebrow}</p>
+        ) : null}
+        <p className="font-semibold admin-text">{headline}</p>
+        {body ? <p className="mt-1 text-sm admin-text-muted">{body}</p> : null}
       </div>
 
-      <div className={`flex gap-2 ${align === "center" ? "justify-center" : "justify-start"}`}>
-        {primaryLabel && (
-          <button
-            disabled
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded font-medium cursor-not-allowed"
-          >
+      <div className={cn("flex flex-wrap gap-2", align === "center" ? "justify-center" : "justify-start")}>
+        {primaryLabel ? (
+          <span className="rounded px-4 py-2 text-sm font-medium admin-accent bg-[color-mix(in_oklab,var(--admin-accent)_18%,var(--admin-surface))]">
             {primaryLabel}
-          </button>
-        )}
-        {secondaryLabel && (
-          <button
-            disabled
-            className="px-4 py-2 bg-gray-200 text-gray-900 text-sm rounded font-medium cursor-not-allowed"
-          >
+          </span>
+        ) : null}
+        {secondaryLabel ? (
+          <span className="rounded border admin-border px-4 py-2 text-sm font-medium admin-text">
             {secondaryLabel}
-          </button>
-        )}
+          </span>
+        ) : null}
       </div>
     </div>
   )

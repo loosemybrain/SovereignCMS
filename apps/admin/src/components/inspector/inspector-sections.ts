@@ -1,4 +1,6 @@
 import type { InspectorSectionKey } from "@sovereign-cms/core"
+import type { AdminUiLocale } from "@/lib/admin-i18n"
+import { getAdminMessages } from "@/lib/admin-i18n"
 
 /**
  * Fixed render order for inspector sections (admin block inspector).
@@ -11,15 +13,10 @@ export const INSPECTOR_SECTION_ORDER: readonly InspectorSectionKey[] = [
   "advanced",
 ] as const
 
-/**
- * Static German labels for inspector sections. No i18n / tenant logic.
- */
-export const INSPECTOR_SECTION_LABELS: Record<InspectorSectionKey, string> = {
-  content: "Inhalt",
-  media: "Medien",
-  actions: "Aktionen",
-  layout: "Layout",
-  advanced: "Erweitert",
+export function getInspectorSectionLabels(
+  locale: AdminUiLocale,
+): Record<InspectorSectionKey, string> {
+  return getAdminMessages(locale).inspector.sections
 }
 
 export function resolveInspectorSectionKey(

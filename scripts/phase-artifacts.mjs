@@ -5,15 +5,19 @@
  *
  * Aufruf aus dem Repo-Root:
  *   npm run phase:zip -- --phase 53.1
+ *   npm run sprint:zip                    # Phase aus neuester phase-*-result.md
+ *   npm run sprint:finish                 # typecheck + lint + build + ZIPs
  *
  * Umgebungsvariablen:
  *   SOVEREIGN_PHASE_ZIP_DIR — Zielverzeichnis (Default: <Repo>/artifacts/phase-zips)
+ *   SPRINT_PHASE — Phasenlabel (z. B. 61), wenn --phase fehlt
  */
 
 import { spawnSync } from "node:child_process"
 import { promises as fs } from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { detectSprintPhaseSlug } from "./lib/detect-sprint-phase.mjs"
 
 const ROOT = process.cwd()
 
@@ -21,13 +25,16 @@ const ROOT = process.cwd()
 const SLIM_ARCHIVE_EXCLUDES = ["node_modules", ".next", ".turbo", "dist"]
 
 function parseArgs(argv) {
-  let phaseLabel = null
+  let phaseLabel = process.env.SPRINT_PHASE?.trim() || null
+  let autoDetect = false
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === "--phase" && argv[i + 1]) {
       phaseLabel = argv[++i]
+    } else if (argv[i] === "--auto") {
+      autoDetect = true
     }
   }
-  return { phaseLabel }
+  return { phaseLabel, autoDetect }
 }
 
 function gitOutput(args) {
@@ -78,7 +85,15 @@ function pathExists(p) {
 }
 
 async function main() {
-  const { phaseLabel } = parseArgs(process.argv)
+  let { phaseLabel, autoDetect } = parseArgs(process.argv)
+
+  if (!phaseLabel && autoDetect) {
+    phaseLabel = await detectSprintPhaseSlug(ROOT)
+    if (phaseLabel) {
+      console.log("Phase automatisch erkannt (neueste phase-*-result.md):", phaseLabel)
+    }
+  }
+
   const slug = safePhaseSlug(phaseLabel)
 
   if (!hasTar()) {

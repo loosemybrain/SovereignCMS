@@ -1,27 +1,31 @@
-import type { ContentStatus, ContentTransitionAction } from "@sovereign-cms/core"
+import type { ContentTransitionAction } from "@sovereign-cms/core"
 import { isContentStatus } from "@sovereign-cms/core"
+import type { AdminUiLocale } from "@/lib/admin-i18n"
+import { getAdminMessages } from "@/lib/admin-i18n"
 
-const STATUS_DE: Record<ContentStatus, string> = {
-  draft: "Entwurf",
-  published: "Veröffentlicht",
-  archived: "Archiviert",
-}
-
-const TRANSITION_DE: Record<ContentTransitionAction, string> = {
-  publish: "Veröffentlichen",
-  archive: "Archivieren",
-  restoreDraft: "Als Entwurf wiederherstellen",
-}
-
-/** Admin editor: German display for persisted page status. */
-export function getEditorPageStatusDisplay(status: string): string {
+/** Admin editor: display for persisted page status (UI locale). */
+export function getEditorPageStatusDisplay(status: string, locale: AdminUiLocale): string {
+  const m = getAdminMessages(locale).contentStatus
   if (isContentStatus(status)) {
-    return STATUS_DE[status]
+    return m[status]
   }
   return status
 }
 
-/** Admin editor: German button labels for workflow actions (UI only; transitions unchanged). */
-export function getEditorTransitionActionLabel(action: ContentTransitionAction): string {
-  return TRANSITION_DE[action]
+/** Admin editor: button labels for workflow actions (UI only; transitions unchanged). */
+export function getEditorTransitionActionLabel(
+  action: ContentTransitionAction,
+  locale: AdminUiLocale,
+): string {
+  const m = getAdminMessages(locale).contentStatus
+  switch (action) {
+    case "publish":
+      return m.publish
+    case "archive":
+      return m.archive
+    case "restoreDraft":
+      return m.restoreDraft
+    default:
+      return action
+  }
 }

@@ -54,6 +54,33 @@ export {
   MEDIA_ASSET_TYPES,
   isMediaAssetType,
 } from "./media"
+export type {
+  GovernanceSeverity,
+  GovernanceCategory,
+  GovernanceScope,
+  PublishGovernanceIssue,
+  PublishGovernanceSummary,
+} from "./publish-governance"
+export {
+  summarizeGovernanceIssues,
+  deduplicateGovernanceIssues,
+  sortGovernanceIssuesForDisplay,
+} from "./publish-governance"
+export {
+  trimGovernanceString,
+  isGovernanceEmpty,
+  extractBlockHeadline,
+  extractGovernanceLinkFields,
+  isGenericAltText,
+  classifyVagueLinkLabel,
+  isUnsafeUrlScheme,
+  isHashOnlyLink,
+  isWhitespaceOnlyUrl,
+  isExternalHttpsLink,
+  classifyHeadingLength,
+  compareGovernanceIssuesForDisplay,
+} from "./governance-helpers"
+export type { GovernanceLinkField } from "./governance-helpers"
 export type { SeoMetadata } from "./seo"
 export {
   createDefaultSeoMetadata,
