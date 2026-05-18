@@ -80,143 +80,168 @@ export function PublicContactForm({
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">{headline}</h2>
-        {intro && <p className="mt-2 text-gray-600">{intro}</p>}
+    <div>
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+          {headline}
+        </h2>
+        {intro ? (
+          <p className="mt-3 text-lg leading-relaxed text-gray-600">{intro}</p>
+        ) : null}
       </div>
 
-      {errors.length > 0 && (
-        <div role="alert" className="mb-4 rounded-lg bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Please fix the following errors:</p>
+      {errors.length > 0 ? (
+        <div
+          role="alert"
+          className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4"
+        >
+          <p className="text-sm font-semibold text-red-800">
+            Please fix the following:
+          </p>
           <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
             {errors.map((error, idx) => (
               <li key={idx}>{error}</li>
             ))}
           </ul>
         </div>
-      )}
+      ) : null}
 
-      {showSuccess && (
+      {showSuccess ? (
         <div
           role="status"
           aria-live="polite"
-          className="mb-4 rounded-lg bg-green-50 p-4"
+          className="mb-6 rounded-lg border border-green-200 bg-green-50 p-5"
         >
-          <p className="text-sm font-medium text-green-800">{successMessage}</p>
-          <p className="mt-1 text-xs text-green-700">
+          <p className="font-semibold text-green-800">{successMessage}</p>
+          <p className="mt-1 text-sm text-green-700">
             Note: In demo mode, no email has been sent. Mail delivery is not yet configured.
           </p>
         </div>
-      )}
+      ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Honeypot field (hidden) */}
-        <div className="absolute -left-96 -top-96">
-          <label htmlFor="website" className="sr-only">
-            Website
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+        {/* Honeypot (hidden from users and assistive tech) */}
+        <div className="absolute -left-[9999px] -top-[9999px]" aria-hidden="true">
           <input
-            id="website"
             name="website"
             type="text"
             value={honeypot}
             onChange={(e) => setHoneypot(e.target.value)}
             tabIndex={-1}
             autoComplete="off"
-            aria-hidden="true"
           />
         </div>
 
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name <span className="text-red-500">*</span>
+          <label
+            htmlFor="cf-name"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Name <span className="text-red-500" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <input
-            id="name"
+            id="cf-name"
             name="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             required
+            autoComplete="name"
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-field"
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-            Email <span className="text-red-500">*</span>
+          <label
+            htmlFor="cf-email"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Email <span className="text-red-500" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <input
-            id="email"
+            id="cf-email"
             name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
+            autoComplete="email"
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-field"
           />
         </div>
 
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="cf-phone"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
             Phone
+            <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>
           </label>
           <input
-            id="phone"
+            id="cf-phone"
             name="phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="Your phone (optional)"
+            placeholder="Your phone number"
+            autoComplete="tel"
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-field"
           />
         </div>
 
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-            Message <span className="text-red-500">*</span>
+          <label
+            htmlFor="cf-message"
+            className="mb-1.5 block text-sm font-medium text-gray-700"
+          >
+            Message <span className="text-red-500" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <textarea
-            id="message"
+            id="cf-message"
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Your message..."
+            placeholder="Your message…"
             rows={5}
             required
             disabled={isSubmitting}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
+            className="pub-field"
           />
         </div>
 
         <div className="flex items-start gap-3">
           <input
-            id="consent"
+            id="cf-consent"
             name="consent"
             type="checkbox"
             checked={consentAccepted}
             onChange={(e) => setConsentAccepted(e.target.checked)}
             required
             disabled={isSubmitting}
-            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+            className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed"
           />
-          <label htmlFor="consent" className="text-sm text-gray-700">
-            {consentLabel} <span className="text-red-500">*</span>
+          <label htmlFor="cf-consent" className="text-sm leading-relaxed text-gray-700">
+            {consentLabel}{" "}
+            <span className="text-red-500" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting || showSuccess}
-          className="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-400"
+          className="pub-btn-primary pub-interactive w-full"
         >
-          {isSubmitting ? "Sending..." : submitLabel}
+          {isSubmitting ? "Sending…" : submitLabel}
         </button>
       </form>
     </div>

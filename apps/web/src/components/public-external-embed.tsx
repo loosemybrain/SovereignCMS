@@ -15,21 +15,27 @@ export function PublicExternalEmbed({
   consentText = "This external content requires your consent to be displayed.",
   buttonLabel = "Load Content",
 }: Props) {
-  // Validate URL
-  const isValid = validateExternalEmbedUrl({
-    provider,
-    embedUrl,
-  })
+  const isValid = validateExternalEmbedUrl({ provider, embedUrl })
 
   if (!isValid) {
     return (
-      <div className="rounded-lg border border-red-300 bg-red-50 p-6 text-center">
-        <p className="text-sm font-medium text-red-800">
-          Invalid embed URL for {provider} provider.
-        </p>
-        <p className="mt-1 text-xs text-red-700">
-          Please check the URL configuration in the block settings.
-        </p>
+      <div
+        className="flex items-center justify-center overflow-hidden rounded-xl px-6 py-10 text-center"
+        style={{
+          background: "var(--pub-surface-bg-subtle)",
+          border: "1px solid var(--pub-surface-border)",
+          minHeight: "160px",
+        }}
+        role="alert"
+      >
+        <div className="max-w-xs">
+          <p className="text-sm font-medium text-gray-600">
+            This embed cannot be displayed.
+          </p>
+          <p className="mt-1 text-xs text-gray-400">
+            The content source is unavailable or the URL is not valid.
+          </p>
+        </div>
       </div>
     )
   }
@@ -40,15 +46,25 @@ export function PublicExternalEmbed({
       consentText={consentText}
       buttonLabel={buttonLabel}
     >
-      <div className="aspect-video overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
+      <div
+        className="overflow-hidden rounded-xl"
+        style={{
+          position: "relative",
+          paddingBottom: "56.25%",  /* 16:9 */
+          height: 0,
+          border: "1px solid var(--pub-surface-border)",
+        }}
+      >
         <iframe
           src={embedUrl}
           title={title}
-          width="100%"
-          height="100%"
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
             border: "none",
-            borderRadius: "0.5rem",
           }}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"

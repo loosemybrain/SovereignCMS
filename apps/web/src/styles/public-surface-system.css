@@ -1,0 +1,240 @@
+/* Public Surface System — Phase 63
+   Single source of truth for spacing rhythm, motion, focus, and container widths
+   on the public rendering layer. Use these tokens and utilities rather than
+   duplicating arbitrary values across components. */
+
+:root {
+  /* ── Section spacing rhythm ── */
+  --pub-section-py: 5rem;        /* 80px — full section vertical padding */
+  --pub-section-py-sm: 3rem;     /* 48px — tighter sections (contact, embed) */
+
+  /* ── Container widths ── */
+  --pub-container-max: 80rem;    /* 1280px — matches header max-w-7xl */
+  --pub-content-max: 44rem;      /* 704px — reading-width constraint for body copy */
+  --pub-wide-max: 64rem;         /* 1024px — wide layouts (image-text, feature-grid) */
+
+  /* ── Surface tokens ── */
+  --pub-surface-bg: #ffffff;
+  --pub-surface-bg-subtle: #f9fafb;
+  --pub-surface-bg-muted: #f3f4f6;
+  --pub-surface-border: #e5e7eb;
+  --pub-surface-border-subtle: #f3f4f6;
+
+  /* ── Elevation ── */
+  --pub-shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --pub-shadow-card-hover: 0 4px 12px 0 rgb(0 0 0 / 0.09), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+
+  /* ── Typography scale ── */
+  --pub-text-body: 1.0625rem;    /* 17px — slightly above browser default for editorial feel */
+  --pub-text-body-lg: 1.125rem;  /* 18px — lead paragraphs */
+  --pub-leading-body: 1.75;      /* generous line-height for reading comfort */
+  --pub-leading-tight: 1.2;
+
+  /* ── Motion governance ── */
+  --pub-motion-dur: 180ms;
+  --pub-motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Focus ring ── */
+  --pub-focus-color: #3b82f6;    /* blue-500 */
+  --pub-focus-width: 2px;
+  --pub-focus-offset: 2px;
+}
+
+/* Respect reduced-motion preference globally */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pub-motion-dur: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Container utility ──
+   Consistent horizontal padding at every breakpoint, matching the header. */
+.pub-container {
+  margin-inline: auto;
+  max-width: var(--pub-container-max);
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .pub-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pub-container {
+    padding-inline: 2rem;
+  }
+}
+
+/* ── Section padding ── */
+.pub-section-py {
+  padding-top: var(--pub-section-py);
+  padding-bottom: var(--pub-section-py);
+}
+
+.pub-section-py-sm {
+  padding-top: var(--pub-section-py-sm);
+  padding-bottom: var(--pub-section-py-sm);
+}
+
+@media (max-width: 639px) {
+  .pub-section-py {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  .pub-section-py-sm {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+/* ── Section separator ──
+   Subtle visual break between adjacent public sections. */
+.pub-section + .pub-section {
+  border-top: 1px solid var(--pub-surface-border-subtle);
+}
+
+/* ── Reading-width constraint ── */
+.pub-prose {
+  max-width: var(--pub-content-max);
+  font-size: var(--pub-text-body);
+  line-height: var(--pub-leading-body);
+}
+
+/* ── Interactive elements ──
+   Apply to anchors, buttons, and cards that have hover effects. */
+.pub-interactive {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--pub-motion-dur);
+  transition-timing-function: var(--pub-motion-ease);
+}
+
+/* ── Focus-visible ring ──
+   Override default browser outline with a consistent, high-contrast ring. */
+.pub-focusable:focus-visible {
+  outline: var(--pub-focus-width) solid var(--pub-focus-color);
+  outline-offset: var(--pub-focus-offset);
+  border-radius: 0.25rem;
+}
+
+/* ── Feature card ── */
+.pub-card {
+  background: var(--pub-surface-bg);
+  border: 1px solid var(--pub-surface-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--pub-shadow-card);
+  transition-property: box-shadow, border-color, transform;
+  transition-duration: var(--pub-motion-dur);
+  transition-timing-function: var(--pub-motion-ease);
+}
+
+.pub-card:hover {
+  box-shadow: var(--pub-shadow-card-hover);
+  border-color: #d1d5db;
+}
+
+/* ── Primary button ── */
+.pub-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border-radius: 0.5rem;
+  background-color: #1d4ed8;   /* blue-700 — strong enough for AA contrast on white */
+  color: #ffffff;
+  transition-property: background-color, box-shadow, transform;
+  transition-duration: var(--pub-motion-dur);
+  transition-timing-function: var(--pub-motion-ease);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  min-height: 44px;             /* touch target */
+}
+
+.pub-btn-primary:hover {
+  background-color: #1e40af;   /* blue-800 */
+}
+
+.pub-btn-primary:focus-visible {
+  outline: var(--pub-focus-width) solid var(--pub-focus-color);
+  outline-offset: var(--pub-focus-offset);
+}
+
+/* ── Secondary button ── */
+.pub-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;   /* gray-100 */
+  color: #111827;               /* gray-900 */
+  border: 1px solid #d1d5db;   /* gray-300 */
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: var(--pub-motion-dur);
+  transition-timing-function: var(--pub-motion-ease);
+  text-decoration: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.pub-btn-secondary:hover {
+  background-color: #e5e7eb;   /* gray-200 */
+  border-color: #9ca3af;       /* gray-400 */
+}
+
+.pub-btn-secondary:focus-visible {
+  outline: var(--pub-focus-width) solid var(--pub-focus-color);
+  outline-offset: var(--pub-focus-offset);
+}
+
+/* ── Form field ── */
+.pub-field {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: var(--pub-text-body);
+  line-height: 1.5;
+  color: #111827;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  transition-property: border-color, box-shadow;
+  transition-duration: var(--pub-motion-dur);
+  transition-timing-function: var(--pub-motion-ease);
+  min-height: 44px;
+}
+
+.pub-field::placeholder {
+  color: #9ca3af;
+}
+
+.pub-field:focus {
+  outline: none;
+  border-color: var(--pub-focus-color);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.12);
+}
+
+.pub-field:disabled {
+  background-color: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+textarea.pub-field {
+  min-height: auto;
+  resize: vertical;
+}
