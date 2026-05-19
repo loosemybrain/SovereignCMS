@@ -71,7 +71,7 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         type: "media",
         section: "media",
         description:
-          "Medien-Asset für den Hero wählen. URL und Alt werden aus dem Eintrag übernommen; öffentliche Ausgabe nutzt nur sichere, normalisierte Bild-URLs (siehe Governance-Dokumentation).",
+          "Choose a media asset for the hero. URL and alt text come from the record; public output uses safe, normalized image URLs only.",
         mediaType: "image",
       },
     ],
@@ -426,7 +426,7 @@ export const adminBlockDefinitions: AdminBlockRegistry = {
         type: "text",
         section: "media",
         description:
-          "Erlaubt: interner Pfad ab / (z. B. /images/foto.jpg) oder externe https://-URL. Nicht erlaubt: http://, data:, javascript:, vbscript:. Später: Verknüpfung über Medien-Assets (mediaAssetId) — noch ohne Upload-Pipeline.",
+          "Allowed: internal path from / (e.g. /images/photo.jpg) or external https:// URL. Not allowed: http://, data:, javascript:, vbscript:. Future: link via media assets (mediaAssetId) — no upload pipeline yet.",
         placeholder: "/images/beispiel.jpg oder https://…",
       },
       {

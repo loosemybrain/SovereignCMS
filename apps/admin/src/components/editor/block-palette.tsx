@@ -17,6 +17,8 @@ import { getPresetsForBlockType } from "@sovereign-cms/core"
 import { cn } from "@sovereign-cms/ui"
 import { AdminButton, AdminSectionCard, adminFeatureCardClassNames } from "@/components/admin-ui"
 import { EditorHint } from "@/components/editor/patterns"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getLocalizedBlockCategory, getLocalizedBlockLabel } from "@/lib/admin-block-i18n"
 
 type BlockPaletteProps = {
   onAddBlock: (blockType: string, presetId?: string) => void
@@ -43,6 +45,9 @@ export function BlockPalette({
   insertAfterBlockId,
   onClearInsertPosition,
 }: BlockPaletteProps) {
+  const { locale, messages } = useAdminI18n()
+  const bp = messages.blockPalette
+  const w = messages.editor.workspace
   const definitions = listAdminBlockDefinitions()
 
   const byCategory = definitions.reduce(
@@ -58,8 +63,8 @@ export function BlockPalette({
 
   return (
     <AdminSectionCard
-      title="Block hinzufügen"
-      description="Karten pro Blocktyp — Presets und leerer Block, gleiche Logik wie zuvor."
+      title={bp.title}
+      description={bp.description}
       variant="glass"
       className="overflow-hidden shadow-md"
       headerAction={
@@ -70,16 +75,14 @@ export function BlockPalette({
             className="px-2 py-1 text-xs"
             onClick={onClearInsertPosition}
           >
-            Position zurücksetzen
+            {w.clearInsertPosition}
           </AdminButton>
         ) : null
       }
     >
       <div className="space-y-3 border-b admin-border pb-4">
         <EditorHint tone="info">
-          {insertAfterBlockId
-            ? "Der neue Block wird nach der markierten Karte eingefügt (Einfügemarke aktiv)."
-            : "Der neue Block wird am Ende der Seite eingefügt."}
+          {insertAfterBlockId ? bp.insertAfterMarked : bp.insertAtEndHint}
         </EditorHint>
       </div>
 
@@ -88,7 +91,9 @@ export function BlockPalette({
           <div key={category} className="mb-10 last:mb-0">
             <div className="mb-4 flex items-center gap-2">
               <span className="h-1 w-8 rounded-full bg-[color-mix(in_oklab,var(--admin-accent)_70%,transparent)]" />
-              <h3 className="text-xs font-bold uppercase tracking-[0.12em] admin-text-muted">{category}</h3>
+              <h3 className="text-xs font-bold uppercase tracking-[0.12em] admin-text-muted">
+                {getLocalizedBlockCategory(category, locale)}
+              </h3>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {blocks.map((definition) => {
@@ -105,7 +110,9 @@ export function BlockPalette({
                         <Icon className="h-5 w-5" strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold admin-text">{definition.label}</p>
+                        <p className="truncate font-semibold admin-text">
+                          {getLocalizedBlockLabel(definition.type, locale)}
+                        </p>
                         <p className="font-mono text-[10px] uppercase tracking-wide text-[color-mix(in_oklab,var(--admin-text-muted)_95%,transparent)]">
                           {definition.type}
                         </p>
@@ -115,7 +122,7 @@ export function BlockPalette({
                       {presets.length > 0 ? (
                         <div>
                           <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.14em] admin-text-muted">
-                            Presets
+                            {bp.presetsSection}
                           </p>
                           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                             {presets.map((preset) => (
@@ -150,9 +157,9 @@ export function BlockPalette({
                       >
                         <span className="flex items-center gap-2 font-semibold admin-text">
                           <Layers className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
-                          Leerer Block
+                          {bp.emptyPreset}
                         </span>
-                        <span className="mt-1 block text-[11px] admin-text-muted">Ohne Preset-Startwerte</span>
+                        <span className="mt-1 block text-[11px] admin-text-muted">{bp.emptyPresetDescription}</span>
                       </button>
                     </div>
                   </div>

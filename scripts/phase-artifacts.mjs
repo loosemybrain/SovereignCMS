@@ -1,7 +1,7 @@
 /**
  * Nach einem Phasenschritt: zwei ZIP-Artefakte erzeugen
  * 1) Nur geänderte Dateien (gegenüber HEAD, inkl. staged + untracked laut .gitignore)
- * 2) „Slim“-Snapshot des Repos: ohne node_modules, .next, .turbo, dist; inkl. .git
+ * 2) „Slim“-Snapshot des Repos: ohne node_modules, .next, .turbo, dist, artifacts; inkl. .git
  *
  * Aufruf aus dem Repo-Root:
  *   npm run phase:zip -- --phase 53.1
@@ -21,8 +21,16 @@ import { detectSprintPhaseSlug } from "./lib/detect-sprint-phase.mjs"
 
 const ROOT = process.cwd()
 
-/** Verzeichnisse, die im Slim-Vollarchiv nicht vorkommen (Build/Deps). */
-const SLIM_ARCHIVE_EXCLUDES = ["node_modules", ".next", ".turbo", "dist"]
+/** Verzeichnisse/Dateien, die in keinem Sprint-ZIP vorkommen (Build/Deps + ZIP-Ausgabe). */
+const SLIM_ARCHIVE_EXCLUDES = ["node_modules", ".next", ".turbo", "dist", "artifacts"]
+
+function isZipExcludedPath(rel) {
+  const normalized = rel.replaceAll("\\", "/").replace(/^\.\//, "")
+  if (normalized === "artifacts" || normalized.startsWith("artifacts/")) {
+    return true
+  }
+  return false
+}
 
 function parseArgs(argv) {
   let phaseLabel = process.env.SPRINT_PHASE?.trim() || null
@@ -114,6 +122,7 @@ async function main() {
   const changed = collectChangedPaths()
   const existing = []
   for (const rel of changed) {
+    if (isZipExcludedPath(rel)) continue
     const abs = path.join(ROOT, rel)
     if (await pathExists(abs)) {
       const st = await fs.stat(abs)
@@ -161,7 +170,10 @@ async function main() {
   await fs.copyFile(fullZipTmp, fullZip)
   await fs.rm(fullZipTmp, { force: true })
 
-  console.log("Slim-Repo-ZIP (ohne node_modules, .next, .turbo, dist):", fullZip)
+  console.log(
+    "Slim-Repo-ZIP (ohne node_modules, .next, .turbo, dist, artifacts):",
+    fullZip,
+  )
   console.log("")
   console.log("Fertig. Ausgabeordner:", outDir)
 }

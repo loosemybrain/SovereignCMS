@@ -1,30 +1,35 @@
 "use server"
 
-import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import type {
   UpdatePrivacyScanApprovalInput,
   UpdatePrivacyScanApprovalResult,
 } from "@sovereign-cms/core"
 import { isPrivacyScanApprovalStatus } from "@sovereign-cms/core"
+import { resolveAdminWriteScope } from "@/lib/resolve-admin-write-scope"
 
+/** Server-side privacy scan approval update. Phase 72: scoped with scan ownership check. */
 export async function updatePrivacyScanApprovalAction(
-  input: UpdatePrivacyScanApprovalInput
+  input: UpdatePrivacyScanApprovalInput,
 ): Promise<UpdatePrivacyScanApprovalResult> {
-  // Validate tenantId
   if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
     throw new Error("tenantId is required")
   }
 
-  // Validate scanId
   if (typeof input.scanId !== "string" || input.scanId.trim().length === 0) {
     throw new Error("scanId is required")
   }
 
-  // Validate approvalStatus
   if (!isPrivacyScanApprovalStatus(input.approvalStatus)) {
     throw new Error("approvalStatus is invalid")
   }
 
-  const { runtime } = getAdminRuntime()
-  return runtime.privacyScannerPersistence.updatePrivacyScanApproval(input)
+  const { runtime, scope } = resolveAdminWriteScope({
+    clientTenantId: input.tenantId,
+    operation: "privacy:manage",
+  })
+
+  return runtime.privacyScannerPersistence.updatePrivacyScanApproval({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }

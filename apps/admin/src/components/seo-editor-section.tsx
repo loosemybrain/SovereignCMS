@@ -4,6 +4,8 @@ import type { SeoMetadata } from "@sovereign-cms/core"
 import { validateCanonicalUrl } from "@sovereign-cms/core"
 import { MediaPicker } from "@/components/media-picker"
 import type { MediaAsset } from "@sovereign-cms/core"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { formatAdminMessage } from "@/lib/admin-i18n"
 
 type Props = {
   seo: SeoMetadata | null | undefined
@@ -12,6 +14,8 @@ type Props = {
 }
 
 export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
+  const { messages } = useAdminI18n()
+  const s = messages.seoForm
   const data = seo || {}
 
   const seoTitle = typeof data.seoTitle === "string" ? data.seoTitle : ""
@@ -48,55 +52,55 @@ export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-medium admin-text">SEO Title</label>
+        <label className="block text-xs font-medium admin-text">{s.seoTitle}</label>
         <input
           id="seo-title"
           type="text"
           aria-describedby="seo-title-help"
           value={seoTitle}
           onChange={(e) => handleSeoTitleChange(e.target.value)}
-          placeholder="Page title for search results"
+          placeholder={s.metaTitlePlaceholder}
           className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
         <p id="seo-title-help" className="mt-1 text-xs admin-text-muted">
-          {seoTitle.length}/60 (recommended: 30-60)
+          {formatAdminMessage(s.titleHelp, { count: String(seoTitle.length) })}
         </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium admin-text">SEO Description</label>
+        <label className="block text-xs font-medium admin-text">{s.seoDescription}</label>
         <textarea
           id="seo-description"
           aria-describedby="seo-description-help"
           value={seoDescription}
           onChange={(e) => handleSeoDescriptionChange(e.target.value)}
-          placeholder="Page description for search results"
+          placeholder={s.metaDescriptionPlaceholder}
           rows={3}
           className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
         <p id="seo-description-help" className="mt-1 text-xs admin-text-muted">
-          {seoDescription.length}/160 (recommended: 100-160)
+          {formatAdminMessage(s.descriptionHelp, { count: String(seoDescription.length) })}
         </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium admin-text">Canonical URL</label>
+        <label className="block text-xs font-medium admin-text">{s.canonicalUrl}</label>
         <input
           id="canonical-url"
           aria-describedby="canonical-url-help"
           type="text"
           value={canonicalUrl}
           onChange={(e) => handleCanonicalUrlChange(e.target.value)}
-          placeholder="https://example.com/page or /relative/path"
+          placeholder={s.canonicalPlaceholder}
           className="mt-1 w-full rounded border admin-border admin-surface px-2 py-1 text-xs admin-text placeholder:admin-text-muted admin-focus-ring focus:outline-none"
         />
         <p id="canonical-url-help" className="mt-1 text-xs admin-text-muted">
-          Optional: Preferred URL for this page
+          {s.canonicalHelp}
         </p>
       </div>
 
       <div>
-        <label className="block text-xs font-medium admin-text mb-2">SEO Image</label>
+        <label className="block text-xs font-medium admin-text mb-2">{s.seoImage}</label>
         {tenantId ? (
           <MediaPicker
             tenantId={tenantId}
@@ -105,7 +109,7 @@ export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
           />
         ) : (
           <div className="rounded bg-red-900/20 border border-red-700/50 p-2" role="alert">
-            <p className="text-xs text-red-200">Error: tenantId not available</p>
+            <p className="text-xs text-red-200">{s.tenantIdMissing}</p>
           </div>
         )}
       </div>
@@ -121,10 +125,10 @@ export function SeoEditorSection({ seo, onUpdate, tenantId }: Props) {
               : "admin-surface-muted admin-text border admin-border hover:opacity-90"
           } admin-focus-ring`}
         >
-          {robotsIndex ? "✓ Index" : "✗ No Index"}
+          {robotsIndex ? s.robotsIndexOn : s.robotsIndexOff}
         </button>
         <p className="text-xs admin-text-muted">
-          {robotsIndex ? "Search engines can index this page" : "Search engines should not index"}
+          {robotsIndex ? s.robotsIndexHelpOn : s.robotsIndexHelpOff}
         </p>
       </div>
     </div>

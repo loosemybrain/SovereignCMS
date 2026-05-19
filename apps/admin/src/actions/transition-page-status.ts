@@ -1,24 +1,17 @@
 "use server"
 
-import { createRuntime } from "@sovereign-cms/runtime"
 import type { TransitionPageStatusInput, TransitionPageStatusResult } from "@sovereign-cms/core"
+import { resolveAdminContentWriteScope } from "@/lib/resolve-admin-content-write-scope"
 
 /**
  * Server-side status transition boundary for pages.
- * 
- * This action:
- * 1. Validates input on server
- * 2. Creates runtime on the server (safe - no client exposure)
- * 3. Delegates to runtime.pageStatusPersistence.transitionPageStatus
- * 4. Returns result to client
  *
- * In future phases, this can be replaced with a real API route
- * or enhanced with authentication/authorization checks.
+ * Phase 71: publish/archive/restore uses tenant-scoped transitionPageStatus.
+ * Permission hook: page:publish (enforcement deferred until auth subject is reliable).
  */
 export async function transitionPageStatusAction(
   input: TransitionPageStatusInput,
 ): Promise<TransitionPageStatusResult> {
-  // Minimal input validation
   if (typeof input.tenantId !== "string" || input.tenantId.length === 0) {
     throw new Error("Invalid input: tenantId is required")
   }
@@ -35,9 +28,14 @@ export async function transitionPageStatusAction(
     throw new Error("Invalid input: action is required")
   }
 
-  // Create runtime on server (safe - no exposure to client)
-  const runtime = createRuntime()
+  const { runtime, scope } = resolveAdminContentWriteScope({
+    clientTenantId: input.tenantId,
+    locale: input.locale,
+    operation: "page:publish",
+  })
 
-  // Delegate to runtime persistence layer
-  return runtime.pageStatusPersistence.transitionPageStatus(input)
+  return runtime.pageStatusPersistence.transitionPageStatus({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }

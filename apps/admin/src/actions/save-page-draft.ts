@@ -1,24 +1,18 @@
 "use server"
 
-import { createRuntime } from "@sovereign-cms/runtime"
 import type { SavePageDraftInput, SavePageDraftResult } from "@sovereign-cms/core"
+import { stripMediaCompositionMetadata } from "@sovereign-cms/runtime"
+import { resolveAdminContentWriteScope } from "@/lib/resolve-admin-content-write-scope"
 
 /**
  * Server-side save boundary for page editor drafts.
- * 
- * This action:
- * 1. Creates runtime on the server (safe - no client exposure)
- * 2. Validates input
- * 3. Delegates to runtime.editorPersistence.savePageDraft
- * 4. Returns result to client
  *
- * In future phases, this can be replaced with a real API route
- * or enhanced with authentication/authorization checks.
+ * Phase 71: tenant scope is resolved centrally; block writes go through
+ * ContentPersistenceAdapter.saveBlocks with page-ownership checks.
  */
 export async function savePageDraftAction(
   input: SavePageDraftInput,
 ): Promise<SavePageDraftResult> {
-  // Minimal input validation
   if (!input.tenantId || typeof input.tenantId !== "string") {
     throw new Error("Invalid input: tenantId is required")
   }
@@ -35,9 +29,15 @@ export async function savePageDraftAction(
     throw new Error("Invalid input: blocks must be an array")
   }
 
-  // Create runtime on server (safe - no exposure to client)
-  const runtime = createRuntime()
+  const { runtime, scope } = resolveAdminContentWriteScope({
+    clientTenantId: input.tenantId,
+    locale: input.locale,
+    operation: "page:update",
+  })
 
-  // Delegate to runtime persistence layer
-  return runtime.editorPersistence.savePageDraft(input)
+  return runtime.editorPersistence.savePageDraft({
+    ...input,
+    tenantId: scope.tenantId,
+    blocks: stripMediaCompositionMetadata(input.blocks),
+  })
 }

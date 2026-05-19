@@ -6,7 +6,7 @@ import { CreateNavigationItemForm } from "@/components/create-navigation-item-fo
 import { AdminDataTable, AdminDataTableBody, AdminDataTableCell, AdminDataTableHeadRow, AdminDataTableRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader, AdminSectionCard } from "@/components/admin-ui"
 import { formatAdminMessage, getAdminMessages } from "@/lib/admin-i18n"
 import { getAdminUiLocale } from "@/lib/admin-i18n/server"
-import { getAdminRuntime } from "@/lib/get-admin-runtime"
+import { resolveAdminOperationalReadScope } from "@/lib/resolve-admin-operational-read-scope"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
 type Props = {
@@ -17,7 +17,10 @@ export default async function NavigationPage({ searchParams }: Props) {
   const params = await searchParams
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const { runtime, tenant } = getAdminRuntime({ host })
+  const { runtime, scope } = resolveAdminOperationalReadScope({
+    host,
+    operation: "navigation:read",
+  })
   const t = getAdminMessages(await getAdminUiLocale())
   const n = t.navigation
 
@@ -33,12 +36,12 @@ export default async function NavigationPage({ searchParams }: Props) {
 
   const [items, pages] = await Promise.all([
     runtime.navigationPersistence.listNavigationItems({
-      tenantId: tenant.tenantId,
+      tenantId: scope.tenantId,
       locale: activeLocale,
       scope: "main",
     }),
-    runtime.db.pages.listByTenant({
-      tenantId: tenant.tenantId,
+    runtime.content.listPages({
+      tenantId: scope.tenantId,
       locale: activeLocale,
     }),
   ])
@@ -60,7 +63,7 @@ export default async function NavigationPage({ searchParams }: Props) {
           />
           <CreateNavigationItemForm
             key={`navigation-create-${activeLocale}`}
-            tenantId={tenant.tenantId}
+            tenantId={scope.tenantId}
             activeLocale={activeLocale}
             pages={pages}
           />

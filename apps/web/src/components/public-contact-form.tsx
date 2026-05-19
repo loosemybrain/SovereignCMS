@@ -81,24 +81,15 @@ export function PublicContactForm({
 
   return (
     <div>
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-          {headline}
-        </h2>
-        {intro ? (
-          <p className="mt-3 text-lg leading-relaxed text-gray-600">{intro}</p>
-        ) : null}
-      </div>
+      <header className="mb-8">
+        {headline ? <h2 className="pub-h2">{headline}</h2> : null}
+        {intro ? <p className="pub-lead">{intro}</p> : null}
+      </header>
 
       {errors.length > 0 ? (
-        <div
-          role="alert"
-          className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4"
-        >
-          <p className="text-sm font-semibold text-red-800">
-            Please fix the following:
-          </p>
-          <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+        <div role="alert" className="pub-notice pub-notice--danger mb-6">
+          <p className="font-semibold">Please fix the following:</p>
+          <ul className="mt-2 list-inside list-disc space-y-1">
             {errors.map((error, idx) => (
               <li key={idx}>{error}</li>
             ))}
@@ -107,21 +98,16 @@ export function PublicContactForm({
       ) : null}
 
       {showSuccess ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mb-6 rounded-lg border border-green-200 bg-green-50 p-5"
-        >
-          <p className="font-semibold text-green-800">{successMessage}</p>
-          <p className="mt-1 text-sm text-green-700">
+        <div role="status" aria-live="polite" className="pub-notice pub-notice--success mb-6">
+          <p className="font-semibold">{successMessage}</p>
+          <p className="mt-1 text-sm opacity-90">
             Note: In demo mode, no email has been sent. Mail delivery is not yet configured.
           </p>
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        {/* Honeypot (hidden from users and assistive tech) */}
-        <div className="absolute -left-[9999px] -top-[9999px]" aria-hidden="true">
+      <form onSubmit={handleSubmit} className="pub-form-stack" noValidate>
+        <div className="absolute left-[-9999px] top-[-9999px]" aria-hidden="true">
           <input
             name="website"
             type="text"
@@ -133,11 +119,8 @@ export function PublicContactForm({
         </div>
 
         <div>
-          <label
-            htmlFor="cf-name"
-            className="mb-1.5 block text-sm font-medium text-gray-700"
-          >
-            Name <span className="text-red-500" aria-hidden="true">*</span>
+          <label htmlFor="cf-name" className="pub-form-label">
+            Name <span className="text-red-600" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
           <input
@@ -150,16 +133,13 @@ export function PublicContactForm({
             required
             autoComplete="name"
             disabled={isSubmitting}
-            className="pub-field"
+            className="pub-field pub-focusable"
           />
         </div>
 
         <div>
-          <label
-            htmlFor="cf-email"
-            className="mb-1.5 block text-sm font-medium text-gray-700"
-          >
-            Email <span className="text-red-500" aria-hidden="true">*</span>
+          <label htmlFor="cf-email" className="pub-form-label">
+            Email <span className="text-red-600" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
           <input
@@ -172,17 +152,14 @@ export function PublicContactForm({
             required
             autoComplete="email"
             disabled={isSubmitting}
-            className="pub-field"
+            className="pub-field pub-focusable"
           />
         </div>
 
         <div>
-          <label
-            htmlFor="cf-phone"
-            className="mb-1.5 block text-sm font-medium text-gray-700"
-          >
+          <label htmlFor="cf-phone" className="pub-form-label">
             Phone
-            <span className="ml-1 text-xs font-normal text-gray-400">(optional)</span>
+            <span className="ml-1 text-xs font-normal text-gray-500">(optional)</span>
           </label>
           <input
             id="cf-phone"
@@ -193,16 +170,13 @@ export function PublicContactForm({
             placeholder="Your phone number"
             autoComplete="tel"
             disabled={isSubmitting}
-            className="pub-field"
+            className="pub-field pub-focusable"
           />
         </div>
 
         <div>
-          <label
-            htmlFor="cf-message"
-            className="mb-1.5 block text-sm font-medium text-gray-700"
-          >
-            Message <span className="text-red-500" aria-hidden="true">*</span>
+          <label htmlFor="cf-message" className="pub-form-label">
+            Message <span className="text-red-600" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
           <textarea
@@ -210,15 +184,15 @@ export function PublicContactForm({
             name="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Your message…"
+            placeholder="Your message"
             rows={5}
             required
             disabled={isSubmitting}
-            className="pub-field"
+            className="pub-field pub-focusable"
           />
         </div>
 
-        <div className="flex items-start gap-3">
+        <div className="pub-form-consent">
           <input
             id="cf-consent"
             name="consent"
@@ -227,11 +201,11 @@ export function PublicContactForm({
             onChange={(e) => setConsentAccepted(e.target.checked)}
             required
             disabled={isSubmitting}
-            className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 disabled:cursor-not-allowed"
+            className="pub-focusable"
           />
-          <label htmlFor="cf-consent" className="text-sm leading-relaxed text-gray-700">
+          <label htmlFor="cf-consent">
             {consentLabel}{" "}
-            <span className="text-red-500" aria-hidden="true">*</span>
+            <span className="text-red-600" aria-hidden="true">*</span>
             <span className="sr-only">(required)</span>
           </label>
         </div>
@@ -239,7 +213,7 @@ export function PublicContactForm({
         <button
           type="submit"
           disabled={isSubmitting || showSuccess}
-          className="pub-btn-primary pub-interactive w-full"
+          className="pub-btn-primary pub-interactive pub-focusable w-full"
         >
           {isSubmitting ? "Sending…" : submitLabel}
         </button>

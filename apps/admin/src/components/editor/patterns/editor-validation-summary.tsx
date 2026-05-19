@@ -1,3 +1,6 @@
+"use client"
+
+import { useAdminI18n } from "@/components/admin-i18n-provider"
 import { EditorHint } from "./editor-hint"
 
 type EditorValidationSummaryProps = {
@@ -9,13 +12,15 @@ type EditorValidationSummaryProps = {
 }
 
 export function EditorValidationSummary({ errors }: EditorValidationSummaryProps) {
+  const { messages } = useAdminI18n()
+
   if (errors.length === 0) {
     return null
   }
 
   return (
     <div role="alert" aria-live="polite" className="space-y-2">
-      <EditorHint tone="warning">Please review the highlighted fields.</EditorHint>
+      <EditorHint tone="warning">{messages.editor.validationReviewFields}</EditorHint>
       <ul className="list-disc pl-5 text-xs admin-warning space-y-1">
         {errors.map((error) => (
           <li key={`${error.fieldLabel}-${error.fieldId ?? "no-id"}`}>

@@ -1,8 +1,9 @@
 "use server"
 
 import type { UpdateTenantSettingsInput, UpdateTenantSettingsResult } from "@sovereign-cms/core"
-import { createRuntime } from "@sovereign-cms/runtime"
+import { resolveAdminWriteScope } from "@/lib/resolve-admin-write-scope"
 
+/** Server-side tenant settings update. Phase 72: scoped settings adapter write. */
 export async function updateTenantSettingsAction(
   input: UpdateTenantSettingsInput,
 ): Promise<UpdateTenantSettingsResult> {
@@ -10,7 +11,13 @@ export async function updateTenantSettingsAction(
     throw new Error("Invalid updateTenantSettings input")
   }
 
-  const runtime = createRuntime()
+  const { runtime, scope } = resolveAdminWriteScope({
+    clientTenantId: input.tenantId,
+    operation: "settings:manage",
+  })
 
-  return runtime.settingsPersistence.updateTenantSettings(input)
+  return runtime.settingsPersistence.updateTenantSettings({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }

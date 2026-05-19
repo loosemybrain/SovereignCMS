@@ -238,3 +238,441 @@ textarea.pub-field {
   min-height: auto;
   resize: vertical;
 }
+
+/* ── Page background aliases (globals.css) ── */
+:root {
+  --public-page-bg: #f4f4f5;
+  --public-text: #111827;
+}
+
+/* ── Section shell ── */
+.pub-section {
+  width: 100%;
+}
+
+.pub-section--subtle {
+  background: var(--pub-surface-bg-subtle);
+}
+
+.pub-section--white {
+  background: var(--pub-surface-bg);
+}
+
+/* ── Content width helpers ── */
+.pub-content-narrow {
+  max-width: var(--pub-content-max);
+}
+
+.pub-content-wide {
+  max-width: var(--pub-wide-max);
+  width: 100%;
+}
+
+.pub-content-center {
+  margin-inline: auto;
+}
+
+/* ── Typography (shared across blocks) ── */
+.pub-h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: var(--pub-leading-tight);
+  color: #111827;
+}
+
+.pub-h1--inverse {
+  color: #ffffff;
+}
+
+.pub-h2 {
+  font-size: clamp(1.625rem, 3.5vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #111827;
+}
+
+.pub-h3 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #111827;
+}
+
+.pub-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1d4ed8;
+}
+
+.pub-lead {
+  margin-top: 1rem;
+  font-size: var(--pub-text-body-lg);
+  line-height: var(--pub-leading-body);
+  color: #4b5563;
+}
+
+.pub-lead--inverse {
+  color: #e5e7eb;
+}
+
+.pub-body {
+  font-size: var(--pub-text-body);
+  line-height: var(--pub-leading-body);
+  color: #4b5563;
+}
+
+.pub-body--sm {
+  font-size: 0.9375rem;
+}
+
+.pub-prose p {
+  color: #374151;
+}
+
+/* ── Stacks & actions ── */
+.pub-stack-header {
+  margin-bottom: 2.5rem;
+  max-width: var(--pub-content-max);
+}
+
+.pub-stack-header--center {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.pub-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.pub-actions--center {
+  justify-content: center;
+}
+
+/* ── Hero ── */
+.pub-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.pub-hero--media {
+  background: #111827;
+  min-height: min(28rem, 70vh);
+}
+
+.pub-hero--plain {
+  background: var(--pub-surface-bg);
+}
+
+.pub-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.pub-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pub-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(10 10 20 / 0.85) 0%,
+    rgb(10 10 20 / 0.4) 55%,
+    rgb(10 10 20 / 0.12) 100%
+  );
+}
+
+.pub-hero__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.pub-hero--media .pub-hero__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: inherit;
+}
+
+/* ── Split layout (image + text) ── */
+.pub-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .pub-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rem;
+  }
+}
+
+.pub-media-frame {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  aspect-ratio: 4 / 3;
+  background: var(--pub-surface-bg-muted);
+}
+
+.pub-media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Feature grid ── */
+.pub-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .pub-feature-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pub-feature-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pub-feature-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pub-feature-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pub-card__body {
+  padding: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pub-card:hover {
+    box-shadow: var(--pub-shadow-card);
+    border-color: var(--pub-surface-border);
+    transform: none;
+  }
+}
+
+/* ── Fallbacks & notices ── */
+.pub-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--pub-surface-bg-muted);
+  border: 1px dashed var(--pub-surface-border);
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.pub-notice {
+  border-radius: 0.5rem;
+  padding: 1rem 1.125rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.pub-notice--danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.pub-notice--success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.pub-notice--muted {
+  background: var(--pub-surface-bg-subtle);
+  border: 1px solid var(--pub-surface-border);
+  color: #6b7280;
+}
+
+/* ── Embed ── */
+.pub-embed-shell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid var(--pub-surface-border);
+  background: var(--pub-surface-bg-muted);
+}
+
+.pub-embed-shell--ratio {
+  padding-bottom: 56.25%;
+  height: 0;
+}
+
+.pub-embed-shell--ratio iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.pub-consent-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 17.5rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: var(--pub-surface-bg-subtle);
+  border: 1px solid var(--pub-surface-border);
+  border-radius: 0.75rem;
+}
+
+/* ── Form (contact) ── */
+.pub-form-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.pub-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pub-form-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.pub-form-consent input[type="checkbox"] {
+  margin-top: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  accent-color: #1d4ed8;
+  cursor: pointer;
+}
+
+.pub-form-consent label {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #374151;
+  cursor: pointer;
+}
+
+/* ── Chrome (header / footer) ── */
+.pub-chrome {
+  background: #09090b;
+  color: #d4d4d8;
+}
+
+.pub-chrome-divider {
+  border-color: #27272a;
+}
+
+.pub-chrome-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  text-decoration: none;
+  transition: color var(--pub-motion-dur) var(--pub-motion-ease);
+}
+
+.pub-chrome-link:hover {
+  color: #fafafa;
+}
+
+.pub-chrome-link:focus-visible {
+  outline: var(--pub-focus-width) solid #a1a1aa;
+  outline-offset: var(--pub-focus-offset);
+}
+
+.pub-chrome-link--active {
+  color: #fafafa;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.pub-chrome-btn {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  border: 1px solid #3f3f46;
+  background: transparent;
+  color: #fafafa;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--pub-motion-dur) var(--pub-motion-ease);
+}
+
+.pub-chrome-btn:hover {
+  background: #18181b;
+}
+
+.pub-chrome-btn:focus-visible {
+  outline: var(--pub-focus-width) solid #a1a1aa;
+  outline-offset: var(--pub-focus-offset);
+}
+
+.pub-chrome-footer {
+  margin-top: auto;
+  border-top: 1px solid #27272a;
+  background: #09090b;
+  color: #a1a1aa;
+}
+
+.pub-chrome-footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  text-decoration: none;
+  transition: color var(--pub-motion-dur) var(--pub-motion-ease);
+}
+
+.pub-chrome-footer-link:hover {
+  color: #fafafa;
+}
+
+.pub-chrome-footer-link:focus-visible {
+  outline: var(--pub-focus-width) solid #a1a1aa;
+  outline-offset: var(--pub-focus-offset);
+  border-radius: 0.25rem;
+}
+
+.pub-chrome-footer-link--legal {
+  color: #71717a;
+}
+
+.pub-chrome-footer-link--legal:hover {
+  color: #e4e4e7;
+}

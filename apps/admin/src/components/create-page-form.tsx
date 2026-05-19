@@ -21,7 +21,10 @@ import {
   AdminSelect,
 } from "@/components/admin-ui"
 import { EditorHint } from "@/components/editor/patterns"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { formatAdminMessage } from "@/lib/admin-i18n"
 import { normalizeSlug } from "@/lib/normalize-slug"
+import { localizeContentTemplate } from "@/lib/localize-content-template"
 
 type Props = {
   tenantId: string
@@ -44,6 +47,8 @@ export function CreatePageForm({
   runtimeSupportedLocales,
   runtimeDefaultLocale,
 }: Props) {
+  const { messages } = useAdminI18n()
+  const f = messages.createPageForm
   const composition = useMemo(() => resolveTenantComposition({ tenantId }), [tenantId])
   const alignedLocales = useMemo(
     () =>
@@ -74,6 +79,7 @@ export function CreatePageForm({
     : composition.defaultTemplateId
   const selectedTemplate =
     availableTemplates.find((template) => template.id === effectiveTemplateId) ?? fallbackTemplate
+  const selectedTemplateCopy = localizeContentTemplate(selectedTemplate, messages)
   const effectiveLocale = alignedLocales.enabledLocales.includes(locale) ? locale : alignedLocales.defaultLocale
 
   const normalizedSubmitSlug = normalizeSlug(slug) || "page"
@@ -120,10 +126,10 @@ export function CreatePageForm({
         setIsSlugManuallyEdited(false)
         setTemplateId(composition.defaultTemplateId)
       } else {
-        setError("Failed to create page")
+        setError(f.createFailed)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Page creation failed"
+      const errorMessage = err instanceof Error ? err.message : f.createErrorGeneric
       setError(errorMessage)
     } finally {
       setIsCreating(false)
@@ -133,8 +139,8 @@ export function CreatePageForm({
   return (
     <AdminCard className="space-y-4">
       <AdminCardHeader>
-        <AdminCardTitle>Create New Page</AdminCardTitle>
-        <AdminCardDescription>Create a new page with composition defaults for this tenant.</AdminCardDescription>
+        <AdminCardTitle>{f.cardTitle}</AdminCardTitle>
+        <AdminCardDescription>{f.cardDescription}</AdminCardDescription>
       </AdminCardHeader>
 
       {error && (
@@ -151,16 +157,14 @@ export function CreatePageForm({
           className="rounded bg-emerald-900/30 border border-emerald-800/50 p-3 text-emerald-300 text-sm"
           aria-live="polite"
         >
-          <strong>Page erstellt:</strong> {createdPageSlug}
+          <strong>{f.createdLabel}</strong> {createdPageSlug}
           <br />
-          <span className="text-xs text-emerald-400/70">
-            Hinweis: InMemory-Daten sind aktuell nicht dauerhaft persistiert.
-          </span>
+          <span className="text-xs text-emerald-400/70">{f.inMemoryHint}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        <AdminField id="create-page-title" label="Title *" error={error}>
+        <AdminField id="create-page-title" label={f.titleLabel} error={error}>
           {(fieldProps) => (
             <AdminInput
               {...fieldProps}
@@ -173,7 +177,7 @@ export function CreatePageForm({
                   setSlug(slugFromTitle(nextTitle))
                 }
               }}
-              placeholder="Enter page title"
+              placeholder={f.titlePlaceholder}
               disabled={isCreating}
               className={cn(isCreating && "cursor-not-allowed opacity-50")}
             />
@@ -182,9 +186,9 @@ export function CreatePageForm({
 
         <AdminField
           id="create-page-slug"
-          label="Slug *"
+          label={f.slugLabel}
           error={error}
-          description="Lowercase kebab-case (letters, numbers, hyphens). Special characters are normalized away."
+          description={f.slugDescription}
         >
           {(fieldProps) => (
             <AdminInput
@@ -196,7 +200,7 @@ export function CreatePageForm({
                 setSlug(nextSlug)
                 setIsSlugManuallyEdited(nextSlug.trim().length > 0)
               }}
-              placeholder="e.g., about or services/consulting"
+              placeholder={f.slugPlaceholder}
               disabled={isCreating}
               className={cn(isCreating && "cursor-not-allowed opacity-50")}
             />
@@ -205,8 +209,8 @@ export function CreatePageForm({
 
         <AdminField
           id="create-page-template"
-          label="Template"
-          description="Choose a starter template for initial blocks."
+          label={f.templateLabel}
+          description={f.templateDescription}
         >
           {(fieldProps) => (
             <AdminSelect
@@ -216,16 +220,19 @@ export function CreatePageForm({
               disabled={isCreating}
               className={cn(isCreating && "cursor-not-allowed opacity-50")}
             >
-              {availableTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.label}
-                </option>
-              ))}
+              {availableTemplates.map((template) => {
+                const copy = localizeContentTemplate(template, messages)
+                return (
+                  <option key={template.id} value={template.id}>
+                    {copy.label}
+                  </option>
+                )
+              })}
             </AdminSelect>
           )}
         </AdminField>
 
-        <AdminField id="create-page-locale" label="Locale" description="Enabled locales from tenant composition.">
+        <AdminField id="create-page-locale" label={f.localeLabel} description={f.localeDescription}>
           {(fieldProps) => (
             <AdminSelect
               {...fieldProps}
@@ -245,24 +252,28 @@ export function CreatePageForm({
 
         {alignedLocales.droppedLocales.length > 0 ? (
           <EditorHint tone="warning">
-            Some composition locales are not supported by runtime: {alignedLocales.droppedLocales.join(", ")}.
+            {formatAdminMessage(f.droppedLocalesWarning, {
+              locales: alignedLocales.droppedLocales.join(", "),
+            })}
           </EditorHint>
         ) : null}
 
         {slugLooksUnsupported ? (
           <EditorHint tone="warning">
-            Slug contains only unsupported characters; submission will use &quot;page&quot; unless you enter a valid slug.
+            {f.slugUnsupportedWarning}
           </EditorHint>
         ) : null}
 
         <EditorHint tone="info">
-          {selectedTemplate.description ?? "No template description available."} Starter blocks:{" "}
+          {selectedTemplateCopy.description || f.noTemplateDescription} {f.starterBlocks}{" "}
           {selectedTemplate.blocks.length}.
         </EditorHint>
         <EditorHint tone="warning">
-          Composition defaults: brand <strong>{composition.brandId}</strong>, default template{" "}
-          <strong>{composition.defaultTemplateId}</strong>, default locale{" "}
-          <strong>{alignedLocales.defaultLocale}</strong>.
+          {formatAdminMessage(f.compositionDefaults, {
+            brandId: composition.brandId,
+            templateId: composition.defaultTemplateId,
+            locale: alignedLocales.defaultLocale,
+          })}
         </EditorHint>
 
         <AdminButton
@@ -271,7 +282,7 @@ export function CreatePageForm({
           variant="primary"
           className="w-full"
         >
-          {isCreating ? "Creating..." : "Create Page"}
+          {isCreating ? f.creating : f.createButton}
         </AdminButton>
       </form>
     </AdminCard>

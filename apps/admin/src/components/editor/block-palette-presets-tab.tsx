@@ -7,6 +7,7 @@ import { adminFeatureCardClassNames } from "@/components/admin-ui"
 import { AdminEmptyState } from "@/components/admin-ui"
 import { EditorHint } from "@/components/editor/patterns"
 import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getLocalizedBlockLabel } from "@/lib/admin-block-i18n"
 
 type BlockPalettePresetsTabProps = {
   onAddBlock: (blockType: string, presetId: string) => void
@@ -14,7 +15,7 @@ type BlockPalettePresetsTabProps = {
 }
 
 export function BlockPalettePresetsTab({ onAddBlock, insertAfterBlockId }: BlockPalettePresetsTabProps) {
-  const { messages: t } = useAdminI18n()
+  const { locale, messages: t } = useAdminI18n()
   const w = t.editor.workspace
   const o = t.editor.orientation
   const definitions = listAdminBlockDefinitions().filter((def) =>
@@ -34,7 +35,9 @@ export function BlockPalettePresetsTab({ onAddBlock, insertAfterBlockId }: Block
         const presets = getPresetsForBlockType(definition.type)
         return (
           <div key={definition.type}>
-            <h3 className="mb-2 text-xs font-semibold admin-text">{definition.label}</h3>
+            <h3 className="mb-2 text-xs font-semibold admin-text">
+              {getLocalizedBlockLabel(definition.type, locale)}
+            </h3>
             <ul className="grid grid-cols-1 gap-2" role="list">
               {presets.map((preset) => (
                 <li key={preset.id}>

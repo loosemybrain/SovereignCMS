@@ -13,6 +13,7 @@ import {
   AdminTextarea,
 } from "@/components/admin-ui"
 import { clientSettingsPersistence } from "@/lib/client-settings-persistence"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
 import { cn } from "@sovereign-cms/ui"
 
 type Props = {
@@ -31,6 +32,8 @@ function newSocialLinkId(): string {
 }
 
 export function SettingsEditor({ tenantId, initialSettings }: Props) {
+  const { messages } = useAdminI18n()
+  const s = messages.settingsForm
   const [settings, setSettings] = useState<TenantSettings>(initialSettings)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,9 +49,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         const labelOk = link.label.trim().length > 0
         const hrefOk = validateExternalHref(link.href.trim())
         if (!labelOk || !hrefOk) {
-          setError(
-            "Social links: Jedes Eintrag braucht einen nicht-leeren Namen und eine gültige URL (https://, http:// oder /…).",
-          )
+          setError(s.socialValidationError)
           setIsSaving(false)
           return
         }
@@ -67,10 +68,10 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
 
       if (result.success) {
         setSettings(result.settings)
-        setSuccessMessage("Settings saved. InMemory data is not permanently persisted.")
+        setSuccessMessage(s.saveSuccess)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to save settings"
+      const message = err instanceof Error ? err.message : s.saveErrorGeneric
       setError(message)
     } finally {
       setIsSaving(false)
@@ -80,7 +81,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
   return (
     <div className="space-y-6">
       {error ? (
-        <AdminAlert variant="destructive" title="Speichern nicht möglich">
+        <AdminAlert variant="destructive" title={s.saveFailed}>
           {error}
         </AdminAlert>
       ) : null}
@@ -89,12 +90,9 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         <AdminAlert variant="success">{successMessage}</AdminAlert>
       ) : null}
 
-      <AdminSectionCard
-        title="Site identity"
-        description="Public-facing name and branding hints."
-      >
+      <AdminSectionCard title={s.siteIdentityTitle} description={s.siteIdentityDescription}>
         <div className="space-y-3">
-          <AdminField id="settings-site-name" label="Site name">
+          <AdminField id="settings-site-name" label={s.siteName}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -109,7 +107,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-tagline" label="Tagline">
+          <AdminField id="settings-tagline" label={s.tagline}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -124,7 +122,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-logo-url" label="Logo URL">
+          <AdminField id="settings-logo-url" label={s.logoUrl}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -143,12 +141,9 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        title="Contact"
-        description="How visitors can reach this tenant."
-      >
+      <AdminSectionCard title={s.contactTitle} description={s.contactDescription}>
         <div className="grid gap-3 md:grid-cols-2">
-          <AdminField id="settings-email" label="Email">
+          <AdminField id="settings-email" label={s.email}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -164,7 +159,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-phone" label="Phone">
+          <AdminField id="settings-phone" label={s.phone}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -180,7 +175,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             )}
           </AdminField>
           <div className="md:col-span-2">
-            <AdminField id="settings-address1" label="Address line 1">
+            <AdminField id="settings-address1" label={s.address1}>
               {(fp) => (
                 <AdminInput
                   {...fp}
@@ -197,7 +192,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
             </AdminField>
           </div>
           <div className="md:col-span-2">
-            <AdminField id="settings-address2" label="Address line 2">
+            <AdminField id="settings-address2" label={s.address2}>
               {(fp) => (
                 <AdminInput
                   {...fp}
@@ -213,7 +208,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               )}
             </AdminField>
           </div>
-          <AdminField id="settings-postal" label="Postal code">
+          <AdminField id="settings-postal" label={s.postal}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -228,7 +223,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-city" label="City">
+          <AdminField id="settings-city" label={s.city}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -243,7 +238,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-country" label="Country">
+          <AdminField id="settings-country" label={s.country}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -261,12 +256,9 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        title="Business"
-        description="Optional notes for visitors."
-      >
+      <AdminSectionCard title={s.businessTitle} description={s.businessDescription}>
         <div className="space-y-3">
-          <AdminField id="settings-opening-hours" label="Opening hours note">
+          <AdminField id="settings-opening-hours" label={s.openingHours}>
             {(fp) => (
               <AdminTextarea
                 {...fp}
@@ -282,7 +274,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-appointment" label="Appointment note">
+          <AdminField id="settings-appointment" label={s.appointment}>
             {(fp) => (
               <AdminTextarea
                 {...fp}
@@ -301,12 +293,9 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        title="Legal"
-        description="References to legal pages by slug."
-      >
+      <AdminSectionCard title={s.legalTitle} description={s.legalDescription}>
         <AdminConfigGrid columns={2}>
-          <AdminField id="settings-responsible" label="Responsible name">
+          <AdminField id="settings-responsible" label={s.responsible}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -323,8 +312,8 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
           </AdminField>
           <AdminField
             id="settings-imprint-slug"
-            label="Imprint slug"
-            description="Used by the public footer to generate locale-aware legal links."
+            label={s.imprintSlug}
+            description={s.imprintSlugDescription}
           >
             {(fp) => (
               <AdminInput
@@ -342,8 +331,8 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
           </AdminField>
           <AdminField
             id="settings-privacy-slug"
-            label="Privacy slug"
-            description="Used by the public footer to generate locale-aware legal links."
+            label={s.privacySlug}
+            description={s.privacySlugDescription}
           >
             {(fp) => (
               <AdminInput
@@ -359,7 +348,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               />
             )}
           </AdminField>
-          <AdminField id="settings-cookie-slug" label="Cookie slug">
+          <AdminField id="settings-cookie-slug" label={s.cookieSlug}>
             {(fp) => (
               <AdminInput
                 {...fp}
@@ -377,13 +366,10 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
         </AdminConfigGrid>
       </AdminSectionCard>
 
-      <AdminSectionCard
-        title="Social links"
-        description="Werden im öffentlichen Footer als Textlinks angezeigt (Reihenfolge = Liste)."
-      >
+      <AdminSectionCard title={s.socialTitle} description={s.socialDescription}>
         <div className="space-y-4">
           {settings.socialLinks.length === 0 ? (
-            <p className="text-sm admin-text-muted">Keine Social Links — „Social Link hinzufügen“ nutzen.</p>
+            <p className="text-sm admin-text-muted">{s.socialEmpty}</p>
           ) : (
             <ul className="space-y-4">
               {settings.socialLinks.map((link) => (
@@ -403,10 +389,10 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
                         }))
                       }
                     >
-                      Entfernen
+                      {s.remove}
                     </AdminButton>
                   </div>
-                  <AdminField id={`social-label-${link.id}`} label="Label">
+                  <AdminField id={`social-label-${link.id}`} label={s.socialLabel}>
                     {(fp) => (
                       <AdminInput
                         {...fp}
@@ -425,8 +411,8 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
                   </AdminField>
                   <AdminField
                     id={`social-href-${link.id}`}
-                    label="URL"
-                    description="https://…, http://… oder /pfad"
+                    label={s.socialUrl}
+                    description={s.socialUrlDescription}
                   >
                     {(fp) => (
                       <AdminInput
@@ -460,7 +446,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
               }))
             }
           >
-            Social Link hinzufügen
+            {s.addSocialLink}
           </AdminButton>
         </div>
       </AdminSectionCard>
@@ -473,7 +459,7 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
           onClick={handleSave}
           className={cn(isSaving && "cursor-not-allowed opacity-70")}
         >
-          {isSaving ? "Saving..." : "Save settings"}
+          {isSaving ? s.saving : s.saveButton}
         </AdminButton>
       </div>
     </div>

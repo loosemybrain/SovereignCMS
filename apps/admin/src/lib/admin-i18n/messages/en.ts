@@ -1,4 +1,5 @@
 import type { AdminMessages } from "../types"
+import { catalogEn } from "./catalog-en"
 
 export const enMessages: AdminMessages = {
   shell: {
@@ -99,6 +100,7 @@ export const enMessages: AdminMessages = {
     blockMoveUpAria: "Move block {type} up",
     blockMoveDownAria: "Move block {type} down",
     blockDeleteAria: "Delete block {type}",
+    validationReviewFields: "Please review the highlighted fields.",
     orientation: {
       blockPosition: "Block {current} of {total}",
       contextHeaderAria: "Selected block context",
@@ -111,6 +113,74 @@ export const enMessages: AdminMessages = {
       emptyPresetsTitle: "No presets yet",
       emptyPresetsDescription: "Presets appear here when they are defined for your block types.",
       stickyContextAria: "Currently editing",
+      capabilityHints: {
+        externalMedia: "Third-party embed — live preview may use placeholders.",
+        form: "Form block — submissions are not active in editor preview.",
+        previewSensitive: "Live preview may differ slightly from the published page.",
+      },
+      editorSurfaceHints: {
+        externalMedia: "Check consent copy and embed URL before publishing.",
+        form: "Review privacy labels and form fields before go-live.",
+        media: "Confirm alt text and asset references stay consistent.",
+        accessibility: "Check headings, labels, and readable structure in this block.",
+        governance: "Review publish-readiness notes for this block in Governance.",
+        preview: "Editor preview may not match every published detail.",
+      },
+      governanceContractHints: {
+        externalMedia:
+          "External media needs consent review and must not load unchecked before user consent.",
+        forms:
+          "Forms need privacy review, recipient checks, and a clear purpose before publishing.",
+        consent: "Confirm consent copy explains third-party or sensitive content clearly.",
+        legalReview: "This block may need legal review before publication.",
+        mediaAltText: "Media should include meaningful alternative text for accessibility.",
+        previewSafety: "Treat preview behavior separately from public runtime behavior.",
+        accessibility: "Review structure, labels, and readability for this block.",
+        links: "Check link targets, labels, and whether visitors should leave your site.",
+        editorialQuality: "Review headlines and copy for clarity before publishing.",
+        navigation: "Confirm navigation labels and targets remain accurate.",
+      },
+      previewIsolationHints: {
+        externalPlaceholder:
+          "External content is shown as a placeholder in preview and must not load unchecked.",
+        formDisabled:
+          "Forms are disabled in preview so real submissions cannot be triggered.",
+        mediaSafe:
+          "Media is resolved through runtime composition and must not be loaded directly from the renderer.",
+        navigationSafe: "Navigation targets should be reviewed carefully in preview.",
+        contentOnly: "Preview shows editorial content only — interactive behavior may differ.",
+      },
+      runtimeValidationHints: {
+        missingMediaAltText:
+          "Runtime contracts expect meaningful media alt text for this block type.",
+        externalMediaRequiresConsent:
+          "External media needs consent review — do not treat preview as production consent.",
+        formRequiresPrivacyReview:
+          "Forms need privacy and recipient review before go-live.",
+        navigationTargetReview:
+          "Check navigation targets and link labels for this block type in preview.",
+        previewIsolationRequired:
+          "Preview isolation applies — editor preview may differ from the public page.",
+        governanceReviewRequired:
+          "Governance marks this block type as critical — complete editorial review.",
+        unknownBlockType:
+          "No known runtime contracts exist for this block type.",
+      },
+      inspectorCompositionHints: {
+        content: "Content fields belong in the content inspector group for this block type.",
+        design: "Design and typography settings are grouped separately from raw content.",
+        media:
+          "Media fields should stay consistent with runtime media composition — not ad-hoc renderer loading.",
+        actions: "Actions and links are grouped for publish and navigation review.",
+        layout: "Layout options affect structure — review them before publishing.",
+        form: "Form fields and consent copy need privacy review before go-live.",
+        navigation: "Navigation labels and targets should stay accurate in preview and production.",
+        accessibility:
+          "Check structure, readability, and alternative information in the inspector.",
+        governance: "This block has publish-relevant review hints in the governance layer.",
+        preview:
+          "This block may be treated differently in editor preview than on the public site.",
+      },
     },
     workspace: {
       livePreview: "Live preview",
@@ -232,4 +302,5 @@ export const enMessages: AdminMessages = {
       editorial: "Editorial",
     },
   },
+  ...catalogEn,
 }

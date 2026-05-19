@@ -37,7 +37,7 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   const { runtime } = getAdminRuntime({ host })
   const totalBlocks = await Promise.all(
-    pages.map((page) => runtime.db.blocks.listByPage({ tenantId: tenant.tenantId, pageId: page.id })),
+    pages.map((page) => runtime.content.listBlocks({ tenantId: tenant.tenantId, pageId: page.id })),
   ).then((results) => results.reduce((sum, blocks) => sum + blocks.length, 0))
 
   return (

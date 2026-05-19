@@ -5,10 +5,12 @@ import type { CmsBlock, CmsPage, ContentTransitionAction, SeoMetadata } from "@s
 import {
   cloneBlockPropsForNewBlock,
   createDefaultSeoMetadata,
+  deduplicateGovernanceIssues,
   getAvailableActionsForStatus,
   getPresetForBlockType,
   isSupportedPresetBlockType,
   summarizeGovernanceIssues,
+  type PublishGovernanceIssue,
 } from "@sovereign-cms/core"
 import type { AdminTenantContext } from "@sovereign-cms/tenancy"
 import { EditorInspector } from "@/components/editor-inspector"
@@ -25,6 +27,7 @@ import { useEditorAnnouncements } from "@/lib/use-editor-announcements"
 import { EditorLiveRegion } from "@/components/editor-live-region"
 import { EditorToolbar } from "@/components/editor/editor-toolbar"
 import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getLocalizedBlockLabel } from "@/lib/admin-block-i18n"
 import { EditorLivePreview } from "@/components/editor/editor-live-preview"
 import type { EditorDeviceMode } from "@/components/editor/editor-device-preview-bar"
 import { EditorRightPanel } from "@/components/editor/editor-right-panel"
@@ -35,6 +38,7 @@ import { BlockPalettePresetsTab } from "@/components/editor/block-palette-preset
 type PageEditorClientProps = {
   page: CmsPage
   blocks: CmsBlock[]
+  mediaCompositionGovernanceHints?: PublishGovernanceIssue[]
   navigationGovernanceItems?: PageGovernanceNavigationItem[]
   tenant: AdminTenantContext
   databaseAdapterLabel: string
@@ -43,11 +47,12 @@ type PageEditorClientProps = {
 export function PageEditorClient({
   page,
   blocks,
+  mediaCompositionGovernanceHints = [],
   navigationGovernanceItems = [],
   tenant,
   databaseAdapterLabel,
 }: PageEditorClientProps) {
-  const { messages: t } = useAdminI18n()
+  const { locale, messages: t } = useAdminI18n()
   const e = t.editor
   const { message, announce } = useEditorAnnouncements()
   const {
@@ -83,14 +88,25 @@ export function PageEditorClient({
 
   const pageGovernanceIssues = useMemo(
     () =>
-      getPageGovernanceIssues(draftBlocks, {
-        pageTitle: page.title,
-        pageSlug: page.slug,
-        pageId: page.id,
-        pageSeo,
-        navigationItems: navigationGovernanceItems,
-      }),
-    [draftBlocks, page.title, page.slug, page.id, pageSeo, navigationGovernanceItems],
+      deduplicateGovernanceIssues([
+        ...mediaCompositionGovernanceHints,
+        ...getPageGovernanceIssues(draftBlocks, {
+          pageTitle: page.title,
+          pageSlug: page.slug,
+          pageId: page.id,
+          pageSeo,
+          navigationItems: navigationGovernanceItems,
+        }),
+      ]),
+    [
+      draftBlocks,
+      mediaCompositionGovernanceHints,
+      page.title,
+      page.slug,
+      page.id,
+      pageSeo,
+      navigationGovernanceItems,
+    ],
   )
   const pageGovernanceSummary = useMemo(
     () => summarizeGovernanceIssues(pageGovernanceIssues),
@@ -242,7 +258,7 @@ export function PageEditorClient({
     setSelectedBlockId(newBlock.id)
     setPanelTab("inspector")
     scrollInspectorToBlock()
-    announce(`${e.blockAdded}: ${definition.label}`)
+    announce(`${e.blockAdded}: ${getLocalizedBlockLabel(blockType, locale)}`)
   }
 
   const handleMoveBlockUp = (blockId: string) => {
@@ -401,6 +417,7 @@ export function PageEditorClient({
                 <PublishGovernancePanel
                   issues={pageGovernanceIssues}
                   selectedBlockId={selectedBlockId}
+                  selectedBlockType={selectedBlock?.type ?? null}
                   onFocusBlock={(blockId) => selectBlock(blockId, { tab: "inspector" })}
                 />
                 <dl className="admin-gov-nested-surface space-y-2 rounded-lg px-3 py-2.5 text-xs admin-text-muted">

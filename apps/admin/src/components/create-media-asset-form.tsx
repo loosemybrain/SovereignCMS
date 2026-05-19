@@ -5,6 +5,8 @@ import type { MediaAssetType } from "@sovereign-cms/core"
 import { ChevronDown, FileText, Image as ImageIcon, Plus, Upload, Video } from "lucide-react"
 import { cn } from "@sovereign-cms/ui"
 import { clientMediaPersistence } from "@/lib/client-media-persistence"
+import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { formatAdminMessage } from "@/lib/admin-i18n"
 import {
   AdminAlert,
   AdminButton,
@@ -21,6 +23,9 @@ const CREATE_TYPES = ["image", "video", "document"] as const satisfies readonly 
 type CreateType = (typeof CREATE_TYPES)[number]
 
 export function CreateMediaAssetForm({ tenantId }: Props) {
+  const { messages } = useAdminI18n()
+  const ml = messages.mediaLibrary
+  const c = messages.common
   const [expanded, setExpanded] = useState(true)
   const [title, setTitle] = useState("")
   const [type, setType] = useState<CreateType>("image")
@@ -48,7 +53,10 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
 
       if (result.success) {
         setSuccessMessage(
-          `Asset erstellt: „${result.asset.title}“ (persisted=${String(result.persisted)} — InMemory, nicht dauerhaft).`,
+          formatAdminMessage(ml.createSuccess, {
+            title: result.asset.title,
+            persisted: String(result.persisted),
+          }),
         )
         setTitle("")
         setUrl("")
@@ -56,7 +64,7 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
         setType("image")
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Media asset creation failed"
+      const errorMessage = err instanceof Error ? err.message : ml.createFailed
       setError(errorMessage)
     } finally {
       setIsCreating(false)
@@ -66,7 +74,7 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
   return (
     <section
       className="overflow-hidden rounded-xl border admin-border admin-surface shadow-sm"
-      aria-label="Medien-Asset hochladen"
+      aria-label={ml.uploadAria}
     >
       <button
         type="button"
@@ -93,35 +101,33 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
           <Upload className="h-5 w-5" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold tracking-tight admin-text">Medien-Asset hochladen</span>
-          <span className="mt-0.5 block text-xs leading-snug admin-text-muted">
-            Neues Medien-Asset zur Bibliothek hinzufügen (URL-basiert, kein Datei-Upload).
-          </span>
+          <span className="block text-sm font-semibold tracking-tight admin-text">{ml.formTitle}</span>
+          <span className="mt-0.5 block text-xs leading-snug admin-text-muted">{ml.formDescription}</span>
         </span>
       </button>
 
       {expanded ? (
         <div className="space-y-5 px-4 pb-5 pt-4 sm:px-5">
           {error ? (
-            <AdminAlert variant="destructive" title="Fehler">
+            <AdminAlert variant="destructive" title={c.error}>
               {error}
             </AdminAlert>
           ) : null}
 
           {successMessage ? (
-            <AdminAlert variant="success" title="Gespeichert">
+            <AdminAlert variant="success" title={ml.saved}>
               {successMessage}
             </AdminAlert>
           ) : null}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <fieldset className="space-y-3">
-              <legend className="sr-only">Asset-Typ</legend>
-              <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">Typ wählen</p>
+              <legend className="sr-only">{ml.chooseTypeSr}</legend>
+              <p className="text-xs font-semibold uppercase tracking-wide admin-text-muted">{ml.chooseType}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <TypeChoiceButton
                   active={type === "image"}
-                  label="Bild"
+                  label={ml.typeImage}
                   icon={<ImageIcon className="h-6 w-6" strokeWidth={1.75} aria-hidden />}
                   accent="from-sky-400/25 to-blue-500/20"
                   onClick={() => setType("image")}
@@ -129,7 +135,7 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
                 />
                 <TypeChoiceButton
                   active={type === "video"}
-                  label="Video"
+                  label={ml.typeVideo}
                   icon={<Video className="h-6 w-6" strokeWidth={1.75} aria-hidden />}
                   accent="from-rose-400/20 to-fuchsia-500/15"
                   onClick={() => setType("video")}
@@ -137,7 +143,7 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
                 />
                 <TypeChoiceButton
                   active={type === "document"}
-                  label="Dokument"
+                  label={ml.typeDocument}
                   icon={<FileText className="h-6 w-6" strokeWidth={1.75} aria-hidden />}
                   accent="from-amber-400/25 to-orange-500/18"
                   onClick={() => setType("document")}
@@ -147,26 +153,26 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
             </fieldset>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <AdminFormField id="media-title" label="Titel" required>
+              <AdminFormField id="media-title" label={ml.fieldTitle} required>
                 <AdminInput
                   id="media-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Titel des Assets"
+                  placeholder={ml.titlePlaceholder}
                   required
                   disabled={isCreating}
                 />
               </AdminFormField>
               <AdminFormField
                 id="media-alt"
-                label="Alt-Text"
-                description="Für Barrierefreiheit und Screenreader."
+                label={ml.fieldAlt}
+                description={ml.fieldAltDescription}
               >
                 <AdminInput
                   id="media-alt"
                   value={alt}
                   onChange={(e) => setAlt(e.target.value)}
-                  placeholder="Inhalt kurz beschreiben"
+                  placeholder={ml.altPlaceholder}
                   disabled={isCreating}
                 />
               </AdminFormField>
@@ -174,14 +180,14 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
 
             <AdminFormField
               id="media-url"
-              label="URL"
-              description="Externe URL oder Pfad zum Asset (z. B. https://… oder /pfad/zur/datei)."
+              label={ml.fieldUrl}
+              description={ml.fieldUrlDescription}
             >
               <AdminInput
                 id="media-url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://… oder /pfad/zur/datei"
+                placeholder={ml.urlPlaceholder}
                 required
                 disabled={isCreating}
               />
@@ -190,7 +196,7 @@ export function CreateMediaAssetForm({ tenantId }: Props) {
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <AdminButton type="submit" disabled={isCreating} variant="primary" className="gap-2 px-4">
                 <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-                {isCreating ? "Wird angelegt…" : "Medien-Asset anlegen"}
+                {isCreating ? ml.creating : ml.createButton}
               </AdminButton>
             </div>
           </form>

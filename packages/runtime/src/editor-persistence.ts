@@ -1,20 +1,20 @@
 import type { EditorPersistence, SavePageDraftInput, SavePageDraftResult } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 
 export type CreateEditorPersistenceInput = {
-  db: DatabaseAdapter
+  content: ContentPersistenceAdapter
 }
 
 /**
  * Creates a runtime-managed editor persistence adapter.
- * Delegates block saves to DatabaseAdapter.blocks.replacePageBlocks.
+ * Delegates block saves to ContentPersistenceAdapter.saveBlocks (tenant-scoped, Phase 71).
  * persisted=false indicates this is InMemory/Mock persistence (no durable storage).
  */
 export function createEditorPersistence(input: CreateEditorPersistenceInput): EditorPersistence {
   return {
     async savePageDraft(draftInput: SavePageDraftInput): Promise<SavePageDraftResult> {
       try {
-        const blocks = await input.db.blocks.replacePageBlocks({
+        const blocks = await input.content.saveBlocks({
           tenantId: draftInput.tenantId,
           pageId: draftInput.pageId,
           locale: draftInput.locale,

@@ -1,13 +1,14 @@
 import type { AdminMessages } from "../types"
+import { catalogDe } from "./catalog-de"
 
 export const deMessages: AdminMessages = {
   shell: {
     workspace: "Arbeitsbereich",
     tenant: "Mandant",
-    runtime: "Runtime",
+    runtime: "Laufzeit",
     topbarView: "Ansicht",
     nav: {
-      dashboard: "Dashboard",
+      dashboard: "Übersicht",
       pages: "Seiten",
       navigation: "Navigation",
       footerNavigation: "Fußnavigation",
@@ -16,8 +17,8 @@ export const deMessages: AdminMessages = {
       privacy: "Datenschutz",
     },
     db: "DB",
-    storage: "Storage",
-    auth: "Auth",
+    storage: "Speicher",
+    auth: "Authentifizierung",
   },
   locale: {
     contentLanguage: "Inhaltssprache",
@@ -25,7 +26,7 @@ export const deMessages: AdminMessages = {
   },
   dashboard: {
     eyebrow: "Orientierung",
-    title: "Dashboard",
+    title: "Übersicht",
     description: "Kurzer Überblick über Mandant, Sprachen und Inhalte — ohne zusätzliche Kennzahlen.",
     pagesLink: "Zur Seitenübersicht →",
     workspaceTitle: "Arbeitsbereich",
@@ -43,16 +44,16 @@ export const deMessages: AdminMessages = {
     blocksDescription: "Blöcke gesamt",
     database: "Datenbank",
     databaseDescription: "Aktuell aktiv",
-    runtimeConfigTitle: "Runtime-Konfiguration",
+    runtimeConfigTitle: "Laufzeit-Konfiguration",
     runtimeConfigDescription: "Adapter-Verdrahtung aus der Umgebung (nur Lesen).",
     defaultLocale: "Standard-Sprache",
     supportedLocales: "Unterstützte Sprachen",
   },
   editor: {
-    skipToInspector: "Zum Inspector springen",
+    skipToInspector: "Zum Eigenschaftenbereich springen",
     regionBlocks: "Seiteninhalt und Blöcke",
-    regionInspector: "Inspector",
-    inspectorTitle: "Inspector",
+    regionInspector: "Eigenschaften",
+    inspectorTitle: "Eigenschaften",
     inspectorSubtitle: "Block-Eigenschaften und Seiten-SEO",
     contextTitle: "Kontext",
     contextDescription: "Nur-Lese-Hinweise zu dieser Editor-Sitzung.",
@@ -99,6 +100,7 @@ export const deMessages: AdminMessages = {
     blockMoveUpAria: "Block {type} nach oben",
     blockMoveDownAria: "Block {type} nach unten",
     blockDeleteAria: "Block {type} löschen",
+    validationReviewFields: "Bitte prüfen Sie die markierten Felder.",
     orientation: {
       blockPosition: "Block {current} von {total}",
       contextHeaderAria: "Kontext des ausgewählten Blocks",
@@ -109,9 +111,82 @@ export const deMessages: AdminMessages = {
       emptyBlocksPanelTitle: "Ersten Block hinzufügen",
       emptyBlocksPanelDescription:
         "Wählen Sie einen Blocktyp, um die Seite aufzubauen. Die Reihenfolge ändern Sie in der Vorschau.",
-      emptyPresetsTitle: "Noch keine Presets",
-      emptyPresetsDescription: "Presets erscheinen hier, sobald sie für Ihre Blocktypen definiert sind.",
+      emptyPresetsTitle: "Noch keine Vorlagen",
+      emptyPresetsDescription: "Vorlagen erscheinen hier, sobald sie für Ihre Blocktypen definiert sind.",
       stickyContextAria: "Aktuell in Bearbeitung",
+      capabilityHints: {
+        externalMedia: "Externe Einbettung — die Vorschau kann Platzhalter nutzen.",
+        form: "Formularblock — Absendungen sind in der Vorschau im Editor inaktiv.",
+        previewSensitive: "Die Live-Vorschau kann von der veröffentlichten Seite abweichen.",
+      },
+      editorSurfaceHints: {
+        externalMedia: "Einwilligungstext und Einbettungs-URL vor Veröffentlichung prüfen.",
+        form: "Datenschutz-Hinweise und Formularfelder vor Veröffentlichung prüfen.",
+        media: "Alternativtext und Medien-Verweise auf Konsistenz prüfen.",
+        accessibility: "Überschriften, Beschriftungen und lesbare Struktur prüfen.",
+        governance: "Hinweise zur Veröffentlichungsreife im Tab Redaktion prüfen.",
+        preview: "Die Vorschau im Editor kann veröffentlichte Details abweichen.",
+      },
+      governanceContractHints: {
+        externalMedia:
+          "Externe Medien benötigen Einwilligungsprüfung und dürfen nicht ungeprüft vor Zustimmung geladen werden.",
+        forms:
+          "Formulare benötigen Datenschutzprüfung, Empfängerprüfung und klare Zweckbindung.",
+        consent: "Einwilligungstext muss Drittanbieter- oder sensible Inhalte klar erklären.",
+        legalReview: "Dieser Block kann vor Veröffentlichung eine rechtliche Prüfung erfordern.",
+        mediaAltText: "Medien sollten aussagekräftige Alternativtexte enthalten.",
+        previewSafety:
+          "Vorschauverhalten muss von öffentlicher Laufzeit getrennt betrachtet werden.",
+        accessibility: "Struktur, Beschriftungen und Lesbarkeit für diesen Block prüfen.",
+        links: "Linkziele, Beschriftungen und externe Weiterleitungen prüfen.",
+        editorialQuality: "Überschriften und Texte vor Veröffentlichung auf Klarheit prüfen.",
+        navigation: "Navigationstexte und Ziele auf Aktualität prüfen.",
+      },
+      previewIsolationHints: {
+        externalPlaceholder:
+          "Externe Inhalte werden in der Vorschau nur als Platzhalter behandelt und dürfen nicht ungeprüft geladen werden.",
+        formDisabled:
+          "Formulare sind in der Vorschau deaktiviert, damit keine echten Übermittlungen ausgelöst werden.",
+        mediaSafe:
+          "Medien werden über die Runtime-Komposition aufgelöst und dürfen nicht direkt aus dem Renderer geladen werden.",
+        navigationSafe:
+          "Navigationsziele sollten in der Vorschau kontrolliert geprüft werden.",
+        contentOnly:
+          "Die Vorschau zeigt nur redaktionellen Inhalt — interaktives Verhalten kann abweichen.",
+      },
+      runtimeValidationHints: {
+        missingMediaAltText:
+          "Laufzeit-Verträge erwarten aussagekräftigen Medien-Alternativtext für diesen Blocktyp.",
+        externalMediaRequiresConsent:
+          "Externe Medien benötigen Einwilligungsprüfung — Vorschau ersetzt keine Produktiv-Einwilligung.",
+        formRequiresPrivacyReview:
+          "Formulare benötigen Datenschutz- und Empfängerprüfung vor Veröffentlichung.",
+        navigationTargetReview:
+          "Navigationsziele und Link-Beschriftungen für diesen Blocktyp in der Vorschau prüfen.",
+        previewIsolationRequired:
+          "Vorschau-Isolation gilt — Editor-Vorschau kann von der öffentlichen Seite abweichen.",
+        governanceReviewRequired:
+          "Redaktion stuft diesen Blocktyp als kritisch ein — redaktionelle Prüfung abschließen.",
+        unknownBlockType:
+          "Für diesen Blocktyp existieren keine bekannten Laufzeit-Verträge.",
+      },
+      inspectorCompositionHints: {
+        content: "Inhaltsfelder gehören zur Inhalts-Inspector-Gruppe dieses Blocktyps.",
+        design: "Design- und Typografie-Einstellungen sind von Rohinhalten getrennt gruppiert.",
+        media:
+          "Medienfelder sollten konsistent über Runtime-Media-Composition behandelt werden — nicht ad-hoc im Renderer.",
+        actions: "Aktionen und Links sind für Veröffentlichungs- und Navigationsprüfung gruppiert.",
+        layout: "Layout-Optionen beeinflussen die Struktur — vor Veröffentlichung prüfen.",
+        form: "Formularfelder und Einwilligungstexte benötigen Datenschutzprüfung vor Go-Live.",
+        navigation:
+          "Navigationstexte und Ziele sollten in Vorschau und Produktion aktuell bleiben.",
+        accessibility:
+          "Struktur, Lesbarkeit und Alternativinformationen im Inspector prüfen.",
+        governance:
+          "Dieser Block besitzt veröffentlichungsrelevante Prüfhinweise in der Redaktions-Schicht.",
+        preview:
+          "Dieser Block kann in der Vorschau bewusst anders behandelt werden als in der öffentlichen Runtime.",
+      },
     },
     workspace: {
       livePreview: "Live-Vorschau",
@@ -119,17 +194,17 @@ export const deMessages: AdminMessages = {
       deviceDesktop: "Desktop",
       deviceTablet: "Tablet",
       deviceMobile: "Mobil",
-      tabInspector: "Inspector",
+      tabInspector: "Eigenschaften",
       tabBlocks: "Blöcke",
-      tabPresets: "Presets",
-      tabGovernance: "Governance",
+      tabPresets: "Vorlagen",
+      tabGovernance: "Redaktion",
       rightPanelAria: "Editor-Seitenleiste",
       panelTabsAria: "Editor-Panel-Tabs",
       inspectorEmptyPreview: "Wählen Sie einen Block in der Vorschau, um den Inhalt zu bearbeiten.",
       insertAtEnd: "Neue Blöcke werden am Seitenende eingefügt.",
       insertAfterActive: "Neue Blöcke werden nach der markierten Karte eingefügt.",
       clearInsertPosition: "Position zurücksetzen",
-      noPresets: "Für die aktuellen Blocktypen sind keine Presets verfügbar.",
+      noPresets: "Für die aktuellen Blocktypen sind keine Vorlagen verfügbar.",
     },
   },
   contentStatus: {
@@ -151,7 +226,7 @@ export const deMessages: AdminMessages = {
     seoUnavailable: "SEO-Bearbeitung ist in dieser Ansicht nicht verfügbar.",
     governanceTitle: "Inhaltshinweise",
     governanceDescription: "Hinweise zum Block-Inhalt (nicht blockierend)",
-    noFieldsForType: "Für den Blocktyp sind keine Inspector-Felder registriert",
+    noFieldsForType: "Für den Blocktyp sind keine Eigenschaften-Felder registriert",
     debugBlock: "Debug: Rohdaten Block",
     debugSeo: "Debug: Rohdaten SEO",
     debugHint: "Nur zur Kontrolle — keine Eingabe.",
@@ -162,13 +237,13 @@ export const deMessages: AdminMessages = {
       content: "Inhalt",
       media: "Medien",
       actions: "Aktionen",
-      layout: "Layout",
+      layout: "Anordnung",
       advanced: "Erweitert",
     },
   },
   mediaPreview: {
     externalNotLoaded: "Externes Bild — in der Vorschau nicht geladen",
-    placeholder: "Medien-Platzhalter (Asset-ID ohne darstellbare URL)",
+    placeholder: "Medien-Platzhalter (Medien-ID ohne darstellbare URL)",
     noImage: "Kein Bild konfiguriert",
     invalidUrl: "Ungültige Bild-URL",
   },
@@ -208,7 +283,7 @@ export const deMessages: AdminMessages = {
     reviewTitle: "Verbesserungen prüfen",
     nonBlockingHint: "Nur redaktionelle Hinweise — Speichern und Veröffentlichen bleiben möglich.",
     noCriticalCalm: "Keine kritischen Punkte — optionale Hinweise können warten.",
-    emptyTitle: "Keine Governance-Hinweise",
+    emptyTitle: "Keine Redaktionshinweise",
     emptyDescription: "Blöcke und Seiten-Metadaten wirken aus den aktuellen Prüfungen in Ordnung.",
     focusBlock: "Zum Block",
     selectedBlockSection: "Hinweise zu diesem Block",
@@ -236,4 +311,5 @@ export const deMessages: AdminMessages = {
       editorial: "Redaktion",
     },
   },
+  ...catalogDe,
 }

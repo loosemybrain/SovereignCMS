@@ -6,6 +6,7 @@ import type { CmsBlock, PublishGovernanceIssue, SeoMetadata } from "@sovereign-c
 import {
   deduplicateGovernanceIssues,
   extractBlockHeadline,
+  isGovernanceSensitiveBlock,
   trimGovernanceString,
   validateCanonicalUrl,
   validateExternalHref,
@@ -36,7 +37,9 @@ export function getPageGovernanceIssues(
   const issues: PublishGovernanceIssue[] = []
 
   for (const block of blocks) {
-    issues.push(...getBlockGovernanceIssues(block))
+    if (isGovernanceSensitiveBlock(block.type)) {
+      issues.push(...getBlockGovernanceIssues(block))
+    }
   }
 
   const title = trimGovernanceString(options?.pageTitle)

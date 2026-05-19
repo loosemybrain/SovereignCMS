@@ -5,6 +5,8 @@ import { ContentStatusBadge } from "@/components/content-status-badge"
 import { CompositionDebugPanel } from "@/components/composition-debug-panel"
 import { CreatePageForm } from "@/components/create-page-form"
 import { AdminDataTable, AdminDataTableBody, AdminDataTableCell, AdminDataTableHeadRow, AdminDataTableRow, AdminDataTableTh, AdminEmptyState, AdminPageHeader, AdminSectionCard, AdminStatusBadge } from "@/components/admin-ui"
+import { formatAdminMessage, getAdminMessages } from "@/lib/admin-i18n"
+import { getAdminUiLocale } from "@/lib/admin-i18n/server"
 import { loadAdminPages } from "@/lib/load-admin-pages"
 
 type Props = {
@@ -28,21 +30,25 @@ export default async function PagesListPage({ searchParams }: Props) {
     searchParams: params,
   })
 
+  const t = getAdminMessages(await getAdminUiLocale())
+  const p = t.pages
+  const c = t.common
+
   return (
     <div className="space-y-6">
-      <AdminPageHeader eyebrow="Content" title="Pages" description="Manage your CMS pages" />
+      <AdminPageHeader eyebrow={p.eyebrow} title={p.title} description={p.description} />
 
-      <AdminSectionCard variant="elevated" title="Locale & overview" description="Switch locale, then browse or create pages for that locale.">
+      <AdminSectionCard variant="elevated" title={p.localeOverviewTitle} description={p.localeOverviewDescription}>
         <div className="space-y-4">
           <AdminLocaleSwitcher activeLocale={activeLocale} localeContext={localeContext} />
           <div className="flex flex-wrap items-center gap-2 text-xs admin-text-muted">
-            <span>Locale</span>
+            <span>{c.locale}</span>
             <AdminStatusBadge>{activeLocale}</AdminStatusBadge>
             <span className="opacity-50">·</span>
-            <span>Variants</span>
+            <span>{c.variants}</span>
             <AdminStatusBadge variant="muted">{pageVariantsCount}</AdminStatusBadge>
             <span className="opacity-50">·</span>
-            <span>Logical</span>
+            <span>{c.logical}</span>
             <AdminStatusBadge variant="muted">{logicalPagesCount}</AdminStatusBadge>
           </div>
         </div>
@@ -62,22 +68,26 @@ export default async function PagesListPage({ searchParams }: Props) {
 
       {error === true ? (
         <div className="rounded-xl border admin-border admin-callout-error p-4 text-sm">
-          Failed to load pages. Please try again.
+          {p.loadFailed}
         </div>
       ) : pages.length === 0 ? (
         <AdminEmptyState
-          title={`No pages for locale ${activeLocale}`}
-          description="Other locale variants may exist. Use locale switcher above to view them."
+          title={formatAdminMessage(p.emptyTitle, { locale: activeLocale })}
+          description={p.emptyDescription}
         />
       ) : (
-        <AdminSectionCard variant="glass" title="Page list" description={`All page records for locale ${activeLocale}.`}>
+        <AdminSectionCard
+          variant="glass"
+          title={p.pageListTitle}
+          description={formatAdminMessage(p.pageListDescription, { locale: activeLocale })}
+        >
           <AdminDataTable>
           <AdminDataTableHeadRow>
-            <AdminDataTableTh>Title</AdminDataTableTh>
-            <AdminDataTableTh>Slug</AdminDataTableTh>
-            <AdminDataTableTh>Locale</AdminDataTableTh>
-            <AdminDataTableTh>Status</AdminDataTableTh>
-            <AdminDataTableTh>Updated</AdminDataTableTh>
+            <AdminDataTableTh>{c.title}</AdminDataTableTh>
+            <AdminDataTableTh>{c.slug}</AdminDataTableTh>
+            <AdminDataTableTh>{c.locale}</AdminDataTableTh>
+            <AdminDataTableTh>{c.status}</AdminDataTableTh>
+            <AdminDataTableTh>{c.updated}</AdminDataTableTh>
           </AdminDataTableHeadRow>
           <AdminDataTableBody>
             {pages.map((page) => (
