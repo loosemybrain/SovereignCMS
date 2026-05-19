@@ -62,6 +62,14 @@ export interface NavigationRepository {
 export interface MediaRepository {
   listByTenant(input: { tenantId: string }): Promise<MediaAsset[]>
   create(input: CreateMediaAssetInput): Promise<MediaAsset>
+  updateMetadata(input: {
+    tenantId: string
+    mediaId: string
+    patch: Partial<CreateMediaAssetInput> & {
+      status?: MediaAsset["status"]
+    }
+  }): Promise<MediaAsset | null>
+  archive(input: { tenantId: string; mediaId: string }): Promise<MediaAsset | null>
 }
 
 export interface SettingsRepository {

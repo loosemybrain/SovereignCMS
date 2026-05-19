@@ -58,13 +58,158 @@ export type {
 export { validateNavigationLabel, validateExternalHref } from "./navigation"
 export type {
   MediaSourceType,
-  MediaReference,
   NormalizedMediaReference,
   MediaAssetType,
   MediaAsset,
   CreateMediaAssetInput,
   CreateMediaAssetResult,
 } from "./media"
+export type { MediaReference } from "./media-reference"
+export type {
+  MediaFieldKind,
+  MediaFieldMode,
+  BlockMediaFieldContract,
+  BlockMediaContract,
+} from "./block-media-contracts"
+export {
+  BLOCK_MEDIA_CONTRACTS,
+  getBlockMediaContract,
+  getMediaFieldsForBlock,
+  hasMediaFields,
+  resolveBlockMediaFieldKeys,
+} from "./block-media-contracts"
+export type { BlockCapability, BlockCapabilityContract } from "./block-capabilities"
+export {
+  BLOCK_CAPABILITY_CONTRACTS,
+  getBlockCapabilityContract,
+  getBlockCapabilities,
+  hasBlockCapability,
+  isMediaCapableBlock,
+  isGovernanceSensitiveBlock,
+  isPreviewSensitiveBlock,
+} from "./block-capabilities"
+export type { BlockEditorSurface, BlockEditorContract } from "./block-editor-contracts"
+export {
+  BLOCK_EDITOR_CONTRACTS,
+  getBlockEditorContract,
+  getBlockEditorSurfaces,
+  hasBlockEditorSurface,
+  isEditorSurfaceAllowed,
+} from "./block-editor-contracts"
+export type {
+  BlockInspectorGroup,
+  BlockInspectorCompositionContract,
+} from "./block-inspector-composition-contracts"
+export {
+  BLOCK_INSPECTOR_COMPOSITION_CONTRACTS,
+  getBlockInspectorCompositionContract,
+  getBlockInspectorGroups,
+  hasBlockInspectorGroup,
+  isInspectorGroupAllowed,
+  mapEditorSurfaceToInspectorGroup,
+} from "./block-inspector-composition-contracts"
+export type {
+  BlockGovernanceConcern,
+  BlockGovernanceSeverity,
+  BlockGovernanceContract,
+} from "./block-governance-contracts"
+export {
+  BLOCK_GOVERNANCE_CONTRACTS,
+  getBlockGovernanceContract,
+  getBlockGovernanceConcerns,
+  hasBlockGovernanceConcern,
+  isGovernanceCriticalBlock,
+  isGovernanceRelevantBlock,
+} from "./block-governance-contracts"
+export type {
+  BlockPreviewIsolationMode,
+  BlockPreviewIsolationReason,
+  BlockPreviewIsolationContract,
+} from "./block-preview-isolation-contracts"
+export {
+  BLOCK_PREVIEW_ISOLATION_CONTRACTS,
+  getBlockPreviewIsolationContract,
+  getBlockPreviewIsolationMode,
+  getBlockPreviewIsolationReasons,
+  hasBlockPreviewIsolationReason,
+  isPreviewIsolatedBlock,
+  requiresExternalPreviewPlaceholder,
+  requiresFormPreviewDisabled,
+} from "./block-preview-isolation-contracts"
+export type {
+  BlockRuntimeValidationSeverity,
+  BlockRuntimeValidationCode,
+  BlockRuntimeValidationIssue,
+  BlockRuntimeValidationResult,
+} from "./block-runtime-validation"
+export {
+  createBlockRuntimeValidationIssue,
+  validateBlockRuntimeSemantics,
+  hasRuntimeValidationErrors,
+  hasRuntimeValidationWarnings,
+} from "./block-runtime-validation"
+export type {
+  RuntimeCompositionMode,
+  RuntimeCompositionConcern,
+  RuntimeCompositionArtifactKind,
+  RuntimeCompositionBoundary,
+  RuntimeCompositionMetadata,
+} from "./runtime-composition-contracts"
+export {
+  PUBLIC_RUNTIME_COMPOSITION_BOUNDARY,
+  ADMIN_PREVIEW_RUNTIME_COMPOSITION_BOUNDARY,
+  getRuntimeCompositionBoundary,
+  isRuntimeCompositionPersistable,
+  assertRuntimeCompositionTransient,
+  createRuntimeCompositionMetadata,
+} from "./runtime-composition-contracts"
+export type {
+  RuntimeBoundaryViolationCode,
+  RuntimeBoundaryEnforcementSeverity,
+  RuntimeBoundaryViolation,
+  RuntimeBoundaryEnforcementResult,
+} from "./runtime-boundary-enforcement"
+export {
+  createRuntimeBoundaryViolation,
+  enforceRuntimeCompositionBoundary,
+  assertRuntimeBoundaryValid,
+  detectRuntimeArtifactPersistenceAttempt,
+  detectProviderLeakage,
+} from "./runtime-boundary-enforcement"
+export type {
+  RuntimeReadModelMode,
+  RuntimeReadModelArtifact,
+  RuntimeReadModelBoundary,
+  RuntimeBlockReadModel,
+} from "./runtime-read-models"
+export {
+  PUBLIC_RUNTIME_READ_MODEL_BOUNDARY,
+  ADMIN_PREVIEW_RUNTIME_READ_MODEL_BOUNDARY,
+  getRuntimeReadModelBoundary,
+  isRuntimeReadModelPersistable,
+  assertRuntimeReadModelBoundary,
+  createRuntimeBlockReadModel,
+} from "./runtime-read-models"
+export type {
+  RuntimeProjectionIntegrityCode,
+  RuntimeProjectionIntegritySeverity,
+  RuntimeProjectionIntegrityViolation,
+  RuntimeProjectionIntegrityResult,
+} from "./runtime-projection-integrity"
+export {
+  createRuntimeProjectionIntegrityViolation,
+  enforceRuntimeBlockReadModelIntegrity,
+  assertRuntimeProjectionIntegrity,
+  detectReadModelPersistenceLeakage,
+  detectProjectionProviderLeakage,
+} from "./runtime-projection-integrity"
+export {
+  mediaReferenceFromProps,
+  hasMediaReferenceInput,
+  isAllowedMediaReferenceUrl,
+  isResolvedMediaReferenceRenderable,
+  toRenderableMediaUrl,
+} from "./media-reference"
 export {
   normalizeMediaReference,
   validateMediaTitle,
@@ -72,6 +217,27 @@ export {
   MEDIA_ASSET_TYPES,
   isMediaAssetType,
 } from "./media"
+export type {
+  MediaAssetId,
+  MediaStorageProvider,
+  MediaVisibility,
+  MediaAssetStatus,
+  MediaAssetRecord,
+  MediaAssetInput,
+} from "./media-ownership"
+export {
+  isMediaAssetOwnedByTenant,
+  isRenderableMediaAsset,
+  getMediaAssetDisplayLabel,
+} from "./media-ownership"
+export {
+  legacyMediaAssetToRecord,
+  mediaAssetRecordToLegacy,
+  createMediaAssetInputToMetadataInput,
+  mediaAssetInputToCreateInput,
+  metadataInputToLegacyMediaAsset,
+  mergeMediaAssetInput,
+} from "./media-asset-bridge"
 export type {
   GovernanceSeverity,
   GovernanceCategory,
@@ -84,6 +250,10 @@ export {
   deduplicateGovernanceIssues,
   sortGovernanceIssuesForDisplay,
 } from "./publish-governance"
+export {
+  mediaCompositionGovernanceIssues,
+  type MediaCompositionCounters,
+} from "./media-composition-governance"
 export {
   trimGovernanceString,
   isGovernanceEmpty,

@@ -35,13 +35,13 @@ export async function loadAdminPages(input?: {
 
   try {
     // Load pages for active locale
-    const pages: CmsPage[] = await runtime.db.pages.listByTenant({
+    const pages: CmsPage[] = await runtime.content.listPages({
       tenantId: tenant.tenantId,
       locale: activeLocale,
     })
 
     // Load all locale variants to calculate counts
-    const allLocalePages: CmsPage[] = await runtime.db.pages.listByTenant({
+    const allLocalePages: CmsPage[] = await runtime.content.listPages({
       tenantId: tenant.tenantId,
     })
 

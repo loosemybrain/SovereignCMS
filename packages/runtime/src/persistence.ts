@@ -24,8 +24,8 @@ function createLazySupabaseContentAdapter(): ContentPersistenceAdapter {
     listPages: async (params) => (await loadAdapter()).listPages(params),
     getPageById: async (params) => (await loadAdapter()).getPageById(params),
     getPageBySlug: async (params) => (await loadAdapter()).getPageBySlug(params),
-    createPage: async (input) => (await loadAdapter()).createPage(input),
-    transitionPageStatus: async (input) => (await loadAdapter()).transitionPageStatus(input),
+    createPage: async (params) => (await loadAdapter()).createPage(params),
+    transitionPageStatus: async (params) => (await loadAdapter()).transitionPageStatus(params),
     listBlocks: async (params) => (await loadAdapter()).listBlocks(params),
     saveBlocks: async (params) => (await loadAdapter()).saveBlocks(params),
   }

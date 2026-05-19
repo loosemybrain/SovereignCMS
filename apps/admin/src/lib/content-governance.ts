@@ -3,20 +3,24 @@
  */
 
 import type { CmsBlock, PublishGovernanceIssue } from "@sovereign-cms/core"
-import { deduplicateGovernanceIssues, validateExternalEmbedUrl } from "@sovereign-cms/core"
+import {
+  deduplicateGovernanceIssues,
+  isGovernanceSensitiveBlock,
+  validateExternalEmbedUrl,
+} from "@sovereign-cms/core"
 import {
   blockIssue,
   getArray,
   getString,
   governanceProps,
-  normalizeBlockMedia,
+  pushBlockMediaContractIssues,
   pushHeadlineLengthHint,
   pushLinkHygieneIssues,
-  pushMediaNormalizationIssues,
 } from "@/lib/governance-checks"
 
 export function getBlockGovernanceIssues(block: CmsBlock | null | undefined): PublishGovernanceIssue[] {
   if (!block) return []
+  if (!isGovernanceSensitiveBlock(block.type)) return []
 
   const props = governanceProps(block)
   const issues: PublishGovernanceIssue[] = []
@@ -210,8 +214,6 @@ function getImageTextIssues(block: CmsBlock, props: Record<string, unknown>): Pu
   const issues: PublishGovernanceIssue[] = []
   const headline = getString(props, "headline")
   const body = getString(props, "body")
-  const normalized = normalizeBlockMedia(props, "imageUrl", "imageAlt", "mediaAssetId")
-
   if (!headline) {
     issues.push(
       blockIssue(block, {
@@ -236,13 +238,7 @@ function getImageTextIssues(block: CmsBlock, props: Record<string, unknown>): Pu
     )
   }
 
-  pushMediaNormalizationIssues(issues, block, {
-    idPrefix: "imgtext",
-    urlField: "imageUrl",
-    normalized,
-    altField: "imageAlt",
-    altValue: getString(props, "imageAlt"),
-  })
+  pushBlockMediaContractIssues(issues, block, props, "imgtext")
 
   pushLinkHygieneIssues(issues, block, "imgtext", props, [
     { urlKey: "ctaHref", labelKey: "ctaLabel", userFacingCta: true },
@@ -409,6 +405,8 @@ function getExternalEmbedIssues(block: CmsBlock, props: Record<string, unknown>)
     { urlKey: "embedUrl", field: "embedUrl", userFacingCta: false },
   ])
 
+  pushBlockMediaContractIssues(issues, block, props, "embed")
+
   return issues
 }
 
@@ -440,14 +438,7 @@ function getHeroIssues(block: CmsBlock, props: Record<string, unknown>): Publish
     pushHeadlineLengthHint(issues, block, { idPrefix: "hero", field: "headline", headline })
   }
 
-  const mediaNorm = normalizeBlockMedia(props, "mediaUrl", "mediaAlt", "mediaAssetId")
-  pushMediaNormalizationIssues(issues, block, {
-    idPrefix: "hero",
-    urlField: "mediaUrl",
-    normalized: mediaNorm,
-    altField: "mediaAlt",
-    altValue: getString(props, "mediaAlt"),
-  })
+  pushBlockMediaContractIssues(issues, block, props, "hero")
 
   return issues
 }

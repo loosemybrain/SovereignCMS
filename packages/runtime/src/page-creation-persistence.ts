@@ -1,20 +1,23 @@
 import type { CreatePageInput, CreatePageResult } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 
 export type CreatePageCreationPersistenceInput = {
-  db: DatabaseAdapter
+  content: ContentPersistenceAdapter
 }
 
 /**
  * Creates a runtime-managed page creation persistence adapter.
- * Delegates page creation to DatabaseAdapter.pages.create.
+ * Delegates page creation to ContentPersistenceAdapter.createPage (tenant-scoped, Phase 71).
  * persisted=false indicates this is InMemory/Mock persistence (no durable storage).
  */
 export function createPageCreationPersistence(input: CreatePageCreationPersistenceInput) {
   return {
     async createPage(createInput: CreatePageInput): Promise<CreatePageResult> {
       try {
-        const page = await input.db.pages.create(createInput)
+        const page = await input.content.createPage({
+          tenantId: createInput.tenantId,
+          input: createInput,
+        })
 
         return {
           success: true,

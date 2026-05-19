@@ -36,18 +36,18 @@ Scope is built **once per request** at composition boundaries (loaders), then pa
 
 | Surface | Resolution | Scope construction |
 |---------|------------|-------------------|
-| **Public web** | `tenantResolver.resolveByHost(host)` | `assertTenantScope({ tenantId: tenant.id, locale })` in `load-public-page.ts` |
-| **Admin** | `resolveAdminTenant({ host })` in `@sovereign-cms/tenancy` | `assertTenantScope({ tenantId, locale })` in `load-admin-page-detail.ts` |
-| **Public page resolution** | Caller supplies `tenantId` + `locale` | `toPublicPageTenantScope()` → `assertTenantScope` before `content.getPageBySlug` |
+| **Public web** | `resolvePublicTenantContext` + `tenantResolver.resolveByHost` (Phase 73) | `toTenantRuntimeScope(resolved)` in `load-public-page.ts` |
+| **Admin** | `resolveAdminTenantContext` (Phase 73) | `toTenantRuntimeScope` in loaders / write scope |
+| **Public page resolution** | Caller supplies `tenantId` + `locale` | `toPublicPageTenantScope()` → `toTenantRuntimeScope` |
 
 ### Single-tenant fallback (centralized)
 
 | App | Mechanism |
 |-----|-----------|
-| Public | In-memory tenant `demo` on `localhost`; `db.tenants` lookup by domain |
-| Admin | `LOCAL_TENANT_ID` env → else `demo` for localhost/fallback (`resolveAdminTenant`) |
+| Public | `getDefaultTenantId()` / DB host map on `localhost` |
+| Admin | `LOCAL_TENANT_ID` → `getDefaultTenantId()` via `resolveAdminTenantContext` |
 
-No additional hardcoded tenant ids were added in apps. **`demo`** remains only in tenancy resolver + in-memory seed data (pre-existing).
+See [tenant-runtime-resolution-phase-73.md](./tenant-runtime-resolution-phase-73.md). Default id constant: `SOVEREIGN_DEFAULT_TENANT_ID` in `@sovereign-cms/tenancy` (aligned with in-memory seed).
 
 ---
 
@@ -143,8 +143,21 @@ Enterprise ABAC/RBAC products need rule stores, UI, and audit pipelines. Soverei
 
 ---
 
+## Phase 73 update (tenant resolution)
+
+Tenant resolution is centralized in `packages/runtime/src/tenant/*-tenant-resolution.ts`. Host/custom-domain routing remains a future phase — no dynamic routing engine.
+
+---
+
+## Phase 71 follow-up (scoped writes)
+
+Content **writes** (create page, status transition, block save) are tenant-scoped in Phase 71. See [scoped-write-enforcement-phase-71.md](./scoped-write-enforcement-phase-71.md).
+
+---
+
 ## Related documentation
 
+- [scoped-write-enforcement-phase-71.md](./scoped-write-enforcement-phase-71.md)
 - [persistence-boundary-phase-66.md](./persistence-boundary-phase-66.md)
 - [authorization-tenant-access-phase-68.md](./authorization-tenant-access-phase-68.md)
 - [tenant-user-mapping-phase-69.md](./tenant-user-mapping-phase-69.md)

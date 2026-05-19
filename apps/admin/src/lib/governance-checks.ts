@@ -7,6 +7,8 @@ import {
   classifyHeadingLength,
   classifyVagueLinkLabel,
   extractGovernanceLinkFields,
+  getMediaFieldsForBlock,
+  isMediaCapableBlock,
   isExternalHttpsLink,
   isGenericAltText,
   isHashOnlyLink,
@@ -14,6 +16,7 @@ import {
   isUnsafeUrlScheme,
   isWhitespaceOnlyUrl,
   normalizeMediaReference,
+  resolveBlockMediaFieldKeys,
   trimGovernanceString,
   type NormalizedMediaReference,
 } from "@sovereign-cms/core"
@@ -63,6 +66,38 @@ export function pushMediaAltIssues(
         field: input.altField,
       }),
     )
+  }
+}
+
+/** Editorial media checks driven by static block media contracts (Phase 78). */
+export function pushBlockMediaContractIssues(
+  issues: PublishGovernanceIssue[],
+  block: CmsBlock,
+  props: Record<string, unknown>,
+  idPrefix: string,
+): void {
+  if (!isMediaCapableBlock(block.type)) {
+    return
+  }
+
+  const fields = getMediaFieldsForBlock(block.type)
+  if (fields.length === 0) {
+    return
+  }
+
+  for (const fieldContract of fields) {
+    const keys = resolveBlockMediaFieldKeys(fieldContract)
+    const normalized = normalizeBlockMedia(props, keys.urlKey, keys.altKey, keys.assetIdKey)
+    const issuePrefix =
+      fields.length === 1 ? idPrefix : `${idPrefix}-${fieldContract.field}`
+
+    pushMediaNormalizationIssues(issues, block, {
+      idPrefix: issuePrefix,
+      urlField: keys.urlKey,
+      normalized,
+      altField: keys.altKey,
+      altValue: keys.altKey ? getString(props, keys.altKey) : "",
+    })
   }
 }
 

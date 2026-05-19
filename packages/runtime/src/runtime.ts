@@ -16,12 +16,19 @@ import { createPageStatusPersistence } from "./page-status-persistence"
 import { createPageCreationPersistence } from "./page-creation-persistence"
 import { createNavigationPersistence } from "./navigation-persistence"
 import { createMediaPersistence } from "./media-persistence"
+import { createMediaResolver, type MediaResolver } from "./media/media-resolver"
 import { createPublicPageResolution } from "./public-page-resolution"
 import { createPublicNavigationResolution } from "./public-navigation-resolution"
 import { createSettingsPersistence } from "./settings-persistence"
 import { createPrivacyScannerPersistence } from "./privacy-scanner-persistence"
 import { loadRuntimeConfig, type RuntimeConfig } from "./config"
 import { resolveContentPersistenceAdapter } from "./persistence"
+import {
+  resolveMediaPersistenceAdapter,
+  resolveNavigationPersistenceAdapter,
+  resolvePrivacyScannerPersistenceAdapter,
+  resolveSettingsPersistenceAdapter,
+} from "./operational-persistence"
 import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 
 export type SovereignRuntime = {
@@ -36,6 +43,7 @@ export type SovereignRuntime = {
   pageCreationPersistence: ReturnType<typeof createPageCreationPersistence>
   navigationPersistence: ReturnType<typeof createNavigationPersistence>
   mediaPersistence: ReturnType<typeof createMediaPersistence>
+  mediaResolver: MediaResolver
   publicPageResolution: ReturnType<typeof createPublicPageResolution>
   publicNavigationResolution: ReturnType<typeof createPublicNavigationResolution>
   settingsPersistence: ReturnType<typeof createSettingsPersistence>
@@ -51,15 +59,23 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
   const storage = selectStorageAdapter(mergedConfig)
   const auth = selectAuthProvider(mergedConfig)
   const tenantResolver = createDatabaseTenantResolver(db)
-  const editorPersistence = createEditorPersistence({ db })
-  const pageStatusPersistence = createPageStatusPersistence({ db })
-  const pageCreationPersistence = createPageCreationPersistence({ db })
-  const navigationPersistence = createNavigationPersistence({ db })
-  const mediaPersistence = createMediaPersistence({ db })
+  const editorPersistence = createEditorPersistence({ content })
+  const pageStatusPersistence = createPageStatusPersistence({ content })
+  const pageCreationPersistence = createPageCreationPersistence({ content })
+  const navigation = resolveNavigationPersistenceAdapter(db)
+  const settings = resolveSettingsPersistenceAdapter(db)
+  const media = resolveMediaPersistenceAdapter(db)
+  const privacyScanner = resolvePrivacyScannerPersistenceAdapter(db)
+  const navigationPersistence = createNavigationPersistence({ navigation })
+  const mediaPersistence = createMediaPersistence({ media })
+  const mediaResolver = createMediaResolver({ media })
   const publicPageResolution = createPublicPageResolution({ content })
-  const publicNavigationResolution = createPublicNavigationResolution({ db })
-  const settingsPersistence = createSettingsPersistence({ db })
-  const privacyScannerPersistence = createPrivacyScannerPersistence({ db })
+  const publicNavigationResolution = createPublicNavigationResolution({
+    navigation,
+    content,
+  })
+  const settingsPersistence = createSettingsPersistence({ settings })
+  const privacyScannerPersistence = createPrivacyScannerPersistence({ privacyScanner })
 
   return {
     config: mergedConfig,
@@ -73,6 +89,7 @@ export function createRuntime(config: Partial<RuntimeConfig> = {}): SovereignRun
     pageCreationPersistence,
     navigationPersistence,
     mediaPersistence,
+    mediaResolver,
     publicPageResolution,
     publicNavigationResolution,
     settingsPersistence,

@@ -1,19 +1,14 @@
 "use server"
 
-import { createRuntime } from "@sovereign-cms/runtime"
 import type { CreatePageInput, CreatePageResult } from "@sovereign-cms/core"
+import { resolveAdminContentWriteScope } from "@/lib/resolve-admin-content-write-scope"
 
 /**
  * Server-side page creation boundary.
  *
- * This action:
- * 1. Validates input on server
- * 2. Creates runtime on the server (safe - no client exposure)
- * 3. Delegates to runtime.pageCreationPersistence.createPage
- * 4. Returns result to client
+ * Phase 71: tenant-scoped createPage via ContentPersistenceAdapter.
  */
 export async function createPageAction(input: CreatePageInput): Promise<CreatePageResult> {
-  // Minimal input validation
   if (typeof input.tenantId !== "string" || input.tenantId.length === 0) {
     throw new Error("Invalid input: tenantId is required")
   }
@@ -30,9 +25,14 @@ export async function createPageAction(input: CreatePageInput): Promise<CreatePa
     throw new Error("Invalid input: title is required")
   }
 
-  // Create runtime on server (safe - no exposure to client)
-  const runtime = createRuntime()
+  const { runtime, scope } = resolveAdminContentWriteScope({
+    clientTenantId: input.tenantId,
+    locale: input.locale,
+    operation: "page:create",
+  })
 
-  // Delegate to runtime persistence layer
-  return runtime.pageCreationPersistence.createPage(input)
+  return runtime.pageCreationPersistence.createPage({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }

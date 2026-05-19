@@ -1,13 +1,13 @@
 import type { TransitionPageStatusInput, TransitionPageStatusResult } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 
 export type CreatePageStatusPersistenceInput = {
-  db: DatabaseAdapter
+  content: ContentPersistenceAdapter
 }
 
 /**
- * Creates a runtime-managed page status persistence adapter.
- * Delegates status transitions to DatabaseAdapter.pages.transitionStatus.
+ * Creates a runtime-managed page status persistence facade.
+ * Delegates to ContentPersistenceAdapter.transitionPageStatus (tenant-scoped, Phase 71).
  * persisted=false indicates this is InMemory/Mock persistence (no durable storage).
  */
 export function createPageStatusPersistence(
@@ -18,7 +18,10 @@ export function createPageStatusPersistence(
       transitionInput: TransitionPageStatusInput,
     ): Promise<TransitionPageStatusResult> {
       try {
-        const page = await input.db.pages.transitionStatus(transitionInput)
+        const page = await input.content.transitionPageStatus({
+          tenantId: transitionInput.tenantId,
+          input: transitionInput,
+        })
 
         return {
           success: true,

@@ -47,6 +47,12 @@ export function createPostgresDatabaseAdapterPlaceholder(): DatabaseAdapter {
     async create() {
       throw new Error("Not implemented in placeholder")
     },
+    async updateMetadata() {
+      throw new Error("Not implemented in placeholder")
+    },
+    async archive() {
+      throw new Error("Not implemented in placeholder")
+    },
   }
   const settings = {
     async getByTenant() {

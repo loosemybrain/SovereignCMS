@@ -3,6 +3,27 @@
 import { useMemo } from "react"
 import type { GovernanceCategory, GovernanceSeverity, PublishGovernanceIssue } from "@sovereign-cms/core"
 import { sortGovernanceIssuesForDisplay, summarizeGovernanceIssues } from "@sovereign-cms/core"
+import {
+  capabilityHintToEditorSurfaceKey,
+  getEditorSurfaceHintKey,
+} from "@/lib/block-editor-surface-hints"
+import { getBlockCapabilityHintKey } from "@/lib/block-capability-hints"
+import {
+  buildGovernanceHintExclusions,
+  getGovernanceContractHintKey,
+} from "@/lib/block-governance-hints"
+import {
+  buildPreviewIsolationHintExclusions,
+  getBlockPreviewIsolationHintKey,
+} from "@/lib/block-preview-isolation-hints"
+import {
+  buildInspectorCompositionHintExclusions,
+  getBlockInspectorCompositionHintKey,
+} from "@/lib/block-inspector-composition-hints"
+import {
+  buildRuntimeValidationHintExclusions,
+  getBlockRuntimeValidationHintKey,
+} from "@/lib/block-runtime-validation-hints"
 import { cn } from "@sovereign-cms/ui"
 import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react"
 import { AdminEmptyState } from "./admin-empty-state"
@@ -13,6 +34,8 @@ export type PublishGovernancePanelProps = {
   issues: PublishGovernanceIssue[]
   onFocusBlock?: (blockId: string) => void
   selectedBlockId?: string | null
+  /** Block type for selected block — enables capability context hints only. */
+  selectedBlockType?: string | null
   className?: string
   compact?: boolean
 }
@@ -94,11 +117,87 @@ export function PublishGovernancePanel({
   issues,
   onFocusBlock,
   selectedBlockId = null,
+  selectedBlockType = null,
   className,
   compact = false,
 }: PublishGovernancePanelProps) {
   const { messages: t } = useAdminI18n()
   const g = t.publishGovernance
+  const capabilityHintKey =
+    selectedBlockType != null ? getBlockCapabilityHintKey(selectedBlockType) : null
+  const capabilityContextHint =
+    capabilityHintKey != null ? t.editor.orientation.capabilityHints[capabilityHintKey] : null
+  const editorSurfaceHintKey =
+    selectedBlockType != null
+      ? getEditorSurfaceHintKey(selectedBlockType, {
+          excludeKeys:
+            capabilityHintKey != null
+              ? [capabilityHintToEditorSurfaceKey(capabilityHintKey)]
+              : undefined,
+        })
+      : null
+  const editorSurfaceContextHint =
+    editorSurfaceHintKey != null
+      ? t.editor.orientation.editorSurfaceHints[editorSurfaceHintKey]
+      : null
+  const governanceHintKey =
+    selectedBlockType != null
+      ? getGovernanceContractHintKey(selectedBlockType, {
+          excludeKeys: buildGovernanceHintExclusions({
+            capabilityHintKey,
+            editorSurfaceHintKey,
+          }),
+        })
+      : null
+  const governanceContractContextHint =
+    governanceHintKey != null
+      ? t.editor.orientation.governanceContractHints[governanceHintKey]
+      : null
+  const previewIsolationHintKey =
+    selectedBlockType != null
+      ? getBlockPreviewIsolationHintKey(selectedBlockType, {
+          excludeKeys: buildPreviewIsolationHintExclusions({
+            capabilityHintKey,
+            editorSurfaceHintKey,
+            governanceHintKey,
+          }),
+        })
+      : null
+  const previewIsolationContextHint =
+    previewIsolationHintKey != null
+      ? t.editor.orientation.previewIsolationHints[previewIsolationHintKey]
+      : null
+  const runtimeValidationHintKey =
+    selectedBlockType != null
+      ? getBlockRuntimeValidationHintKey(selectedBlockType, {
+          excludeKeys: buildRuntimeValidationHintExclusions({
+            capabilityHintKey,
+            editorSurfaceHintKey,
+            governanceHintKey,
+            previewIsolationHintKey,
+          }),
+        })
+      : null
+  const runtimeValidationContextHint =
+    runtimeValidationHintKey != null
+      ? t.editor.orientation.runtimeValidationHints[runtimeValidationHintKey]
+      : null
+  const inspectorCompositionHintKey =
+    selectedBlockType != null
+      ? getBlockInspectorCompositionHintKey(selectedBlockType, {
+          excludeKeys: buildInspectorCompositionHintExclusions({
+            capabilityHintKey,
+            editorSurfaceHintKey,
+            governanceHintKey,
+            previewIsolationHintKey,
+            runtimeValidationHintKey,
+          }),
+        })
+      : null
+  const inspectorCompositionContextHint =
+    inspectorCompositionHintKey != null
+      ? t.editor.orientation.inspectorCompositionHints[inspectorCompositionHintKey]
+      : null
 
   const sortedIssues = useMemo(() => sortGovernanceIssuesForDisplay(issues), [issues])
   const summary = summarizeGovernanceIssues(sortedIssues)
@@ -187,6 +286,32 @@ export function PublishGovernancePanel({
               <p className="mb-2 text-xs admin-text-muted">
                 {g.selectedBlockSummary.replace("{count}", String(selectedBlockIssues.length))}
               </p>
+              {capabilityContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">{capabilityContextHint}</p>
+              ) : null}
+              {editorSurfaceContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">{editorSurfaceContextHint}</p>
+              ) : null}
+              {governanceContractContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">
+                  {governanceContractContextHint}
+                </p>
+              ) : null}
+              {previewIsolationContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">
+                  {previewIsolationContextHint}
+                </p>
+              ) : null}
+              {runtimeValidationContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">
+                  {runtimeValidationContextHint}
+                </p>
+              ) : null}
+              {inspectorCompositionContextHint ? (
+                <p className="mb-2 text-[11px] leading-snug admin-text-muted">
+                  {inspectorCompositionContextHint}
+                </p>
+              ) : null}
               <IssueList
                 items={selectedBlockIssues}
                 categoryLabels={categoryLabels}

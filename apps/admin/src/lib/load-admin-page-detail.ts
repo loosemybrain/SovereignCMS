@@ -1,7 +1,15 @@
 import type { CmsBlock, CmsPage, LocaleContext, NavigationItem } from "@sovereign-cms/core"
 import type { PageGovernanceNavigationItem } from "@/lib/page-governance"
 import type { RuntimeConfig } from "@sovereign-cms/runtime"
-import { assertTenantScope, createLocaleContext } from "@sovereign-cms/runtime"
+import type { PublishGovernanceIssue } from "@sovereign-cms/core"
+import { mediaCompositionGovernanceIssues } from "@sovereign-cms/core"
+import {
+  composeAdminPreviewBlockMedia,
+  createLocaleContext,
+  resolveAdminTenantContext,
+  resolvePreviewTenantContext,
+  toTenantRuntimeScope,
+} from "@sovereign-cms/runtime"
 import { getAdminRuntime } from "@/lib/get-admin-runtime"
 import { resolveAdminLocale } from "@/lib/resolve-admin-locale"
 
@@ -21,19 +29,21 @@ export async function loadAdminPageDetail(input: {
   slug: string
   searchParams?: {
     locale?: string
+    preview?: string
   }
 }): Promise<{
   tenant: ReturnType<typeof getAdminRuntime>["tenant"]
   runtimeConfig: RuntimeConfig
   page: CmsPage | null
   blocks: CmsBlock[]
+  mediaCompositionGovernanceHints: PublishGovernanceIssue[]
   navigationGovernanceItems: PageGovernanceNavigationItem[]
   localeContext: LocaleContext
   activeLocale: string
   error?: boolean
   notFound?: boolean
 }> {
-  const { runtime, tenant } = getAdminRuntime({ host: input.host })
+  const { runtime, tenant, resolved: adminResolved } = getAdminRuntime({ host: input.host })
 
   const localeContext = createLocaleContext({
     locale: runtime.config.defaultLocale,
@@ -46,10 +56,22 @@ export async function loadAdminPageDetail(input: {
     localeContext,
   })
 
-  const tenantScope = assertTenantScope({
-    tenantId: tenant.tenantId,
-    locale: activeLocale,
-  })
+  const isPreviewRequest =
+    input.searchParams?.preview === "1" || input.searchParams?.preview === "true"
+
+  const resolved = isPreviewRequest
+    ? resolvePreviewTenantContext({
+        tenantId: adminResolved.tenantId,
+        locale: activeLocale,
+      })
+    : resolveAdminTenantContext({
+        explicitTenantId: process.env.LOCAL_TENANT_ID,
+        selectedTenantId: tenant.tenantId,
+        locale: activeLocale,
+        host: input.host,
+      })
+
+  const tenantScope = toTenantRuntimeScope(resolved)
 
   try {
     const page = await runtime.content.getPageBySlug({
@@ -64,6 +86,7 @@ export async function loadAdminPageDetail(input: {
         runtimeConfig: runtime.config,
         page: null,
         blocks: [],
+        mediaCompositionGovernanceHints: [],
         navigationGovernanceItems: [],
         localeContext,
         activeLocale,
@@ -71,22 +94,29 @@ export async function loadAdminPageDetail(input: {
       }
     }
 
-    const [blocks, navigationItems] = await Promise.all([
+    const [blocksRaw, navigationItems] = await Promise.all([
       runtime.content.listBlocks({
         tenantId: tenantScope.tenantId,
         pageId: page.id,
       }),
-      runtime.db.navigation.listByTenant({
+      runtime.navigationPersistence.listNavigationItems({
         tenantId: tenantScope.tenantId,
         locale: tenantScope.locale ?? activeLocale,
       }),
     ])
 
+    const mediaComposition = await composeAdminPreviewBlockMedia({
+      tenantId: tenantScope.tenantId,
+      blocks: blocksRaw,
+      mediaResolver: runtime.mediaResolver,
+    })
+
     return {
       tenant,
       runtimeConfig: runtime.config,
       page,
-      blocks,
+      blocks: mediaComposition.value,
+      mediaCompositionGovernanceHints: mediaCompositionGovernanceIssues(mediaComposition),
       navigationGovernanceItems: toGovernanceNavigationItems(navigationItems),
       localeContext,
       activeLocale,
@@ -98,6 +128,7 @@ export async function loadAdminPageDetail(input: {
       runtimeConfig: runtime.config,
       page: null,
       blocks: [],
+      mediaCompositionGovernanceHints: [],
       navigationGovernanceItems: [],
       localeContext,
       activeLocale,

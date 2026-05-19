@@ -1,6 +1,10 @@
 import type { CreatePageInput, Locale, TransitionPageStatusInput } from "@sovereign-cms/core"
 import type { DatabaseAdapter } from "../contracts"
 import type { ContentPersistenceAdapter } from "./types"
+import {
+  assertPageOwnedByTenant,
+  requireScopedContentTenantId,
+} from "./assert-content-write-tenant"
 import { normalizeAdapterError } from "./errors"
 import { requireAdapterTenantId } from "./require-tenant-id"
 
@@ -37,17 +41,34 @@ export function createContentAdapterFromDatabase(db: DatabaseAdapter): ContentPe
       }
     },
 
-    async createPage(input) {
+    async createPage(params) {
+      const tenantId = requireScopedContentTenantId(
+        params.tenantId,
+        params.input.tenantId,
+        "createPage",
+      )
       try {
-        return await db.pages.create(input)
+        return await db.pages.create({ ...params.input, tenantId })
       } catch (error) {
         throw normalizeAdapterError("createPage", error)
       }
     },
 
-    async transitionPageStatus(input) {
+    async transitionPageStatus(params) {
+      const tenantId = requireScopedContentTenantId(
+        params.tenantId,
+        params.input.tenantId,
+        "transitionPageStatus",
+      )
       try {
-        return await db.pages.transitionStatus(input)
+        const existing = await db.pages.listByTenant({ tenantId })
+        const page =
+          existing.find(
+            (candidate) =>
+              candidate.id === params.input.pageId && candidate.locale === params.input.locale,
+          ) ?? null
+        assertPageOwnedByTenant(page, tenantId, params.input.pageId, "transitionPageStatus")
+        return await db.pages.transitionStatus({ ...params.input, tenantId })
       } catch (error) {
         throw normalizeAdapterError("transitionPageStatus", error)
       }
@@ -65,6 +86,9 @@ export function createContentAdapterFromDatabase(db: DatabaseAdapter): ContentPe
     async saveBlocks(params) {
       const tenantId = requireAdapterTenantId(params.tenantId, "saveBlocks")
       try {
+        const pages = await db.pages.listByTenant({ tenantId })
+        const page = pages.find((candidate) => candidate.id === params.pageId) ?? null
+        assertPageOwnedByTenant(page, tenantId, params.pageId, "saveBlocks")
         return await db.blocks.replacePageBlocks({
           tenantId,
           pageId: params.pageId,

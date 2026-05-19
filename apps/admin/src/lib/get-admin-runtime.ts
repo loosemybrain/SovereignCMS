@@ -1,13 +1,26 @@
-import { createRuntime } from "@sovereign-cms/runtime"
-import { resolveAdminTenant } from "@sovereign-cms/tenancy"
+import {
+  createRuntime,
+  resolveAdminTenantContext,
+  type ResolvedTenantContext,
+} from "@sovereign-cms/runtime"
+import { resolveAdminTenant, type AdminTenantContext } from "@sovereign-cms/tenancy"
 
-export function getAdminRuntime(input?: { host?: string }) {
+export function getAdminRuntime(input?: { host?: string }): {
+  runtime: ReturnType<typeof createRuntime>
+  tenant: AdminTenantContext
+  resolved: ResolvedTenantContext
+} {
   const runtime = createRuntime()
-
-  const tenant = resolveAdminTenant({
+  const legacy = resolveAdminTenant({
     host: input?.host,
     env: process.env,
   })
 
-  return { runtime, tenant }
+  const resolved = resolveAdminTenantContext({
+    explicitTenantId: process.env.LOCAL_TENANT_ID,
+    selectedTenantId: legacy.tenantId,
+    host: input?.host,
+  })
+
+  return { runtime, tenant: legacy, resolved }
 }

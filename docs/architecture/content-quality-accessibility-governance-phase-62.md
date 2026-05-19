@@ -36,6 +36,8 @@ No compliance claims are made.
 
 Per block type (CTA, feature grid, image+text, hero, text, contact form, external embed): defensive checks on known prop keys only; malformed props do not throw.
 
+Phase 79 adds **`BLOCK_CAPABILITY_CONTRACTS`** so governance can gate on `governance-sensitive` / `media` capabilities; media field paths remain in Phase 78 contracts. See [block-capability-contracts-phase-79.md](./block-capability-contracts-phase-79.md).
+
 ## Link hygiene
 
 Known fields: `primaryHref`, `secondaryHref`, `ctaHref`, `href`, `embedUrl` (where appropriate).

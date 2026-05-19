@@ -38,3 +38,19 @@ Kontrollierte **Medien-Semantik** und eine **reine Normalisierungs-Schicht** in 
 ## Nicht-Ziele (explizit)
 
 - Keine Mediathek, keine Upload-Pipeline, kein CDN, kein generisches Medien-Schema-Framework.
+
+---
+
+## Phase 75 — Ownership & persisted metadata (Ergänzung)
+
+- **`MediaAssetRecord`** (`packages/core/src/media-ownership.ts`) beschreibt tenant-scoped Metadaten (`storageProvider`, `visibility`, `status`) ohne Provider-SDK.
+- **`MediaReference` / `imageUrl`** bleiben das Editor-Speicherformat; **`assetId`** soll später über `MediaPersistenceAdapter.getMediaById` aufgelöst werden — bis dahin **kein** öffentliches Rendering nur aus `assetId`.
+- **`normalizeMediaReference`** und Governance-Verhalten dieser Phase bleiben maßgeblich; `isRenderableMediaAsset` ergänzt die Metadaten-Schicht (rein, ohne Netzwerk).
+- Uploads, Signed URLs und Storage-Bytes: siehe `docs/architecture/media-storage-boundary-phase-75.md` (bewusst nicht implementiert).
+
+### Phase 76 — Auflösung
+
+- **`resolveMediaReference`** (Server, `packages/runtime/src/media/media-resolver.ts`) mappt `MediaReference` → `MediaAssetRecord` (tenant-scoped).
+- **`assetId`** ohne URL: öffentliche Seiten können Metadaten auflösen, wenn sichtbar; sonst weiterhin kein Render nur aus ID.
+- **`url`** bleibt unterstützt; externe URLs nur HTTPS oder interner Pfad.
+- Öffentlicher Renderer nutzt weiter **`normalizeMediaReference`** — kein Provider-Client im Browser.

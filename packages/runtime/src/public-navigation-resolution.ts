@@ -1,10 +1,16 @@
 import type { NavigationScope, PreviewContext } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type {
+  ContentPersistenceAdapter,
+  NavigationPersistenceAdapter,
+} from "@sovereign-cms/db"
 import type { PublicNavigationItemViewModel } from "./public-navigation-view-model"
 import { isPubliclyVisible } from "./public-visibility"
+import { prepareOperationalRead } from "./tenant/read-authorization-boundary"
+import { toTenantRuntimeScope } from "./tenant/resolution"
 
 export function createPublicNavigationResolution(input: {
-  db: DatabaseAdapter
+  navigation: NavigationPersistenceAdapter
+  content: ContentPersistenceAdapter
 }) {
   return {
     async resolveNavigation(params: {
@@ -13,9 +19,18 @@ export function createPublicNavigationResolution(input: {
       preview: PreviewContext
       scope?: NavigationScope
     }): Promise<PublicNavigationItemViewModel[]> {
+      const readScope = prepareOperationalRead(
+        toTenantRuntimeScope({
+          tenantId: params.tenantId,
+          source: "explicit",
+          locale: params.locale,
+        }),
+        "navigation:read",
+      )
+
       const scope = params.scope ?? "main"
-      const items = await input.db.navigation.listByTenant({
-        tenantId: params.tenantId,
+      const items = await input.navigation.listNavigationItems({
+        tenantId: readScope.tenantId,
         locale: params.locale,
         scope,
       })
@@ -24,8 +39,8 @@ export function createPublicNavigationResolution(input: {
         isPubliclyVisible(item.status, params.preview),
       )
 
-      const pages = await input.db.pages.listByTenant({
-        tenantId: params.tenantId,
+      const pages = await input.content.listPages({
+        tenantId: readScope.tenantId,
         locale: params.locale,
       })
       const pageById = new Map(pages.map((page) => [page.id, page]))

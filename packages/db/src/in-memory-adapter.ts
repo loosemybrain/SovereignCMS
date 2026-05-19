@@ -707,6 +707,59 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
       store.mediaAssets.push(asset)
       return asset
     },
+
+    async updateMetadata(input) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("media.updateMetadata: tenantId is required")
+      }
+
+      const index = store.mediaAssets.findIndex(
+        (candidate) => candidate.id === input.mediaId && candidate.tenantId === input.tenantId,
+      )
+      if (index < 0) {
+        return null
+      }
+
+      const current = store.mediaAssets[index]
+      const now = new Date().toISOString()
+      const patch = input.patch
+
+      const next: MediaAsset = {
+        ...current,
+        ...(patch.type !== undefined ? { type: patch.type } : {}),
+        ...(patch.title !== undefined ? { title: patch.title.trim() } : {}),
+        ...(patch.url !== undefined ? { url: patch.url.trim() } : {}),
+        ...(patch.alt !== undefined ? { alt: patch.alt?.trim() || undefined } : {}),
+        ...(patch.mimeType !== undefined ? { mimeType: patch.mimeType } : {}),
+        ...(patch.status !== undefined ? { status: patch.status } : {}),
+        updatedAt: now,
+      }
+
+      store.mediaAssets[index] = next
+      return next
+    },
+
+    async archive(input) {
+      if (typeof input.tenantId !== "string" || input.tenantId.trim().length === 0) {
+        throw new Error("media.archive: tenantId is required")
+      }
+
+      const index = store.mediaAssets.findIndex(
+        (candidate) => candidate.id === input.mediaId && candidate.tenantId === input.tenantId,
+      )
+      if (index < 0) {
+        return null
+      }
+
+      const now = new Date().toISOString()
+      const next: MediaAsset = {
+        ...store.mediaAssets[index],
+        status: "archived",
+        updatedAt: now,
+      }
+      store.mediaAssets[index] = next
+      return next
+    },
   }
 
   const settingsRepo: SettingsRepository = {

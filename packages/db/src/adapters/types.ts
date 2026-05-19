@@ -10,14 +10,15 @@
 import type {
   CmsBlock,
   CmsPage,
-  CreateMediaAssetInput,
   CreateNavigationItemInput,
   CreatePageInput,
   CreatePrivacyScanInput,
   Locale,
-  MediaAsset,
+  MediaAssetInput,
+  MediaAssetRecord,
   NavigationItem,
   NavigationScope,
+  PrivacyScanFinding,
   PrivacyScanJob,
   TenantSettings,
   TenantUserMembership,
@@ -30,6 +31,7 @@ import type {
 /**
  * Content: pages + blocks (maps to `PageRepository` + `BlockRepository`).
  * Phase 70: every read requires explicit `tenantId` — no silent default tenant in adapters.
+ * Phase 71: writes require scoped `tenantId` + page ownership checks before mutation.
  */
 export interface ContentPersistenceAdapter {
   listPages(params: { tenantId: string; locale?: string }): Promise<CmsPage[]>
@@ -39,8 +41,11 @@ export interface ContentPersistenceAdapter {
     locale: string
     slug: string
   }): Promise<CmsPage | null>
-  createPage(input: CreatePageInput): Promise<CmsPage>
-  transitionPageStatus(input: TransitionPageStatusInput): Promise<CmsPage>
+  createPage(params: { tenantId: string; input: CreatePageInput }): Promise<CmsPage>
+  transitionPageStatus(params: {
+    tenantId: string
+    input: TransitionPageStatusInput
+  }): Promise<CmsPage>
   listBlocks(params: { tenantId: string; pageId: string }): Promise<CmsBlock[]>
   saveBlocks(params: {
     tenantId: string
@@ -50,33 +55,79 @@ export interface ContentPersistenceAdapter {
   }): Promise<CmsBlock[]>
 }
 
-/** Settings (maps to `SettingsRepository`). Brand-specific settings are not a separate store yet. */
+/**
+ * Settings (maps to `SettingsRepository`). Brand-specific settings are not a separate store yet.
+ * Phase 72: writes require scoped `tenantId`.
+ * Phase 74: reads require explicit `tenantId` params.
+ */
 export interface SettingsPersistenceAdapter {
-  getTenantSettings(tenantId: string): Promise<TenantSettings>
-  updateTenantSettings(input: UpdateTenantSettingsInput): Promise<TenantSettings>
+  getTenantSettings(params: { tenantId: string }): Promise<TenantSettings>
+  /** Brand settings share tenant store until a dedicated brand table exists (Phase 74). */
+  getBrandSettings(params: { tenantId: string; brand: string }): Promise<TenantSettings>
+  updateTenantSettings(params: {
+    tenantId: string
+    input: UpdateTenantSettingsInput
+  }): Promise<TenantSettings>
 }
 
-/** Navigation including footer scope (maps to `NavigationRepository`). */
+/**
+ * Navigation (maps to `NavigationRepository`).
+ * Phase 74: all reads require explicit `tenantId`.
+ */
 export interface NavigationPersistenceAdapter {
   listNavigationItems(params: {
     tenantId: string
     locale?: string
     scope?: NavigationScope
   }): Promise<NavigationItem[]>
-  createNavigationItem(input: CreateNavigationItemInput): Promise<NavigationItem>
+  createNavigationItem(params: {
+    tenantId: string
+    input: CreateNavigationItemInput
+  }): Promise<NavigationItem>
 }
 
-/** Media metadata (maps to `MediaRepository`). Upload bytes use `StorageAdapter`, not this interface. */
+/**
+ * Footer navigation (same store as main nav, `scope: "footer"`).
+ * Implemented by the navigation memory adapter in Phase 74.
+ */
+export interface FooterPersistenceAdapter {
+  listFooterNavigationItems(params: {
+    tenantId: string
+    locale?: string
+  }): Promise<NavigationItem[]>
+}
+
+/**
+ * Media metadata only (maps to `MediaRepository`).
+ * Binary upload/delete and signed URLs belong on a future `StorageProviderAdapter` (Phase 75+).
+ */
 export interface MediaPersistenceAdapter {
-  listMedia(params: { tenantId: string }): Promise<MediaAsset[]>
-  createMedia(input: CreateMediaAssetInput): Promise<MediaAsset>
+  listMedia(params: { tenantId: string; folderId?: string }): Promise<MediaAssetRecord[]>
+  getMediaById(params: { tenantId: string; mediaId: string }): Promise<MediaAssetRecord | null>
+  createMediaMetadata(params: {
+    tenantId: string
+    input: MediaAssetInput
+  }): Promise<MediaAssetRecord>
+  updateMediaMetadata(params: {
+    tenantId: string
+    mediaId: string
+    input: Partial<MediaAssetInput>
+  }): Promise<MediaAssetRecord>
+  archiveMedia(params: { tenantId: string; mediaId: string }): Promise<MediaAssetRecord>
 }
 
 /** Privacy scanner jobs (maps to `PrivacyScanRepository`). */
 export interface PrivacyScannerPersistenceAdapter {
   listScans(params: { tenantId: string }): Promise<PrivacyScanJob[]>
-  createScan(input: CreatePrivacyScanInput): Promise<PrivacyScanJob>
-  updateScanApproval(input: UpdatePrivacyScanApprovalInput): Promise<PrivacyScanJob>
+  listFindings(params: {
+    tenantId: string
+    scanId?: string
+  }): Promise<PrivacyScanFinding[]>
+  createScan(params: { tenantId: string; input: CreatePrivacyScanInput }): Promise<PrivacyScanJob>
+  updateScanApproval(params: {
+    tenantId: string
+    input: UpdatePrivacyScanApprovalInput
+  }): Promise<PrivacyScanJob>
 }
 
 /** Tenant resolution (maps to `TenantRepository`). */

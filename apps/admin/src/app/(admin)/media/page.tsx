@@ -14,20 +14,26 @@ import {
   AdminSectionCard,
   AdminStatCard,
 } from "@/components/admin-ui"
-import { getAdminMessages } from "@/lib/admin-i18n"
+import { formatAdminMessage, getAdminMessages } from "@/lib/admin-i18n"
 import { getAdminUiLocale } from "@/lib/admin-i18n/server"
-import { getAdminRuntime } from "@/lib/get-admin-runtime"
+import { resolveAdminOperationalReadScope } from "@/lib/resolve-admin-operational-read-scope"
 import { MediaPickerDemo } from "@/components/media-picker-demo"
 
 export default async function MediaPage() {
   const h = await headers()
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? undefined
-  const { runtime, tenant } = getAdminRuntime({ host })
+  const { runtime, scope } = resolveAdminOperationalReadScope({
+    host,
+    operation: "media:read",
+  })
 
-  const m = getAdminMessages(await getAdminUiLocale()).media
+  const t = getAdminMessages(await getAdminUiLocale())
+  const m = t.media
+  const ml = t.mediaLibrary
+  const c = t.common
 
   const assets = await runtime.mediaPersistence.listMediaAssets({
-    tenantId: tenant.tenantId,
+    tenantId: scope.tenantId,
   })
 
   const imageCount = assets.filter((a) => a.type === "image").length
@@ -40,51 +46,54 @@ export default async function MediaPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <AdminStatCard
-          title="Bilder"
+          title={ml.imagesTitle}
           value={imageCount}
-          description="Assets vom Typ Bild"
+          description={ml.imagesDescription}
           icon={<ImageIcon className="h-5 w-5" strokeWidth={2} />}
           showAnimation={false}
         />
         <AdminStatCard
-          title="Videos"
+          title={ml.videosTitle}
           value={videoCount}
-          description="Assets vom Typ Video"
+          description={ml.videosDescription}
           icon={<Video className="h-5 w-5" strokeWidth={2} />}
           showAnimation={false}
         />
         <AdminStatCard
-          title="Dokumente"
+          title={ml.documentsTitle}
           value={documentCount}
-          description="Dokumente und Sonstiges"
+          description={ml.documentsDescription}
           icon={<FileText className="h-5 w-5" strokeWidth={2} />}
           showAnimation={false}
         />
       </div>
 
-      <CreateMediaAssetForm tenantId={tenant.tenantId} />
+      <CreateMediaAssetForm tenantId={scope.tenantId} />
 
       <AdminSectionCard
         variant="glass"
-        title="Bibliothek"
-        description={`${assets.length} Asset(s) für Tenant ${tenant.tenantId}. Hinweis: InMemory pro Request — Liste nach Anlegen ggf. aktualisieren.`}
+        title={ml.libraryTitle}
+        description={formatAdminMessage(ml.libraryDescription, {
+          count: String(assets.length),
+          tenant: scope.tenantId,
+        })}
       >
         <AdminDataTable>
           <AdminDataTableHeadRow>
-            <AdminDataTableTh>Titel</AdminDataTableTh>
-            <AdminDataTableTh>Typ</AdminDataTableTh>
-            <AdminDataTableTh>URL</AdminDataTableTh>
-            <AdminDataTableTh>Alt</AdminDataTableTh>
-            <AdminDataTableTh>Status</AdminDataTableTh>
-            <AdminDataTableTh>Aktualisiert</AdminDataTableTh>
+            <AdminDataTableTh>{ml.fieldTitle}</AdminDataTableTh>
+            <AdminDataTableTh>{ml.fieldType}</AdminDataTableTh>
+            <AdminDataTableTh>{ml.fieldUrl}</AdminDataTableTh>
+            <AdminDataTableTh>{ml.fieldAlt}</AdminDataTableTh>
+            <AdminDataTableTh>{c.status}</AdminDataTableTh>
+            <AdminDataTableTh>{c.updated}</AdminDataTableTh>
           </AdminDataTableHeadRow>
           <AdminDataTableBody>
             {assets.length === 0 ? (
               <AdminDataTableRow hover={false}>
                 <AdminDataTableCell className="px-4 py-10" colSpan={6}>
                   <AdminEmptyState
-                    title="Keine Media-Assets"
-                    description="Lege ein URL-basiertes Asset über das Formular oben an."
+                    title={ml.emptyAssetsTitle}
+                    description={ml.emptyAssetsDescription}
                   />
                 </AdminDataTableCell>
               </AdminDataTableRow>
@@ -110,8 +119,12 @@ export default async function MediaPage() {
         </AdminDataTable>
       </AdminSectionCard>
 
-      <AdminSectionCard variant="default" title="Picker-Demo" description="Entwickler-Vorschau der Media-Picker-Komponente.">
-        <MediaPickerDemo tenantId={tenant.tenantId} />
+      <AdminSectionCard
+        variant="default"
+        title={ml.pickerDemoTitle}
+        description={ml.pickerDemoDescription}
+      >
+        <MediaPickerDemo tenantId={scope.tenantId} />
       </AdminSectionCard>
     </div>
   )

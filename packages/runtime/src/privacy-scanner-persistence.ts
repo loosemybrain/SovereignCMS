@@ -1,22 +1,35 @@
 import type {
   CreatePrivacyScanInput,
   CreatePrivacyScanResult,
+  PrivacyScanFinding,
   PrivacyScanJob,
   UpdatePrivacyScanApprovalInput,
   UpdatePrivacyScanApprovalResult,
 } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type { PrivacyScannerPersistenceAdapter } from "@sovereign-cms/db"
 
-export function createPrivacyScannerPersistence(input: { db: DatabaseAdapter }) {
+export function createPrivacyScannerPersistence(input: {
+  privacyScanner: PrivacyScannerPersistenceAdapter
+}) {
   return {
     async listPrivacyScans(params: { tenantId: string }): Promise<PrivacyScanJob[]> {
-      return input.db.privacyScans.listByTenant(params)
+      return input.privacyScanner.listScans(params)
+    },
+
+    async listPrivacyFindings(params: {
+      tenantId: string
+      scanId?: string
+    }): Promise<PrivacyScanFinding[]> {
+      return input.privacyScanner.listFindings(params)
     },
 
     async createPrivacyScan(
       createInput: CreatePrivacyScanInput
     ): Promise<CreatePrivacyScanResult> {
-      const scan = await input.db.privacyScans.create(createInput)
+      const scan = await input.privacyScanner.createScan({
+        tenantId: createInput.tenantId,
+        input: createInput,
+      })
 
       return {
         success: true,
@@ -28,7 +41,10 @@ export function createPrivacyScannerPersistence(input: { db: DatabaseAdapter }) 
     async updatePrivacyScanApproval(
       updateInput: UpdatePrivacyScanApprovalInput
     ): Promise<UpdatePrivacyScanApprovalResult> {
-      const scan = await input.db.privacyScans.updateApproval(updateInput)
+      const scan = await input.privacyScanner.updateScanApproval({
+        tenantId: updateInput.tenantId,
+        input: updateInput,
+      })
 
       return {
         success: true,

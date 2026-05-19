@@ -1,9 +1,10 @@
 "use server"
 
-import { createRuntime } from "@sovereign-cms/runtime"
 import type { CreateMediaAssetInput, CreateMediaAssetResult } from "@sovereign-cms/core"
 import { isMediaAssetType } from "@sovereign-cms/core"
+import { resolveAdminWriteScope } from "@/lib/resolve-admin-write-scope"
 
+/** Server-side media metadata create. Phase 72: scoped media adapter write. */
 export async function createMediaAssetAction(
   input: CreateMediaAssetInput,
 ): Promise<CreateMediaAssetResult> {
@@ -22,7 +23,13 @@ export async function createMediaAssetAction(
     throw new Error("Invalid media asset type")
   }
 
-  const runtime = createRuntime()
+  const { runtime, scope } = resolveAdminWriteScope({
+    clientTenantId: input.tenantId,
+    operation: "media:manage",
+  })
 
-  return runtime.mediaPersistence.createMediaAsset(input)
+  return runtime.mediaPersistence.createMediaAsset({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }

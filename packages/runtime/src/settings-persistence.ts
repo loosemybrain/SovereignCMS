@@ -3,29 +3,39 @@ import type {
   UpdateTenantSettingsInput,
   UpdateTenantSettingsResult,
 } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import type { SettingsPersistenceAdapter } from "@sovereign-cms/db"
 
 export type CreateSettingsPersistenceInput = {
-  db: DatabaseAdapter
+  settings: SettingsPersistenceAdapter
 }
 
 export function createSettingsPersistence(input: CreateSettingsPersistenceInput) {
-  const { db } = input
+  const { settings } = input
 
   return {
     async getTenantSettings(params: { tenantId: string }): Promise<TenantSettings> {
-      return db.settings.getByTenant(params)
+      return settings.getTenantSettings(params)
+    },
+
+    async getBrandSettings(params: {
+      tenantId: string
+      brand: string
+    }): Promise<TenantSettings> {
+      return settings.getBrandSettings(params)
     },
 
     async updateTenantSettings(
       updateInput: UpdateTenantSettingsInput,
     ): Promise<UpdateTenantSettingsResult> {
-      const settings = await db.settings.update(updateInput)
+      const settingsResult = await settings.updateTenantSettings({
+        tenantId: updateInput.tenantId,
+        input: updateInput,
+      })
 
       return {
         success: true,
-        settings,
-        updatedAt: settings.updatedAt,
+        settings: settingsResult,
+        updatedAt: settingsResult.updatedAt,
         persisted: false,
       }
     },

@@ -7,6 +7,7 @@ import type {
 } from "@sovereign-cms/core"
 import type { ContentPersistenceAdapter } from "../types"
 import { PersistenceAdapterError, normalizeAdapterError } from "../errors"
+import { requireScopedContentTenantId } from "../assert-content-write-tenant"
 import { requireAdapterTenantId } from "../require-tenant-id"
 import type { SupabaseContentClientPort } from "./client-port"
 import { mapSupabaseBlockRow, mapSupabasePageRow } from "./row-mappers"
@@ -91,14 +92,23 @@ export function createSupabaseContentAdapter(
       }
     },
 
-    async createPage(_input: CreatePageInput) {
+    async createPage(params: { tenantId: string; input: CreatePageInput }) {
+      requireScopedContentTenantId(params.tenantId, params.input.tenantId, "createPage")
       throw new PersistenceAdapterError(
         "not_implemented",
         "Supabase createPage is not implemented in Phase 66",
       )
     },
 
-    async transitionPageStatus(_input: TransitionPageStatusInput) {
+    async transitionPageStatus(params: {
+      tenantId: string
+      input: TransitionPageStatusInput
+    }) {
+      requireScopedContentTenantId(
+        params.tenantId,
+        params.input.tenantId,
+        "transitionPageStatus",
+      )
       throw new PersistenceAdapterError(
         "not_implemented",
         "Supabase transitionPageStatus is not implemented in Phase 66",
@@ -120,12 +130,13 @@ export function createSupabaseContentAdapter(
       }
     },
 
-    async saveBlocks(_params: {
+    async saveBlocks(params: {
       tenantId: string
       pageId: string
       locale: Locale
       blocks: import("@sovereign-cms/core").CmsBlock[]
     }) {
+      requireAdapterTenantId(params.tenantId, "saveBlocks")
       throw new PersistenceAdapterError(
         "not_implemented",
         "Supabase saveBlocks is not implemented in Phase 66",

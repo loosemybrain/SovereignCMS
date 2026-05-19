@@ -6,6 +6,7 @@ import { cn } from "@sovereign-cms/ui"
 import { AdminButton } from "@/components/admin-ui"
 import { EditorHint } from "@/components/editor/patterns"
 import { useAdminI18n } from "@/components/admin-i18n-provider"
+import { getLocalizedBlockCategory, getLocalizedBlockLabel } from "@/lib/admin-block-i18n"
 
 type BlockPaletteBlocksTabProps = {
   onAddBlock: (blockType: string) => void
@@ -18,7 +19,8 @@ export function BlockPaletteBlocksTab({
   insertAfterBlockId,
   onClearInsertPosition,
 }: BlockPaletteBlocksTabProps) {
-  const w = useAdminI18n().messages.editor.workspace
+  const { locale, messages } = useAdminI18n()
+  const w = messages.editor.workspace
   const definitions = listAdminBlockDefinitions()
 
   const byCategory = definitions.reduce(
@@ -47,7 +49,9 @@ export function BlockPaletteBlocksTab({
 
       {Object.entries(byCategory).map(([category, blocks]) => (
         <div key={category}>
-          <h3 className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] admin-text-muted">{category}</h3>
+          <h3 className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] admin-text-muted">
+            {getLocalizedBlockCategory(category, locale)}
+          </h3>
           <ul className="space-y-1.5" role="list">
             {blocks.map((definition) => {
               const Icon = getEditorBlockTypeIcon(definition.type)
@@ -65,7 +69,9 @@ export function BlockPaletteBlocksTab({
                       <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium admin-text">{definition.label}</span>
+                      <span className="block text-sm font-medium admin-text">
+                        {getLocalizedBlockLabel(definition.type, locale)}
+                      </span>
                       <span className="font-mono text-[10px] uppercase tracking-wide admin-text-muted">
                         {definition.type}
                       </span>

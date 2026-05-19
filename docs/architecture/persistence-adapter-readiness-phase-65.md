@@ -297,3 +297,13 @@ See [tenant-enforcement-runtime-phase-70.md](./tenant-enforcement-runtime-phase-
 
 - Added `packages/db/src/adapters/types.ts` — type-only draft facades
 - Extended `packages/db/src/index.ts` exports — no runtime behavior change
+
+---
+
+## Phase 75 update — media metadata adapter
+
+- **`MediaPersistenceAdapter`** now returns provider-neutral **`MediaAssetRecord`** (metadata only).
+- Methods: `listMedia`, `getMediaById`, `createMediaMetadata`, `updateMediaMetadata`, `archiveMedia` — all require explicit `tenantId`.
+- **Storage** remains separate: draft `StorageProviderAdapter` documented in `media-storage-boundary-phase-75.md`; **not implemented**.
+- Draft SQL: `docs/db/drafts/media-assets.sql` (not executable).
+- Uploads, signed URLs, CDN, and binary handling are **intentionally out of scope**.

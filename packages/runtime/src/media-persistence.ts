@@ -3,23 +3,31 @@ import type {
   CreateMediaAssetResult,
   MediaAsset,
 } from "@sovereign-cms/core"
-import type { DatabaseAdapter } from "@sovereign-cms/db"
+import {
+  createMediaAssetInputToMetadataInput,
+  mediaAssetRecordToLegacy,
+} from "@sovereign-cms/core"
+import type { MediaPersistenceAdapter } from "@sovereign-cms/db"
 
-export function createMediaPersistence(input: { db: DatabaseAdapter }) {
+export function createMediaPersistence(input: { media: MediaPersistenceAdapter }) {
   return {
     async listMediaAssets(params: { tenantId: string }): Promise<MediaAsset[]> {
-      return input.db.media.listByTenant(params)
+      const records = await input.media.listMedia(params)
+      return records.map(mediaAssetRecordToLegacy)
     },
 
     async createMediaAsset(
       createInput: CreateMediaAssetInput,
     ): Promise<CreateMediaAssetResult> {
-      const asset = await input.db.media.create(createInput)
-
+      const record = await input.media.createMediaMetadata({
+        tenantId: createInput.tenantId,
+        input: createMediaAssetInputToMetadataInput(createInput),
+      })
+      const asset = mediaAssetRecordToLegacy(record)
       return {
         success: true,
         asset,
-        createdAt: new Date().toISOString(),
+        createdAt: asset.createdAt,
         persisted: false,
       }
     },

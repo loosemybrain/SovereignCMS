@@ -1,9 +1,11 @@
-import type { BlockInstance, PreviewContext } from "@sovereign-cms/core"
+import type { PreviewContext } from "@sovereign-cms/core"
 import type { PageRecord } from "@sovereign-cms/db"
 import type { TenantContext } from "@sovereign-cms/tenancy"
 import {
-  assertTenantScope,
+  createResolvedTenantContext,
   createRuntime,
+  resolvePublicTenantContext,
+  toTenantRuntimeScope,
   mapSeoMetadataToPublicViewModel,
   mapSettingsToPublicFooterViewModel,
   mapSettingsToPublicHeaderViewModel,
@@ -11,6 +13,7 @@ import {
   type PublicHeaderViewModel,
   type PublicNavigationItemViewModel,
   type PublicSeoViewModel,
+  composePublicBlockMedia,
 } from "@sovereign-cms/runtime"
 import { createPreviewContext } from "@sovereign-cms/core"
 
@@ -20,7 +23,7 @@ export type PublicPagePayload = {
   tenant: TenantContext
   locale: string
   page: PageRecord
-  blocks: BlockInstance[]
+  blocks: Awaited<ReturnType<typeof composePublicBlockMedia>>["value"]
   navigation: PublicNavigationItemViewModel[]
   seo: PublicSeoViewModel
   previewContext: PreviewContext
@@ -33,23 +36,49 @@ export async function loadPublicPage(input: {
   host: string
   slug: string
   locale: string
+  routeTenant?: string
   searchParams?: Record<string, string | string[] | undefined>
 }): Promise<PublicPagePayload | null> {
-  // Create preview context from search params
   const previewContext = createPreviewContext({
     preview: input.searchParams?.preview,
   })
 
-  const tenant = await runtime.tenantResolver.resolveByHost(input.host)
-  if (!tenant) return null
-  if (process.env.NODE_ENV === "development") {
-    console.info("[sovereign:web] tenant resolved", tenant.id)
-  }
+  const routeTenant =
+    input.routeTenant ??
+    (typeof input.searchParams?.tenant === "string" ? input.searchParams.tenant : undefined)
 
-  const tenantScope = assertTenantScope({
-    tenantId: tenant.id,
+  const syncResolved = resolvePublicTenantContext({
+    host: input.host,
+    routeTenant,
     locale: input.locale,
   })
+
+  const tenantRow = await runtime.tenantResolver.resolveByHost(input.host)
+  if (!tenantRow && !routeTenant) {
+    return null
+  }
+
+  const tenantId = routeTenant?.trim() || tenantRow?.id || syncResolved.tenantId
+
+  const resolved = createResolvedTenantContext({
+    tenantId,
+    source: routeTenant ? "route" : tenantRow ? "host" : syncResolved.source,
+    host: input.host,
+    routeTenant,
+    locale: input.locale,
+  })
+
+  const tenantScope = toTenantRuntimeScope(resolved)
+
+  const tenant: TenantContext = tenantRow ?? {
+    id: tenantId,
+    slug: tenantId,
+    displayName: tenantId,
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[sovereign:web] tenant resolved", tenant.id, "source:", resolved.source)
+  }
 
   // Resolve page using public resolution with preview context
   const page = await runtime.publicPageResolution.resolvePage({
@@ -68,7 +97,12 @@ export async function loadPublicPage(input: {
     tenantId: tenantScope.tenantId,
     pageId: page.id,
   })
-  const blocks = blocksRaw.filter((block) => block.visibility === "visible") as BlockInstance[]
+  const visibleBlocks = blocksRaw.filter((block) => block.visibility === "visible")
+  const { value: blocks } = await composePublicBlockMedia({
+    tenantId: tenantScope.tenantId,
+    blocks: visibleBlocks,
+    mediaResolver: runtime.mediaResolver,
+  })
   if (process.env.NODE_ENV === "development") {
     console.info("[sovereign:web] blocks count", blocks.length)
   }

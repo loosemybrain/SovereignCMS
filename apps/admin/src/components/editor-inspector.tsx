@@ -6,6 +6,7 @@ import { InspectorFieldRenderer } from "./inspector/inspector-field-renderer"
 import { SeoEditorSection } from "@/components/seo-editor-section"
 import type { SeoMetadata } from "@sovereign-cms/core"
 import { getAdminBlockDefinition } from "@/block-definitions/registry"
+import { localizeInspectorFields } from "@/lib/admin-block-i18n"
 import { validateFieldValue } from "@/lib/field-validation"
 import { getBlockGovernanceIssues } from "@/lib/content-governance"
 import { GovernanceCategoryIcon } from "@/lib/governance-category-icons"
@@ -60,6 +61,7 @@ function PropsEditing({
 }) {
   const { locale, messages: t } = useAdminI18n()
   const ins = t.inspector
+  const common = t.common
   const sectionLabels = getInspectorSectionLabels(locale)
   const props =
     block && typeof block.props === "object" && block.props !== null
@@ -68,7 +70,9 @@ function PropsEditing({
 
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
   const definition = getAdminBlockDefinition(block.type)
-  const fields = definition?.inspectorFields ?? []
+  const fields = definition
+    ? localizeInspectorFields(block.type, definition.inspectorFields, locale)
+    : []
 
   if (fields.length === 0) {
     return (
@@ -83,7 +87,7 @@ function PropsEditing({
   const getFieldError = (fieldKey: string, value: unknown, fieldValidations: (typeof fields)[number]["validations"]) => {
     if (!touchedFields[fieldKey]) return null
     const result = validateFieldValue(value, fieldValidations)
-    return result.valid ? null : (result.errors[0] ?? "Invalid value.")
+    return result.valid ? null : (result.errors[0] ?? common.invalidValue)
   }
 
   const renderField = (field: (typeof fields)[number]) => {
@@ -183,10 +187,11 @@ export function EditorInspector({
   const { messages: t } = useAdminI18n()
   const ins = t.inspector
   const o = t.editor.orientation
+  const inspectorAria = t.inspectorPanel.ariaLabel
 
   if (selectedBlock === null) {
     return (
-      <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
+      <div className="admin-inspector-stack text-sm" aria-label={inspectorAria}>
         <div ref={topAnchorRef} className="h-px w-full shrink-0 scroll-mt-4" tabIndex={-1} aria-hidden />
         <AdminEmptyState
           title={o.emptyInspectorTitle}
@@ -214,7 +219,7 @@ export function EditorInspector({
   const position = getBlockEditorPosition(selectedBlock.id, orderedBlocks)
 
   return (
-    <div className="admin-inspector-stack text-sm" aria-label="Inspector panel">
+    <div className="admin-inspector-stack text-sm" aria-label={inspectorAria}>
       <div ref={topAnchorRef} className="h-px w-full shrink-0 scroll-mt-4" tabIndex={-1} aria-hidden />
       {position ? (
         <EditorSelectedBlockContext

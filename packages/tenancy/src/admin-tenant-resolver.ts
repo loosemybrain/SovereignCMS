@@ -1,8 +1,9 @@
+import { readConfiguredTenantId } from "./default-tenant-id"
 import type { AdminTenantContext } from "./types"
 
 /**
- * Single place for admin single-tenant fallback (Phase 70).
- * Apps must not hardcode tenant ids elsewhere — use this resolver, then `assertTenantScope` in runtime.
+ * Admin tenant id for server actions (legacy shape).
+ * Prefer `resolveAdminTenantContext` from `@sovereign-cms/runtime` for new code.
  */
 
 function normalizeHost(host?: string): string | undefined {
@@ -24,10 +25,11 @@ export function resolveAdminTenant(input: {
   }
 
   const host = normalizeHost(input.host)
+  const tenantId = readConfiguredTenantId(env)
   if (host === "localhost") {
-    return { tenantId: "demo", source: "host" }
+    return { tenantId, source: "host" }
   }
 
-  return { tenantId: "demo", source: "fallback" }
+  return { tenantId, source: "fallback" }
 }
 

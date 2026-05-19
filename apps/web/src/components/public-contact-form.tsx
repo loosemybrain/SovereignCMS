@@ -107,7 +107,7 @@ export function PublicContactForm({
       ) : null}
 
       <form onSubmit={handleSubmit} className="pub-form-stack" noValidate>
-        <div className="absolute -left-[9999px] -top-[9999px]" aria-hidden="true">
+        <div className="absolute left-[-9999px] top-[-9999px]" aria-hidden="true">
           <input
             name="website"
             type="text"

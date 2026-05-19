@@ -1,7 +1,9 @@
 import { headers } from "next/headers"
-import { getAdminRuntime } from "@/lib/get-admin-runtime"
-import { AdminAlert, AdminPageHeader } from "@/components/admin-ui"
+import { resolveAdminOperationalReadScope } from "@/lib/resolve-admin-operational-read-scope"
+import { AdminPageHeader } from "@/components/admin-ui"
 import { PrivacyScannerPanel } from "@/components/privacy-scanner-panel"
+import { getAdminMessages } from "@/lib/admin-i18n"
+import { getAdminUiLocale } from "@/lib/admin-i18n/server"
 
 export const metadata = {
   title: "Privacy",
@@ -10,31 +12,21 @@ export const metadata = {
 export default async function PrivacyPage() {
   const headersList = await headers()
   const host = headersList.get("host") || "localhost"
-  const { runtime, tenant } = getAdminRuntime({ host })
-
-  if (!tenant) {
-    return (
-      <div className="space-y-6">
-        <AdminAlert variant="destructive" title="Tenant not found">
-          Der Tenant konnte fuer diese Anfrage nicht aufgeloest werden.
-        </AdminAlert>
-      </div>
-    )
-  }
+  const { runtime, scope } = resolveAdminOperationalReadScope({
+    host,
+    operation: "privacy:read",
+  })
 
   const scans = await runtime.privacyScannerPersistence.listPrivacyScans({
-    tenantId: tenant.tenantId,
+    tenantId: scope.tenantId,
   })
+  const p = getAdminMessages(await getAdminUiLocale()).privacyPage
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader
-        eyebrow="Compliance"
-        title="Privacy"
-        description="Privacy-Scan-Jobs und manuelle Prüfung (Foundation-UI)."
-      />
+      <AdminPageHeader eyebrow={p.eyebrow} title={p.title} description={p.description} />
 
-      <PrivacyScannerPanel tenantId={tenant.tenantId} initialScans={scans} />
+      <PrivacyScannerPanel tenantId={scope.tenantId} initialScans={scans} />
     </div>
   )
 }

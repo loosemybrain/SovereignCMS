@@ -1,5 +1,6 @@
 import type { CmsBlock } from "@sovereign-cms/core"
-import { getAdminBlockDefinition } from "@/block-definitions/registry"
+import { getLocalizedBlockLabel } from "@/lib/admin-block-i18n"
+import type { AdminUiLocale } from "@/lib/admin-i18n/types"
 
 const EXCERPT_PROP_KEYS = ["headline", "title", "subline", "intro", "body", "eyebrow", "primaryLabel"] as const
 
@@ -41,6 +42,6 @@ export function getBlockEditorPosition(
   }
 }
 
-export function getBlockTypeLabel(block: CmsBlock): string {
-  return getAdminBlockDefinition(block.type)?.label ?? block.type
+export function getBlockTypeLabel(block: CmsBlock, locale: AdminUiLocale): string {
+  return getLocalizedBlockLabel(block.type, locale)
 }

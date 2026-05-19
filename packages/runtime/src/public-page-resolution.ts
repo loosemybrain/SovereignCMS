@@ -1,7 +1,8 @@
 import type { CmsPage, PreviewContext } from "@sovereign-cms/core"
 import type { ContentPersistenceAdapter } from "@sovereign-cms/db"
 import { isPubliclyVisible } from "./public-visibility"
-import { assertTenantScope, type TenantRuntimeScope } from "./tenant/scope"
+import { toTenantRuntimeScope } from "./tenant/resolution"
+import type { TenantRuntimeScope } from "./tenant/scope"
 
 export type ResolvePublicPageInput = {
   tenantId: string
@@ -14,8 +15,9 @@ export type ResolvePublicPageInput = {
 export function toPublicPageTenantScope(
   input: Pick<ResolvePublicPageInput, "tenantId" | "locale" | "brand">,
 ): TenantRuntimeScope {
-  return assertTenantScope({
+  return toTenantRuntimeScope({
     tenantId: input.tenantId,
+    source: "explicit",
     locale: input.locale,
     brand: input.brand,
   })

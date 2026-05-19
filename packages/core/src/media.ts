@@ -3,15 +3,6 @@ import type { ContentStatus } from "./content-status"
 /** Semantic classification for CMS-authored media references (no I/O). */
 export type MediaSourceType = "internal" | "external" | "placeholder" | "missing" | "invalid"
 
-/** Raw editor/storage shape — future-compatible with asset IDs. */
-export type MediaReference = {
-  sourceType: MediaSourceType
-  url?: string
-  alt?: string
-  assetId?: string
-  label?: string
-}
-
 /** Normalized view for renderers and governance (pure, no network). */
 export type NormalizedMediaReference = {
   sourceType: MediaSourceType

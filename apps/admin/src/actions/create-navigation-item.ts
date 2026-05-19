@@ -1,8 +1,12 @@
 "use server"
 
-import { createRuntime } from "@sovereign-cms/runtime"
 import type { CreateNavigationItemInput, CreateNavigationItemResult } from "@sovereign-cms/core"
+import { resolveAdminWriteScope } from "@/lib/resolve-admin-write-scope"
 
+/**
+ * Server-side navigation item creation (main + footer via scope).
+ * Phase 72: tenant-scoped adapter with page-ownership check for page links.
+ */
 export async function createNavigationItemAction(
   input: CreateNavigationItemInput,
 ): Promise<CreateNavigationItemResult> {
@@ -21,6 +25,14 @@ export async function createNavigationItemAction(
     throw new Error("Invalid navigation scope")
   }
 
-  const runtime = createRuntime()
-  return runtime.navigationPersistence.createNavigationItem(input)
+  const { runtime, scope } = resolveAdminWriteScope({
+    clientTenantId: input.tenantId,
+    locale: input.locale,
+    operation: "navigation:manage",
+  })
+
+  return runtime.navigationPersistence.createNavigationItem({
+    ...input,
+    tenantId: scope.tenantId,
+  })
 }
