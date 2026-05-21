@@ -203,6 +203,40 @@ export {
   detectReadModelPersistenceLeakage,
   detectProjectionProviderLeakage,
 } from "./runtime-projection-integrity"
+export type {
+  RuntimeArtifactKind,
+  RuntimeArtifactLifetime,
+  RuntimeArtifactVisibility,
+  RuntimeArtifactBoundaryScope,
+  RuntimeArtifactClassification,
+  RuntimeArtifactExposureCheckResult,
+} from "./runtime-artifact-classification"
+export {
+  RUNTIME_ARTIFACT_CLASSIFICATIONS,
+  getRuntimeArtifactClassification,
+  getRuntimeArtifactVisibility,
+  isRuntimeArtifactPersistable,
+  isRuntimeArtifactRendererVisible,
+  isRuntimeArtifactAdminPreviewVisible,
+  isRuntimeArtifactInternalOnly,
+  assertRuntimeArtifactTransient,
+  checkRuntimeArtifactExposure,
+} from "./runtime-artifact-classification"
+export type {
+  RuntimeExposureTarget,
+  RuntimeExposureContext,
+  RuntimeExposureViolationCode,
+  RuntimeExposureSeverity,
+  RuntimeExposureViolation,
+  RuntimeExposureCheckResult,
+  RuntimeArtifactExposureInput,
+} from "./runtime-exposure-discipline"
+export {
+  createRuntimeExposureViolation,
+  checkRuntimeArtifactExposureForTarget,
+  assertRuntimeArtifactExposureAllowed,
+  isRuntimeArtifactExposureAllowed,
+} from "./runtime-exposure-discipline"
 export {
   mediaReferenceFromProps,
   hasMediaReferenceInput,
@@ -296,8 +330,51 @@ export type {
   TenantSettings,
   UpdateTenantSettingsInput,
   UpdateTenantSettingsResult,
+  TenantSettingsSaveResult,
 } from "./settings"
 export { createDefaultTenantSettings } from "./settings"
+export type {
+  TenantAppearanceSettings,
+  TenantCustomFont,
+  TenantSpinnerSettings,
+  AllowedThemeTokenKey,
+} from "./settings-appearance"
+export {
+  createDefaultTenantAppearanceSettings,
+  sanitizeTenantAppearanceSettings,
+  getInvalidThemeTokenFields,
+  ALLOWED_THEME_TOKEN_KEYS,
+} from "./settings-appearance"
+export {
+  sanitizeCssColorToken,
+  sanitizeFontFamilyName,
+  sanitizeFontWeight,
+  sanitizeFontStyle,
+  sanitizeCssLengthToken,
+  isValidCssColorToken,
+  isValidCssLengthToken,
+  isSafeWoff2DataUrl,
+  MAX_WOFF2_DATA_URL_LENGTH,
+  MAX_WOFF2_FILE_BYTES,
+} from "./settings-css-sanitizers"
+export {
+  buildPublicAppearanceCss,
+  buildAdminPreviewAppearanceCss,
+  buildThemeTokensCss,
+  buildFontFaceCss,
+  buildSpinnerScopeCss,
+} from "./settings-theme-css"
+export type { SpinnerPresetKey, SpinnerSpeedKey } from "./spinner-contract"
+export {
+  SPINNER_PRESET_KEYS,
+  SPINNER_SPEED_KEYS,
+  DEFAULT_SPINNER_PRESET,
+  DEFAULT_SPINNER_SPEED,
+  isSpinnerPresetKey,
+  isSpinnerSpeedKey,
+  normalizeSpinnerPreset,
+  normalizeSpinnerSpeed,
+} from "./spinner-contract"
 export type {
   ContactFormFieldName,
   ContactFormSubmissionInput,

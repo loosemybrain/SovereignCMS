@@ -23,7 +23,7 @@ Updates use `UpdateTenantSettingsInput` with a partial settings payload.
 `packages/db/src/contracts.ts` defines `SettingsRepository`:
 
 - `getByTenant({ tenantId })` — returns stored settings or creates defaults in-memory
-- `update(input)` — shallow merge for nested objects; `socialLinks` replaced when provided
+- `update(input)` — returns `TenantSettingsSaveResult` (`settings` + `persisted`); shallow merge for nested objects; `socialLinks` replaced when provided
 
 `DatabaseAdapter` includes `settings`.
 
@@ -32,7 +32,7 @@ Updates use `UpdateTenantSettingsInput` with a partial settings payload.
 `createSettingsPersistence({ db })` in `packages/runtime/src/settings-persistence.ts` exposes:
 
 - `getTenantSettings`
-- `updateTenantSettings` — returns `persisted: false` for InMemory
+- `updateTenantSettings` — forwards `persisted` from adapter save result (memory: `false`)
 
 ## Admin boundary
 

@@ -1,5 +1,6 @@
 import type { PublicPagePayload } from "@/lib/load-public-page"
 
+import { PublicTenantAppearanceStyles } from "@/components/public-tenant-appearance-styles"
 import { PublicLayoutShell } from "@/components/public-layout-shell"
 import { PublicBlockRenderer } from "@/components/public/PublicBlockRenderer"
 import { PublicPreviewBadge } from "@/components/public-preview-badge"
@@ -13,11 +14,13 @@ export function PublicPageView({
   footer,
   header,
   contactEmail,
+  appearanceCss,
 }: PublicPagePayload) {
   const previewEnabled = previewContext.mode === "enabled"
 
   return (
     <div className="flex min-h-screen flex-col">
+      <PublicTenantAppearanceStyles css={appearanceCss} />
       <PublicPreviewBadge previewEnabled={previewEnabled} />
       <PublicLayoutShell header={header} footer={footer} previewEnabled={previewEnabled}>
         {/* Draft indicator — visible only in preview mode */}

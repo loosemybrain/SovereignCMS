@@ -21,7 +21,7 @@ import type {
   CreatePrivacyScanInput,
   UpdatePrivacyScanApprovalInput,
 } from "@sovereign-cms/core"
-import { createDefaultTenantSettings } from "@sovereign-cms/core"
+import { createDefaultTenantSettings, createDefaultTenantAppearanceSettings } from "@sovereign-cms/core"
 import { nanoid } from "nanoid"
 
 type TenantRow = {
@@ -72,6 +72,13 @@ function cloneTenantSettings(settings: TenantSettings): TenantSettings {
     business: { ...settings.business },
     legal: { ...settings.legal },
     socialLinks: settings.socialLinks.map((link) => ({ ...link })),
+    appearance: settings.appearance
+      ? {
+          themeTokens: { ...settings.appearance.themeTokens },
+          customFonts: settings.appearance.customFonts.map((font) => ({ ...font })),
+          spinner: { ...settings.appearance.spinner },
+        }
+      : createDefaultTenantAppearanceSettings(),
   }
 }
 
@@ -92,6 +99,24 @@ function mergeTenantSettingsPatch(
       patch.socialLinks !== undefined
         ? patch.socialLinks.map((link) => ({ ...link }))
         : base.socialLinks.map((link) => ({ ...link })),
+    appearance: patch.appearance
+      ? {
+          themeTokens: patch.appearance.themeTokens
+            ? { ...base.appearance.themeTokens, ...patch.appearance.themeTokens }
+            : { ...base.appearance.themeTokens },
+          customFonts:
+            patch.appearance.customFonts !== undefined
+              ? patch.appearance.customFonts.map((font) => ({ ...font }))
+              : base.appearance.customFonts.map((font) => ({ ...font })),
+          spinner: patch.appearance.spinner
+            ? { ...base.appearance.spinner, ...patch.appearance.spinner }
+            : { ...base.appearance.spinner },
+        }
+      : {
+          themeTokens: { ...base.appearance.themeTokens },
+          customFonts: base.appearance.customFonts.map((font) => ({ ...font })),
+          spinner: { ...base.appearance.spinner },
+        },
     updatedAt: now,
   }
 }
@@ -337,6 +362,7 @@ function buildStores(): MutableStore {
       privacySlug: "datenschutz",
       cookieSlug: "cookies",
     },
+    appearance: createDefaultTenantAppearanceSettings(),
     updatedAt: new Date().toISOString(),
   }
   tenantSettingsByTenantId.set("demo", demoSettings)
@@ -785,7 +811,10 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
         createDefaultTenantSettings(input.tenantId)
       const merged = mergeTenantSettingsPatch(current, input.settings)
       store.tenantSettingsByTenantId.set(input.tenantId, merged)
-      return cloneTenantSettings(merged)
+      return {
+        settings: cloneTenantSettings(merged),
+        persisted: false,
+      }
     },
   }
 

@@ -15,7 +15,7 @@ import {
   type PublicSeoViewModel,
   composePublicBlockMedia,
 } from "@sovereign-cms/runtime"
-import { createPreviewContext } from "@sovereign-cms/core"
+import { buildPublicAppearanceCss, createPreviewContext } from "@sovereign-cms/core"
 
 const runtime = createRuntime()
 
@@ -30,6 +30,8 @@ export type PublicPagePayload = {
   footer: PublicFooterViewModel
   header: PublicHeaderViewModel
   contactEmail?: string
+  /** Sanitized CSS from tenant appearance settings (empty when no tokens/fonts/spinner). */
+  appearanceCss: string
 }
 
 export async function loadPublicPage(input: {
@@ -157,6 +159,8 @@ export async function loadPublicPage(input: {
   // Map SEO metadata
   const seo = mapSeoMetadataToPublicViewModel(page.seo)
 
+  const appearanceCss = buildPublicAppearanceCss(settings.appearance)
+
   return {
     tenant,
     locale: input.locale,
@@ -168,5 +172,6 @@ export async function loadPublicPage(input: {
     footer,
     header,
     contactEmail: settings.contact.email,
+    appearanceCss,
   }
 }

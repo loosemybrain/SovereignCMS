@@ -32,6 +32,9 @@ export type LegalSettings = {
   cookieSlug?: string
 }
 
+import type { TenantAppearanceSettings } from "./settings-appearance"
+import { createDefaultTenantAppearanceSettings } from "./settings-appearance"
+
 export type TenantSettings = {
   tenantId: string
   siteIdentity: SiteIdentitySettings
@@ -39,12 +42,19 @@ export type TenantSettings = {
   business: BusinessSettings
   socialLinks: SocialLink[]
   legal: LegalSettings
+  appearance: TenantAppearanceSettings
   updatedAt: string
 }
 
 export type UpdateTenantSettingsInput = {
   tenantId: string
   settings: Partial<Omit<TenantSettings, "tenantId" | "updatedAt">>
+}
+
+/** Adapter-level save outcome (settings hardening / persistence foundation). */
+export type TenantSettingsSaveResult = {
+  settings: TenantSettings
+  persisted: boolean
 }
 
 export type UpdateTenantSettingsResult = {
@@ -66,6 +76,7 @@ export function createDefaultTenantSettings(tenantId: string): TenantSettings {
     business: {},
     socialLinks: [],
     legal: {},
+    appearance: createDefaultTenantAppearanceSettings(),
     updatedAt: new Date().toISOString(),
   }
 }

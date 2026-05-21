@@ -294,13 +294,47 @@ export const catalogDe: Pick<
     socialUrlDescription: "https://…, http://… oder /pfad",
     socialValidationError:
       "Social-Media-Links: Jeder Eintrag braucht eine nicht-leere Beschriftung und eine gültige URL (https://, http:// oder /…).",
-    saveSuccess: "Einstellungen gespeichert. In-Memory-Daten sind noch nicht dauerhaft persistiert.",
+    saveSuccess: "Einstellungen gespeichert.",
+    saveSuccessPersisted:
+      "Einstellungen gespeichert und im konfigurierten Datenbank-Adapter dauerhaft persistiert.",
+    saveSuccessInMemory:
+      "Einstellungen nur im Speicher gespeichert — dauerhafte Persistenz erst mit einem Nicht-Memory-Datenbank-Adapter.",
     saveErrorGeneric: "Einstellungen konnten nicht gespeichert werden",
     saving: "Speichern …",
     saveButton: "Einstellungen speichern",
     socialEmpty: "Keine Social-Media-Links — „Social-Media-Link hinzufügen“ nutzen.",
     remove: "Entfernen",
     addSocialLink: "Social-Media-Link hinzufügen",
+    themeTitle: "Theme-Tokens",
+    themeDescription:
+      "Optionale CSS-Farb- und Radius-Tokens für die öffentliche Website. Werte werden vor der Injection bereinigt.",
+    fontTitle: "Eigene Schriften (Prototyp)",
+    fontDescription:
+      "Lokale WOFF2-Schriften als Data-URL — keine produktive Storage-Strategie.",
+    fontPrototypeHint:
+      "Lokale Schriften sind aktuell als Prototyp per Data-URL eingebunden. Produktiv sollten sie später über verwaltete Media-/Storage-Assets referenziert werden.",
+    fontEmpty: "Keine eigenen Schriften — „Schrift hinzufügen“ nutzen.",
+    addFont: "Schrift hinzufügen",
+    fontFamily: "Schriftfamilienname",
+    fontWeight: "Schriftstärke",
+    fontStyle: "Schriftstil",
+    fontWoff2File: "WOFF2-Datei (max. 512 KB)",
+    spinnerTitle: "Lade-Spinner",
+    spinnerDescription:
+      "Preset und Geschwindigkeit für öffentliche Ladeanzeigen (gleicher Vertrag wie in der Vorschau).",
+    spinnerPreset: "Preset",
+    spinnerSpeed: "Geschwindigkeit",
+    spinnerPreviewTitle: "Spinner-Vorschau",
+    spinnerPreviewDescription:
+      "Vorschau nutzt denselben bereinigten CSS-Vertrag wie die öffentliche Website.",
+    themeTokenInvalid:
+      "Ungültiger CSS-Wert. Dieser Wert wird nicht in die öffentliche Ausgabe übernommen.",
+    themeTokensSanitizedOnSave:
+      "Einige Theme-Werte waren ungültig und wurden nicht für die öffentliche Ausgabe gespeichert. Markierte Felder korrigieren und erneut speichern.",
+    fontUploadTooLarge: "Datei ist zu groß (max. 512 KB).",
+    fontUploadWrongType: "Nur .woff2-Dateien mit MIME data:font/woff2 werden akzeptiert.",
+    fontUploadFailed: "Schriftdatei konnte nicht gelesen werden.",
+    fontUploadSuccess: "WOFF2-Datei angehängt (Prototyp-Data-URL).",
   },
   navigationForm: {
     scope: "Bereich",

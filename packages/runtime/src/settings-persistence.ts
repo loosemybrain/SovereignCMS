@@ -27,16 +27,16 @@ export function createSettingsPersistence(input: CreateSettingsPersistenceInput)
     async updateTenantSettings(
       updateInput: UpdateTenantSettingsInput,
     ): Promise<UpdateTenantSettingsResult> {
-      const settingsResult = await settings.updateTenantSettings({
+      const saveResult = await settings.updateTenantSettings({
         tenantId: updateInput.tenantId,
         input: updateInput,
       })
 
       return {
         success: true,
-        settings: settingsResult,
-        updatedAt: settingsResult.updatedAt,
-        persisted: false,
+        settings: saveResult.settings,
+        updatedAt: saveResult.settings.updatedAt,
+        persisted: saveResult.persisted,
       }
     },
   }

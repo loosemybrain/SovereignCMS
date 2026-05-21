@@ -480,12 +480,37 @@ export type AdminMessages = {
     socialUrlDescription: string
     socialValidationError: string
     saveSuccess: string
+    saveSuccessPersisted: string
+    saveSuccessInMemory: string
     saveErrorGeneric: string
     saving: string
     saveButton: string
     socialEmpty: string
     remove: string
     addSocialLink: string
+    themeTitle: string
+    themeDescription: string
+    fontTitle: string
+    fontDescription: string
+    fontPrototypeHint: string
+    fontEmpty: string
+    addFont: string
+    fontFamily: string
+    fontWeight: string
+    fontStyle: string
+    fontWoff2File: string
+    spinnerTitle: string
+    spinnerDescription: string
+    spinnerPreset: string
+    spinnerSpeed: string
+    spinnerPreviewTitle: string
+    spinnerPreviewDescription: string
+    themeTokenInvalid: string
+    themeTokensSanitizedOnSave: string
+    fontUploadTooLarge: string
+    fontUploadWrongType: string
+    fontUploadFailed: string
+    fontUploadSuccess: string
   }
   navigationForm: {
     scope: string
