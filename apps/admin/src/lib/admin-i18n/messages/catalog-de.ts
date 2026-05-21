@@ -11,6 +11,7 @@ export const catalogDe: Pick<
   | "mediaLibrary"
   | "privacyPage"
   | "settingsForm"
+  | "settingsDomains"
   | "navigationForm"
   | "createPageForm"
   | "appearance"
@@ -304,7 +305,30 @@ export const catalogDe: Pick<
     saveErrorGeneric: "Einstellungen konnten nicht gespeichert werden",
     saving: "Speichern …",
     saveButton: "Einstellungen speichern",
-    socialEmpty: "Keine Social-Media-Links — „Social-Media-Link hinzufügen“ nutzen.",
+    saveBarAriaLabel: "Speichern und Persistenzstatus",
+    saveStatusIdle: "Bereit zum Speichern",
+    saveStatusIdleDetail: "Änderungen werden erst nach dem Speichern wirksam.",
+    saveStatusUnsaved: "Änderungen noch nicht gespeichert",
+    saveStatusUnsavedDetail: "Speichern, um die Einstellungen zu übernehmen.",
+    saveStatusSaving: "Wird gespeichert …",
+    saveStatusSavingDetail: "Bitte warten, bis der Vorgang abgeschlossen ist.",
+    saveStatusPersisted: "Dauerhaft gespeichert",
+    saveStatusPersistedDetail: "Die letzte Speicherung wurde im konfigurierten Datenbank-Adapter persistiert.",
+    saveStatusMemory: "Temporär gespeichert",
+    saveStatusMemoryDetail: "Nur im Memory-Store — noch nicht dauerhaft persistiert.",
+    saveStatusUnavailable: "Persistenz aktuell nicht verfügbar",
+    saveStatusUnavailableDetail: "Die letzte Speicherung konnte nicht dauerhaft abgelegt werden.",
+    themeTokenGuidance:
+      "Nur sichere CSS-Farb- und Längenwerte. Ungültige Eingaben werden vor der öffentlichen Ausgabe verworfen.",
+    spinnerGuidance:
+      "Preset und Geschwindigkeit gelten für öffentliche Ladeanzeigen — die Vorschau nutzt denselben CSS-Vertrag.",
+    spinnerPreviewCaption: "Öffentliche Ladeanzeige (Vorschau)",
+    socialExternalGuidance:
+      "Externe Ziele prüfen: https:// oder http://, relative Pfade mit / — Datenschutz und Zielseiten beachten.",
+    persistenceStatusGuidance:
+      "Status nach der letzten Speicherung. Details stehen im Tab „System & Runtime“.",
+    socialEmpty: "Keine Social-Links konfiguriert.",
+    socialEmptyDescription: "Links erscheinen im öffentlichen Footer in der Reihenfolge dieser Liste.",
     remove: "Entfernen",
     addSocialLink: "Social-Media-Link hinzufügen",
     themeTitle: "Theme-Tokens",
@@ -315,7 +339,8 @@ export const catalogDe: Pick<
       "Lokale WOFF2-Schriften als Data-URL — keine produktive Storage-Strategie.",
     fontPrototypeHint:
       "Lokale Schriften sind aktuell als Prototyp per Data-URL eingebunden. Produktiv sollten sie später über verwaltete Media-/Storage-Assets referenziert werden.",
-    fontEmpty: "Keine eigenen Schriften — „Schrift hinzufügen“ nutzen.",
+    fontEmpty: "Noch keine lokalen Schriftarten hinterlegt.",
+    fontEmptyDescription: "WOFF2-Dateien werden im Prototyp als Data-URL eingebunden (max. 512 KB).",
     addFont: "Schrift hinzufügen",
     fontFamily: "Schriftfamilienname",
     fontWeight: "Schriftstärke",
@@ -337,6 +362,69 @@ export const catalogDe: Pick<
     fontUploadWrongType: "Nur .woff2-Dateien mit MIME data:font/woff2 werden akzeptiert.",
     fontUploadFailed: "Schriftdatei konnte nicht gelesen werden.",
     fontUploadSuccess: "WOFF2-Datei angehängt (Prototyp-Data-URL).",
+  },
+  settingsDomains: {
+    tabsAriaLabel: "Einstellungsbereiche",
+    tabBranding: "Branding",
+    tabAppearance: "Erscheinungsbild",
+    tabNavigationLayout: "Navigation & Layout",
+    tabSocialExternal: "Social & Externe Links",
+    tabLegalGovernance: "Rechtliches & Governance",
+    tabSystemRuntime: "System & Runtime",
+    brandingIntro: "Zentrale Markenwirkung: Name, Schrift und Ladeanzeige.",
+    brandingMarkHint: "Logo-URLs und Schriften an die öffentliche Markenführung anpassen.",
+    appearanceIntro:
+      "Globale Gestaltung der öffentlichen Oberfläche. Unsichere CSS-Werte werden nicht übernommen.",
+    navigationLayoutIntro:
+      "Globale Struktur- und Layoutoptionen. Seiten- und Blocknavigation bleiben separat steuerbar.",
+    socialExternalIntro:
+      "Externe Profile und Verlinkungen prüfen. Datenschutz und Ziel-URLs beachten.",
+    legalGovernanceIntro: "Rechtliche Angaben und veröffentlichungsrelevante Hinweise.",
+    systemRuntimeIntro:
+      "Technische Laufzeitinformationen, Persistenzstatus und Prototyp-Grenzen.",
+    themePresetTitle: "Theme-Presets",
+    themePresetDescription: "Benannte Ausgangspunkte für Farben und Radius (Tokens unten).",
+    themePresetNote:
+      "Preset-Sammlungen sind noch nicht automatisiert — Tokens vorerst im Abschnitt darunter anpassen.",
+    themePresetEmptyTitle: "Aktuell wird das Standard-Theme verwendet.",
+    themePresetEmptyDescription:
+      "Benannte Presets sind noch nicht angebunden. Farben und Radius unten manuell als Tokens setzen.",
+    previewFrameLabel: "Vorschau",
+    themePreviewTitle: "Theme-Vorschau",
+    themePreviewDescription: "Beispielfläche mit bereinigten Theme-Tokens.",
+    themePreviewSampleTitle: "Beispielüberschrift",
+    themePreviewSampleBody: "Fließtext nutzt gedämpfte Vordergrund-Tokens, sofern gesetzt.",
+    themePreviewSampleButton: "Primäre Aktion",
+    themePreviewSampleMuted: "Sekundär",
+    navigationMenusTitle: "Menüs & Navigation",
+    navigationMenusDescription: "Haupt- und Footer-Menüs werden auf eigenen Seiten gepflegt.",
+    navigationMenusNote:
+      "Links unten nutzen — Reihenfolge und Ziele bleiben getrennt von diesen Einstellungen.",
+    navigationMainLink: "Hauptnavigation",
+    navigationFooterLink: "Footer-Navigation",
+    consentGovernanceTitle: "Consent & Governance",
+    consentGovernanceDescription: "Hinweise zur datenschutzrelevanten Veröffentlichung.",
+    consentGovernanceNote:
+      "Detaillierte Consent-Konfiguration liegt im Privacy-Bereich; Rechts-Slugs unten speisen Footer-Links.",
+    persistenceStatusTitle: "Persistenzstatus",
+    persistenceStatusDescription: "Ergebnis des letzten Speicherns (nach jedem Save aktualisiert).",
+    persistenceModeLabel: "Modus",
+    persistedLabel: "Letztes Save persistiert",
+    persistenceMemory: "Memory (Prototyp)",
+    persistenceDatabase: "Datenbank",
+    persistenceUnavailable: "Nicht verfügbar",
+    persistenceUnknown: "Noch nicht gespeichert",
+    persistedYes: "Ja — dauerhaft gespeichert",
+    persistedNo: "Nein — nicht dauerhaft",
+    persistedUnknown: "—",
+    fontPrototypeTitle: "Eigene Schriften (Prototyp)",
+    fontPrototypeDescription: "Temporäre Data-URL — keine produktive Storage-Strategie.",
+    runtimeNotesTitle: "Runtime-Hinweise",
+    runtimeNotesDescription: "Grenzen dieser Einstellungsoberfläche.",
+    runtimeNoteTenantScope: "Lesen und Schreiben nur mit serverseitig aufgelöstem Mandanten-Scope.",
+    runtimeNoteSanitizer:
+      "Theme- und Schriftwerte durchlaufen CSS-Sanitizer vor öffentlichem CSS.",
+    runtimeNoteNoLowLevel: "Kein JSON-Rohdaten-Editor und keine Low-Level-Adapter-Steuerung.",
   },
   navigationForm: {
     scope: "Bereich",

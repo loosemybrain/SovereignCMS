@@ -1,15 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { Type } from "lucide-react"
 import { MAX_WOFF2_FILE_BYTES } from "@sovereign-cms/core"
-import {
-  AdminButton,
-  AdminField,
-  AdminInput,
-  AdminSectionCard,
-} from "@/components/admin-ui"
+import { AdminButton, AdminEmptyState, AdminField, AdminInput } from "@/components/admin-ui"
 import { useAdminI18n } from "@/components/admin-i18n-provider"
 import type { SettingsTabProps } from "@/components/settings/settings-tab-types"
+import {
+  SettingsInlineHint,
+  SettingsNestedItemCard,
+  SettingsSectionCard,
+} from "@/components/settings/settings-ux-primitives"
 
 function newFontId(): string {
   if (
@@ -83,17 +84,23 @@ export function FontSettingsTab({ settings, setSettings, isSaving }: SettingsTab
   }
 
   return (
-    <AdminSectionCard title={s.fontTitle} description={s.fontDescription}>
-      <p className="mb-4 text-xs leading-relaxed admin-text-muted">{s.fontPrototypeHint}</p>
-      <div className="space-y-4">
+    <SettingsSectionCard title={s.fontTitle} description={s.fontDescription}>
+      <SettingsInlineHint>{s.fontPrototypeHint}</SettingsInlineHint>
+      <div className="mt-4 space-y-4">
         {settings.appearance.customFonts.length === 0 ? (
-          <p className="text-sm admin-text-muted">{s.fontEmpty}</p>
+          <AdminEmptyState
+            title={s.fontEmpty}
+            description={s.fontEmptyDescription}
+            icon={<Type className="h-7 w-7" strokeWidth={1.75} aria-hidden />}
+            className="py-10"
+          >
+            <AdminButton type="button" variant="secondary" disabled={isSaving} onClick={addFont}>
+              {s.addFont}
+            </AdminButton>
+          </AdminEmptyState>
         ) : (
           settings.appearance.customFonts.map((font) => (
-            <div
-              key={font.id}
-              className="space-y-3 rounded-lg border admin-border admin-surface-muted p-4"
-            >
+            <SettingsNestedItemCard key={font.id}>
               <div className="flex justify-end">
                 <AdminButton
                   type="button"
@@ -137,7 +144,7 @@ export function FontSettingsTab({ settings, setSettings, isSaving }: SettingsTab
                   />
                 )}
               </AdminField>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <AdminField id={`font-weight-${font.id}`} label={s.fontWeight}>
                   {(fp) => (
                     <AdminInput
@@ -187,7 +194,7 @@ export function FontSettingsTab({ settings, setSettings, isSaving }: SettingsTab
                       type="file"
                       accept=".woff2,font/woff2"
                       disabled={isSaving}
-                      className="block w-full text-sm admin-text"
+                      className="block w-full max-w-full text-sm admin-text"
                       onChange={(e) => onWoff2File(font.id, e.target.files?.[0] ?? null)}
                     />
                     {uploadErrors[font.id] ? (
@@ -201,13 +208,15 @@ export function FontSettingsTab({ settings, setSettings, isSaving }: SettingsTab
                   </div>
                 )}
               </AdminField>
-            </div>
+            </SettingsNestedItemCard>
           ))
         )}
-        <AdminButton type="button" variant="secondary" disabled={isSaving} onClick={addFont}>
-          {s.addFont}
-        </AdminButton>
+        {settings.appearance.customFonts.length > 0 ? (
+          <AdminButton type="button" variant="secondary" disabled={isSaving} onClick={addFont}>
+            {s.addFont}
+          </AdminButton>
+        ) : null}
       </div>
-    </AdminSectionCard>
+    </SettingsSectionCard>
   )
 }

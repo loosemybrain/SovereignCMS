@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const t = getAdminMessages(await getAdminUiLocale()).settings
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <AdminPageHeader eyebrow={t.eyebrow} title={t.title} description={t.description} />
       <SettingsEditor tenantId={scope.tenantId} initialSettings={settings} />
     </div>

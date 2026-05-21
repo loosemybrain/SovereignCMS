@@ -78,6 +78,7 @@ Apply `docs/migration/sql/phase-91-settings-persistence-runtime-foundation.sql` 
 | `npm run typecheck` | Pass (15/15) |
 | `npm run lint` | Pass (0 errors; 3 pre-existing admin warnings) |
 | `npm run build` | Pass (admin + web) |
+| `npm run sprint:finish -- --phase 91` | Pass — slim ZIP erstellt; Delta-ZIP übersprungen (keine Änderungen vs. `HEAD`, ggf. vorher committen) |
 
 ## Open follow-ups
 

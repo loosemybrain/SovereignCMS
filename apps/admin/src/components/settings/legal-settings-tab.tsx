@@ -1,6 +1,7 @@
 "use client"
 
-import { AdminConfigGrid, AdminField, AdminInput, AdminSectionCard } from "@/components/admin-ui"
+import { AdminConfigGrid, AdminField, AdminInput } from "@/components/admin-ui"
+import { SettingsSectionCard } from "@/components/settings/settings-ux-primitives"
 import { useAdminI18n } from "@/components/admin-i18n-provider"
 import type { SettingsTabProps } from "@/components/settings/settings-tab-types"
 
@@ -8,7 +9,7 @@ export function LegalSettingsTab({ settings, setSettings, isSaving }: SettingsTa
   const s = useAdminI18n().messages.settingsForm
 
   return (
-    <AdminSectionCard title={s.legalTitle} description={s.legalDescription}>
+    <SettingsSectionCard title={s.legalTitle} description={s.legalDescription}>
       <AdminConfigGrid columns={2}>
         <AdminField id="settings-responsible" label={s.responsible}>
           {(fp) => (
@@ -79,6 +80,6 @@ export function LegalSettingsTab({ settings, setSettings, isSaving }: SettingsTa
           )}
         </AdminField>
       </AdminConfigGrid>
-    </AdminSectionCard>
+    </SettingsSectionCard>
   )
 }

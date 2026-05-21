@@ -2,16 +2,16 @@
 
 import { BusinessSettingsSection } from "@/components/settings/sections/business-settings-section"
 import { ContactSettingsSection } from "@/components/settings/sections/contact-settings-section"
-import { SiteIdentitySettingsSection } from "@/components/settings/sections/site-identity-settings-section"
+import { NavigationLayoutHintsSection } from "@/components/settings/sections/navigation-layout-hints-section"
 import type { SettingsTabProps } from "@/components/settings/settings-tab-types"
+import { SettingsTabPanel } from "@/components/settings/settings-ux-primitives"
 
-/** Legacy technical tab — composes shared sections (Phase 92). */
-export function GeneralSettingsTab(props: SettingsTabProps) {
+export function NavigationLayoutSettingsTab(props: SettingsTabProps) {
   return (
-    <>
-      <SiteIdentitySettingsSection {...props} />
+    <SettingsTabPanel>
+      <NavigationLayoutHintsSection />
       <ContactSettingsSection {...props} />
       <BusinessSettingsSection {...props} />
-    </>
+    </SettingsTabPanel>
   )
 }

@@ -486,7 +486,26 @@ export type AdminMessages = {
     saveErrorGeneric: string
     saving: string
     saveButton: string
+    saveBarAriaLabel: string
+    saveStatusIdle: string
+    saveStatusIdleDetail: string
+    saveStatusUnsaved: string
+    saveStatusUnsavedDetail: string
+    saveStatusSaving: string
+    saveStatusSavingDetail: string
+    saveStatusPersisted: string
+    saveStatusPersistedDetail: string
+    saveStatusMemory: string
+    saveStatusMemoryDetail: string
+    saveStatusUnavailable: string
+    saveStatusUnavailableDetail: string
+    themeTokenGuidance: string
+    spinnerGuidance: string
+    spinnerPreviewCaption: string
+    socialExternalGuidance: string
+    persistenceStatusGuidance: string
     socialEmpty: string
+    socialEmptyDescription: string
     remove: string
     addSocialLink: string
     themeTitle: string
@@ -495,6 +514,7 @@ export type AdminMessages = {
     fontDescription: string
     fontPrototypeHint: string
     fontEmpty: string
+    fontEmptyDescription: string
     addFont: string
     fontFamily: string
     fontWeight: string
@@ -512,6 +532,60 @@ export type AdminMessages = {
     fontUploadWrongType: string
     fontUploadFailed: string
     fontUploadSuccess: string
+  }
+  settingsDomains: {
+    tabsAriaLabel: string
+    tabBranding: string
+    tabAppearance: string
+    tabNavigationLayout: string
+    tabSocialExternal: string
+    tabLegalGovernance: string
+    tabSystemRuntime: string
+    brandingIntro: string
+    brandingMarkHint: string
+    appearanceIntro: string
+    navigationLayoutIntro: string
+    socialExternalIntro: string
+    legalGovernanceIntro: string
+    systemRuntimeIntro: string
+    themePresetTitle: string
+    themePresetDescription: string
+    themePresetNote: string
+    themePresetEmptyTitle: string
+    themePresetEmptyDescription: string
+    previewFrameLabel: string
+    themePreviewTitle: string
+    themePreviewDescription: string
+    themePreviewSampleTitle: string
+    themePreviewSampleBody: string
+    themePreviewSampleButton: string
+    themePreviewSampleMuted: string
+    navigationMenusTitle: string
+    navigationMenusDescription: string
+    navigationMenusNote: string
+    navigationMainLink: string
+    navigationFooterLink: string
+    consentGovernanceTitle: string
+    consentGovernanceDescription: string
+    consentGovernanceNote: string
+    persistenceStatusTitle: string
+    persistenceStatusDescription: string
+    persistenceModeLabel: string
+    persistedLabel: string
+    persistenceMemory: string
+    persistenceDatabase: string
+    persistenceUnavailable: string
+    persistenceUnknown: string
+    persistedYes: string
+    persistedNo: string
+    persistedUnknown: string
+    fontPrototypeTitle: string
+    fontPrototypeDescription: string
+    runtimeNotesTitle: string
+    runtimeNotesDescription: string
+    runtimeNoteTenantScope: string
+    runtimeNoteSanitizer: string
+    runtimeNoteNoLowLevel: string
   }
   navigationForm: {
     scope: string

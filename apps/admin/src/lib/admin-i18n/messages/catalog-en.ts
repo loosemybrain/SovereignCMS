@@ -11,6 +11,7 @@ export const catalogEn: Pick<
   | "mediaLibrary"
   | "privacyPage"
   | "settingsForm"
+  | "settingsDomains"
   | "navigationForm"
   | "createPageForm"
   | "appearance"
@@ -293,7 +294,30 @@ export const catalogEn: Pick<
     saveErrorGeneric: "Failed to save settings",
     saving: "Saving…",
     saveButton: "Save settings",
-    socialEmpty: "No social links — use “Add social link”.",
+    saveBarAriaLabel: "Save and persistence status",
+    saveStatusIdle: "Ready to save",
+    saveStatusIdleDetail: "Changes take effect after you save.",
+    saveStatusUnsaved: "Unsaved changes",
+    saveStatusUnsavedDetail: "Save to apply your settings.",
+    saveStatusSaving: "Saving…",
+    saveStatusSavingDetail: "Please wait until the operation completes.",
+    saveStatusPersisted: "Saved permanently",
+    saveStatusPersistedDetail: "The last save was persisted to the configured database adapter.",
+    saveStatusMemory: "Saved temporarily",
+    saveStatusMemoryDetail: "In-memory store only — not permanently persisted yet.",
+    saveStatusUnavailable: "Persistence currently unavailable",
+    saveStatusUnavailableDetail: "The last save could not be stored durably.",
+    themeTokenGuidance:
+      "Only safe CSS color and length values. Invalid input is dropped before public output.",
+    spinnerGuidance:
+      "Preset and speed apply to public loading indicators — preview uses the same CSS contract.",
+    spinnerPreviewCaption: "Public loading indicator (preview)",
+    socialExternalGuidance:
+      "Check external targets: https:// or http://, or relative paths starting with / — consider privacy and destinations.",
+    persistenceStatusGuidance:
+      "Status after the last save. More detail is in the System & runtime tab.",
+    socialEmpty: "No social links configured.",
+    socialEmptyDescription: "Links appear in the public footer in this list order.",
     remove: "Remove",
     addSocialLink: "Add social link",
     themeTitle: "Theme tokens",
@@ -303,7 +327,8 @@ export const catalogEn: Pick<
     fontDescription: "Local WOFF2 fonts embedded as data URLs — not a production storage strategy.",
     fontPrototypeHint:
       "Local fonts are currently wired as a prototype via data URLs. In production they should later be referenced through managed media/storage assets.",
-    fontEmpty: "No custom fonts — use “Add font”.",
+    fontEmpty: "No local fonts added yet.",
+    fontEmptyDescription: "WOFF2 files are embedded as data URLs in the prototype (max. 512 KB).",
     addFont: "Add font",
     fontFamily: "Font family name",
     fontWeight: "Font weight",
@@ -323,6 +348,66 @@ export const catalogEn: Pick<
     fontUploadWrongType: "Only .woff2 files with MIME data:font/woff2 are accepted.",
     fontUploadFailed: "Could not read the font file.",
     fontUploadSuccess: "WOFF2 file attached (prototype data URL).",
+  },
+  settingsDomains: {
+    tabsAriaLabel: "Settings sections",
+    tabBranding: "Branding",
+    tabAppearance: "Appearance",
+    tabNavigationLayout: "Navigation & layout",
+    tabSocialExternal: "Social & external links",
+    tabLegalGovernance: "Legal & governance",
+    tabSystemRuntime: "System & runtime",
+    brandingIntro: "Core brand impact: name, typeface, and loading indicator.",
+    brandingMarkHint: "Keep logo URLs and fonts aligned with your public brand guidelines.",
+    appearanceIntro:
+      "Global styling for the public site. Unsafe CSS values are not applied to output.",
+    navigationLayoutIntro:
+      "Global structure and layout options. Page and block navigation are managed separately.",
+    socialExternalIntro:
+      "Review external profiles and links. Consider privacy and destination URLs.",
+    legalGovernanceIntro: "Legal information and publication-relevant notices.",
+    systemRuntimeIntro: "Runtime information, persistence status, and prototype boundaries.",
+    themePresetTitle: "Theme presets",
+    themePresetDescription: "Named starting points for colors and radius (manual tokens below).",
+    themePresetNote:
+      "Preset collections are not automated yet — adjust tokens in the section below for now.",
+    themePresetEmptyTitle: "The default theme is in use.",
+    themePresetEmptyDescription:
+      "Named presets are not wired yet. Set colors and radius manually as tokens below.",
+    previewFrameLabel: "Preview",
+    themePreviewTitle: "Theme preview",
+    themePreviewDescription: "Sample surface using sanitized theme tokens.",
+    themePreviewSampleTitle: "Sample heading",
+    themePreviewSampleBody: "Body text uses muted foreground tokens when set.",
+    themePreviewSampleButton: "Primary action",
+    themePreviewSampleMuted: "Secondary",
+    navigationMenusTitle: "Menus & navigation",
+    navigationMenusDescription: "Main and footer menus are edited on dedicated pages.",
+    navigationMenusNote: "Use the links below — list order and targets stay separate from these settings.",
+    navigationMainLink: "Main navigation",
+    navigationFooterLink: "Footer navigation",
+    consentGovernanceTitle: "Consent & governance",
+    consentGovernanceDescription: "Hints for privacy-related publishing.",
+    consentGovernanceNote:
+      "Detailed consent configuration lives in the privacy area; legal slugs below power footer links.",
+    persistenceStatusTitle: "Persistence status",
+    persistenceStatusDescription: "Result of the last save attempt (updated after each save).",
+    persistenceModeLabel: "Mode",
+    persistedLabel: "Last save persisted",
+    persistenceMemory: "Memory (prototype)",
+    persistenceDatabase: "Database",
+    persistenceUnavailable: "Unavailable",
+    persistenceUnknown: "Not saved yet",
+    persistedYes: "Yes — durable storage",
+    persistedNo: "No — not durably stored",
+    persistedUnknown: "—",
+    fontPrototypeTitle: "Custom fonts (prototype)",
+    fontPrototypeDescription: "Temporary data-URL binding — not a production storage strategy.",
+    runtimeNotesTitle: "Runtime notes",
+    runtimeNotesDescription: "Boundaries for this settings surface.",
+    runtimeNoteTenantScope: "Reads and writes use server-resolved tenant scope only.",
+    runtimeNoteSanitizer: "Theme and font values pass through CSS sanitizers before public CSS.",
+    runtimeNoteNoLowLevel: "No raw JSON editing or low-level adapter controls here.",
   },
   navigationForm: {
     scope: "Scope",
