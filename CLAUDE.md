@@ -31,8 +31,16 @@ npm run clean
 npx turbo typecheck --filter=@sovereign-cms/core
 npx turbo build --filter=@sovereign-cms/admin
 
-# Create phase ZIP artifacts after a completed migration step
-npm run phase:zip -- --phase <N>
+# Finish a phase: validate + create ZIPs (required after each completed phase)
+npm run sprint:finish -- --phase <label>
+# Alias:
+npm run phase:complete -- --phase <label>
+
+# Optional: auto-run sprint:finish after git commit that touches phase-*-result.md
+npm run hooks:install
+
+# ZIP only (no typecheck/lint/build)
+npm run phase:zip -- --phase <label>
 ```
 
 There are no automated tests in this codebase. Correctness is verified via `typecheck` + `lint`.

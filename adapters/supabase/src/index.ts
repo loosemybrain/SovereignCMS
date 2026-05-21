@@ -2,6 +2,7 @@ import type { DatabaseAdapter } from "@sovereign-cms/db"
 import type { StorageAdapter } from "@sovereign-cms/storage"
 
 export { createSupabaseContentClientPort } from "./content-client"
+export { createSupabaseSettingsClientPort } from "./settings-client"
 
 /**
  * Platzhalter: echte Implementierung bindet `@supabase/supabase-js` und

@@ -51,17 +51,27 @@ export type UpdateTenantSettingsInput = {
   settings: Partial<Omit<TenantSettings, "tenantId" | "updatedAt">>
 }
 
+/** How tenant settings were persisted (Phase 91). */
+export type SettingsPersistenceMode = "memory" | "database" | "unavailable"
+
 /** Adapter-level save outcome (settings hardening / persistence foundation). */
-export type TenantSettingsSaveResult = {
+export type TenantSettingsPersistenceResult = {
   settings: TenantSettings
   persisted: boolean
+  persistenceMode: SettingsPersistenceMode
+  warning?: string
 }
+
+/** @deprecated Alias — prefer TenantSettingsPersistenceResult */
+export type TenantSettingsSaveResult = TenantSettingsPersistenceResult
 
 export type UpdateTenantSettingsResult = {
   success: boolean
   settings: TenantSettings
   updatedAt: string
   persisted: boolean
+  persistenceMode: SettingsPersistenceMode
+  warning?: string
 }
 
 export function createDefaultTenantSettings(tenantId: string): TenantSettings {

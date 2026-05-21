@@ -10,6 +10,7 @@ import type {
   MediaAsset,
   CreateMediaAssetInput,
   TenantSettings,
+  TenantSettingsPersistenceResult,
   TenantSettingsSaveResult,
   UpdateTenantSettingsInput,
   PrivacyScanJob,
@@ -75,7 +76,7 @@ export interface MediaRepository {
 
 export interface SettingsRepository {
   getByTenant(input: { tenantId: string }): Promise<TenantSettings>
-  update(input: UpdateTenantSettingsInput): Promise<TenantSettingsSaveResult>
+  update(input: UpdateTenantSettingsInput): Promise<TenantSettingsPersistenceResult>
 }
 
 export interface PrivacyScanRepository {

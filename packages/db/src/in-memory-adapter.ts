@@ -21,7 +21,11 @@ import type {
   CreatePrivacyScanInput,
   UpdatePrivacyScanApprovalInput,
 } from "@sovereign-cms/core"
-import { createDefaultTenantSettings, createDefaultTenantAppearanceSettings } from "@sovereign-cms/core"
+import {
+  createDefaultTenantSettings,
+  createDefaultTenantAppearanceSettings,
+  mergeTenantSettingsPatch,
+} from "@sovereign-cms/core"
 import { nanoid } from "nanoid"
 
 type TenantRow = {
@@ -79,45 +83,6 @@ function cloneTenantSettings(settings: TenantSettings): TenantSettings {
           spinner: { ...settings.appearance.spinner },
         }
       : createDefaultTenantAppearanceSettings(),
-  }
-}
-
-function mergeTenantSettingsPatch(
-  base: TenantSettings,
-  patch: UpdateTenantSettingsInput["settings"],
-): TenantSettings {
-  const now = new Date().toISOString()
-  return {
-    tenantId: base.tenantId,
-    siteIdentity: patch.siteIdentity
-      ? { ...base.siteIdentity, ...patch.siteIdentity }
-      : { ...base.siteIdentity },
-    contact: patch.contact ? { ...base.contact, ...patch.contact } : { ...base.contact },
-    business: patch.business ? { ...base.business, ...patch.business } : { ...base.business },
-    legal: patch.legal ? { ...base.legal, ...patch.legal } : { ...base.legal },
-    socialLinks:
-      patch.socialLinks !== undefined
-        ? patch.socialLinks.map((link) => ({ ...link }))
-        : base.socialLinks.map((link) => ({ ...link })),
-    appearance: patch.appearance
-      ? {
-          themeTokens: patch.appearance.themeTokens
-            ? { ...base.appearance.themeTokens, ...patch.appearance.themeTokens }
-            : { ...base.appearance.themeTokens },
-          customFonts:
-            patch.appearance.customFonts !== undefined
-              ? patch.appearance.customFonts.map((font) => ({ ...font }))
-              : base.appearance.customFonts.map((font) => ({ ...font })),
-          spinner: patch.appearance.spinner
-            ? { ...base.appearance.spinner, ...patch.appearance.spinner }
-            : { ...base.appearance.spinner },
-        }
-      : {
-          themeTokens: { ...base.appearance.themeTokens },
-          customFonts: base.appearance.customFonts.map((font) => ({ ...font })),
-          spinner: { ...base.appearance.spinner },
-        },
-    updatedAt: now,
   }
 }
 
@@ -814,6 +779,7 @@ function buildAdapterFromStores(store: MutableStore): DatabaseAdapter {
       return {
         settings: cloneTenantSettings(merged),
         persisted: false,
+        persistenceMode: "memory",
       }
     },
   }

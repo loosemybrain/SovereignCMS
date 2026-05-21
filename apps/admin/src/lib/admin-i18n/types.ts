@@ -482,6 +482,7 @@ export type AdminMessages = {
     saveSuccess: string
     saveSuccessPersisted: string
     saveSuccessInMemory: string
+    savePersistenceUnavailable: string
     saveErrorGeneric: string
     saving: string
     saveButton: string

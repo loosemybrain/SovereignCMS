@@ -37,6 +37,8 @@ export function createSettingsPersistence(input: CreateSettingsPersistenceInput)
         settings: saveResult.settings,
         updatedAt: saveResult.settings.updatedAt,
         persisted: saveResult.persisted,
+        persistenceMode: saveResult.persistenceMode,
+        warning: saveResult.warning,
       }
     },
   }

@@ -31,12 +31,14 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [themeSanitizedNotice, setThemeSanitizedNotice] = useState<string | null>(null)
+  const [persistenceWarning, setPersistenceWarning] = useState<string | null>(null)
 
   const handleSave = async () => {
     try {
       setError(null)
       setSuccessMessage(null)
       setThemeSanitizedNotice(null)
+      setPersistenceWarning(null)
       setIsSaving(true)
 
       for (const link of settings.socialLinks) {
@@ -66,7 +68,13 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
 
       if (result.success) {
         setSettings(result.settings)
-        setSuccessMessage(result.persisted ? s.saveSuccessPersisted : s.saveSuccessInMemory)
+        if (result.persistenceMode === "database" && result.persisted) {
+          setSuccessMessage(s.saveSuccessPersisted)
+        } else if (result.persistenceMode === "memory") {
+          setSuccessMessage(s.saveSuccessInMemory)
+        } else {
+          setPersistenceWarning(result.warning ?? s.savePersistenceUnavailable)
+        }
         if (invalidThemeKeys.length > 0) {
           setThemeSanitizedNotice(s.themeTokensSanitizedOnSave)
         }
@@ -90,6 +98,12 @@ export function SettingsEditor({ tenantId, initialSettings }: Props) {
       ) : null}
 
       {successMessage ? <AdminAlert variant="success">{successMessage}</AdminAlert> : null}
+
+      {persistenceWarning ? (
+        <AdminAlert variant="warning" title={s.savePersistenceUnavailable}>
+          {persistenceWarning}
+        </AdminAlert>
+      ) : null}
 
       {themeSanitizedNotice ? (
         <AdminAlert variant="warning">{themeSanitizedNotice}</AdminAlert>

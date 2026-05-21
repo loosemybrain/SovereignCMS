@@ -298,7 +298,9 @@ export const catalogDe: Pick<
     saveSuccessPersisted:
       "Einstellungen gespeichert und im konfigurierten Datenbank-Adapter dauerhaft persistiert.",
     saveSuccessInMemory:
-      "Einstellungen nur im Speicher gespeichert — dauerhafte Persistenz erst mit einem Nicht-Memory-Datenbank-Adapter.",
+      "Gespeichert, aber nur im temporären Memory-Store. Noch nicht dauerhaft persistiert.",
+    savePersistenceUnavailable:
+      "Einstellungen konnten nicht dauerhaft gespeichert werden, da die Datenbank-Persistenz noch nicht verfügbar ist.",
     saveErrorGeneric: "Einstellungen konnten nicht gespeichert werden",
     saving: "Speichern …",
     saveButton: "Einstellungen speichern",

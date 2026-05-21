@@ -3,30 +3,42 @@ description: Nach jedem abgeschlossenen Sprint/Phasenschritt automatisch Validie
 alwaysApply: true
 ---
 
-# Sprint-Abschluss: ZIP-Artefakte
+# Sprint-Abschluss: ZIP-Artefakte (obligatorisch)
 
-Wenn ein **Sprint oder eine Phase** (z. B. 59.7, 61) als erledigt gilt:
+Wenn ein **Sprint oder eine Phase** als erledigt gilt, ist der **letzte Schritt vor der Antwort an den Nutzer** immer:
 
-1. `docs/migration/phase-<label>-result.md` anlegen oder aktualisieren (Validierungsergebnis ehrlich dokumentieren).
-2. **Immer** aus dem Repo-Root ausführen:
+1. `docs/migration/phase-<label>-result.md` anlegen oder aktualisieren (Validierung ehrlich dokumentieren).
+2. **Aus dem Repo-Root ausführen** (selbst ausführen, nicht nur erwähnen):
 
 ```bash
 npm run sprint:finish -- --phase <label>
 ```
 
-Ohne `--phase` wird die **neueste** `docs/migration/phase-*-result.md` (Änderungsdatum) verwendet.
+Ohne `--phase` wird die **neueste** `docs/migration/phase-*-result.md` (Änderungsdatum) verwendet. Alias: `npm run phase:complete -- --phase <label>`.
 
-Das Skript führt nacheinander aus: `typecheck` → `lint` → `build` → zwei ZIPs unter `artifacts/phase-zips/`:
-- `SovereignCMS-<label>-nur-Aenderungen.zip` (ohne Pfade unter `artifacts/`)
-- `SovereignCMS-<label>-repo-slim.zip` (ohne `node_modules`, `.next`, `.turbo`, `dist`, `artifacts`)
+Das Skript führt aus: `typecheck` → `lint` → `build` → zwei ZIPs unter `artifacts/phase-zips/`:
+- `SovereignCMS-<label>-nur-Aenderungen.zip`
+- `SovereignCMS-<label>-repo-slim.zip`
 
-Nur bei erfolgreicher Validierung fortfahren. Bei Fehlern: beheben, erneut `sprint:finish` — **kein ZIP bei rotem Build**.
+**Nur bei grünem Build** ZIPs erzeugen. Bei Fehlern: beheben, erneut `sprint:finish` — **kein ZIP bei rotem Build**.
 
-Nur ZIPs ohne erneute Validierung (z. B. nach manuellem Fix):
+Ergebnis in der Antwort kurz nennen (Phase, Checks, ZIP-Pfade).
+
+## Automatisierung nach Git-Commit (optional, lokal)
+
+Einmal installieren — danach läuft `sprint:finish` automatisch, wenn ein Commit eine `docs/migration/phase-*-result.md` enthält:
+
+```bash
+npm run hooks:install
+```
+
+Opt-out für einen Commit: `SOVEREIGN_SKIP_PHASE_ZIP=1 git commit ...`  
+Deinstallieren: `npm run hooks:uninstall`
+
+## Nur ZIP ohne erneute Validierung
 
 ```bash
 npm run sprint:zip
-# oder explizit:
 npm run phase:zip -- --phase <label>
 ```
 

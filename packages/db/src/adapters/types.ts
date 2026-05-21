@@ -21,6 +21,7 @@ import type {
   PrivacyScanFinding,
   PrivacyScanJob,
   TenantSettings,
+  TenantSettingsPersistenceResult,
   TenantSettingsSaveResult,
   TenantUserMembership,
   TenantUserMembershipInput,
@@ -68,7 +69,7 @@ export interface SettingsPersistenceAdapter {
   updateTenantSettings(params: {
     tenantId: string
     input: UpdateTenantSettingsInput
-  }): Promise<TenantSettingsSaveResult>
+  }): Promise<TenantSettingsPersistenceResult>
 }
 
 /**

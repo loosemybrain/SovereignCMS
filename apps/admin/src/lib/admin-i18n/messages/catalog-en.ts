@@ -287,7 +287,9 @@ export const catalogEn: Pick<
     saveSuccess: "Settings saved.",
     saveSuccessPersisted: "Settings saved and persisted to the configured database adapter.",
     saveSuccessInMemory:
-      "Settings saved in memory only — they are not permanently persisted until a non-memory database adapter is configured.",
+      "Saved to the temporary in-memory store only — not permanently persisted yet.",
+    savePersistenceUnavailable:
+      "Settings could not be saved permanently because database persistence is not available yet.",
     saveErrorGeneric: "Failed to save settings",
     saving: "Saving…",
     saveButton: "Save settings",

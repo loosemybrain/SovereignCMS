@@ -331,8 +331,16 @@ export type {
   UpdateTenantSettingsInput,
   UpdateTenantSettingsResult,
   TenantSettingsSaveResult,
+  TenantSettingsPersistenceResult,
+  SettingsPersistenceMode,
 } from "./settings"
 export { createDefaultTenantSettings } from "./settings"
+export {
+  mergeTenantSettingsPatch,
+  normalizeTenantSettingsFromStorage,
+  tenantSettingsToStoragePayload,
+} from "./settings-normalize"
+export type { TenantSettingsStoragePayload } from "./settings-normalize"
 export type {
   TenantAppearanceSettings,
   TenantCustomFont,
